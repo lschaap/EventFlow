@@ -1,0 +1,367 @@
+This is the prompt I would use to start a brand-new project chat. It captures the vision, architecture, requirements, and goals we've developed.
+
+---
+
+# Project Overview
+
+I am building a portfolio project to help me transition into an **AI Software Implementation Manager** role. The goal is **not** to demonstrate advanced software engineering, but to demonstrate the work of an implementation consultant:
+
+* Requirements gathering
+* Business process analysis
+* Solution design
+* Project planning
+* System implementation
+* API integration
+* User acceptance testing (UAT)
+* Change management
+* AI integration
+
+The application will solve a real operational problem that I currently experience as an **Assistant General Manager and Athletic Director** at an international boarding school.
+
+---
+
+# Project Vision
+
+Build a web application called **EventFlow** (working title).
+
+It will be an **Event Operations Platform** that serves as the **single source of truth** for school events.
+
+The system should eliminate the need to coordinate information through:
+
+* WhatsApp
+* Notes
+* Email
+* Google Calendar
+* Memory
+
+Instead, all information should live in one system.
+
+---
+
+# MVP Goals
+
+The first version should accomplish the following:
+
+* Create events
+* Edit events
+* Cancel events
+* Assign multiple staff members
+* Assign multiple drivers
+* Assign multiple vehicles
+* Add and remove students
+* Automatically create/update/delete Google Calendar events
+* Keep one central database for:
+
+  * Upcoming events
+  * Current events
+  * Past events
+
+No AI should be included in Version 1.
+
+---
+
+# Technology Stack
+
+Frontend
+
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
+
+Backend
+
+* Firebase Authentication
+* Firestore Database
+* Firebase Hosting
+
+Integrations
+
+* Google Calendar API
+
+AI (Version 2)
+
+* Gemini API
+
+Development
+
+* VS Code
+* GitHub
+* GitHub Projects
+
+---
+
+# Database Design
+
+## Events
+
+Stores one record per event.
+
+Suggested fields:
+
+* Event ID
+* Event Name
+* Status
+* Sport
+* Event Type
+* Date
+* Departure Time
+* Return Time
+* Location
+* Purpose
+* Created By
+* Created Date
+* Last Modified
+* Google Calendar Event ID
+* Notes
+
+---
+
+## Students
+
+* Student ID
+* Name
+* Grade
+* Active
+
+---
+
+## Staff
+
+* Staff ID
+* Name
+* Email
+* Role
+* Active
+
+---
+
+## Drivers
+
+* Driver ID
+* Name
+* Active
+
+---
+
+## Vehicles
+
+* Vehicle ID
+* Vehicle Name
+* Capacity
+* Active
+
+---
+
+## EventParticipants
+
+One row per student.
+
+* Event Participant ID
+* Event ID
+* Student ID
+* Status
+* Added By
+* Updated At
+
+---
+
+## EventDrivers
+
+One row per driver assignment.
+
+* Event Driver ID
+* Event ID
+* Driver ID
+* Vehicle ID
+* Notes
+
+---
+
+## EventStaff
+
+One row per staff assignment.
+
+* Event Staff ID
+* Event ID
+* Staff ID
+* Role
+
+---
+
+# Primary Users
+
+Athletic Director
+
+Can:
+
+* Create events
+* Edit events
+* Confirm events
+* Cancel events
+* Assign staff
+* Assign drivers
+* Manage participants
+
+Coach
+
+Can:
+
+* View assigned events
+* Add/remove participants
+* Update event information
+
+Teachers
+
+Can:
+
+* View events
+* See which students are missing class
+
+Kitchen Staff
+
+Can:
+
+* View meal requirements
+* View participant list
+
+Drivers
+
+Can:
+
+* View assigned trips
+* View event details
+
+---
+
+# Core Workflow
+
+1. User logs in.
+2. User creates an event.
+3. User assigns:
+
+   * Staff
+   * Drivers
+   * Vehicles
+4. User adds participants.
+5. Event remains Draft.
+6. Athletic Director changes status to Confirmed.
+7. Google Calendar event is automatically created.
+8. Future edits automatically update the Calendar event.
+9. Cancelling the event removes it from Google Calendar.
+10. Completed events remain available for one year before archival.
+
+---
+
+# Project Sprints
+
+### Sprint 1
+
+Project setup
+
+* React
+* Firebase
+* GitHub
+* Authentication
+
+---
+
+### Sprint 2
+
+Database
+
+* Firestore
+* CRUD for Events
+
+---
+
+### Sprint 3
+
+Participants
+
+* Add
+* Remove
+* Search
+
+---
+
+### Sprint 4
+
+Drivers & Staff
+
+* Assign multiple drivers
+* Assign multiple staff
+* Assign vehicles
+
+---
+
+### Sprint 5
+
+Google Calendar Integration
+
+* Create event
+* Update event
+* Delete cancelled event
+
+---
+
+### Sprint 6
+
+Dashboard
+
+Views:
+
+* Upcoming
+* Current
+* Past
+
+---
+
+### Sprint 7
+
+AI Features
+
+Using Gemini:
+
+* Event summary
+* Missing information detection
+* Draft emails
+* Logistics checklist
+* Risk identification
+
+---
+
+# Documentation
+
+I want to treat this like a real implementation project.
+
+The repository should include:
+
+* Project Charter
+* Requirements Specification
+* Stakeholder Analysis
+* Current-State Workflow
+* Future-State Workflow
+* Data Model (ER Diagram)
+* Architecture Diagram
+* API Documentation
+* UAT Test Cases
+* Go-Live Checklist
+* User Guide
+* Future Enhancements
+
+---
+
+# Career Goal
+
+The purpose of this project is to demonstrate experience relevant to **AI Software Implementation Manager**, **Professional Services Consultant**, and **Technical Implementation Consultant** roles.
+
+When making recommendations, prioritize:
+
+* Clean architecture
+* Scalability
+* Simplicity
+* Modern development practices
+* Real-world implementation methodology
+
+Avoid overengineering the project. Focus on building a polished MVP that I could realistically complete, deploy, use at my school, and confidently discuss in interviews.
