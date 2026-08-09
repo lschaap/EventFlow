@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function LoginPage() {
-  const { currentUser, loading, signInWithGoogle, authError } = useAuth()
+  const { firebaseUser, loading, signInWithGoogle, authError, accessDeniedMessage } = useAuth()
   const location = useLocation()
 
   if (loading) {
@@ -16,7 +16,7 @@ export default function LoginPage() {
     )
   }
 
-  if (currentUser) {
+  if (firebaseUser && !accessDeniedMessage) {
     const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname || '/events'
     return <Navigate to={from} replace />
   }
@@ -30,6 +30,12 @@ export default function LoginPage() {
         {authError ? (
           <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {authError}
+          </div>
+        ) : null}
+
+        {accessDeniedMessage ? (
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {accessDeniedMessage}
           </div>
         ) : null}
 

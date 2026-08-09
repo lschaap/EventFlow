@@ -7,7 +7,7 @@ const navLinks = [
 ]
 
 export default function Layout() {
-  const { currentUser, signOutUser } = useAuth()
+  const { firebaseUser, appUser, signOutUser, role } = useAuth()
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -34,7 +34,22 @@ export default function Layout() {
               </NavLink>
             ))}
 
-            {currentUser ? (
+            {role === 'admin' ? (
+              <NavLink
+                to="/admin/configuration"
+                className={({ isActive }) =>
+                  `rounded-md px-3 py-2 transition ${
+                    isActive
+                      ? 'bg-slate-900 text-white'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`
+                }
+              >
+                Admin Config
+              </NavLink>
+            ) : null}
+
+            {firebaseUser ? (
               <button
                 type="button"
                 onClick={signOutUser}

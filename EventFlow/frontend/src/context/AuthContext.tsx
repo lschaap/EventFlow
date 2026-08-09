@@ -8,21 +8,29 @@ import {
   type User,
 } from 'firebase/auth'
 import { auth } from '../lib/firebase'
+import { getAppUser } from '../services/users'
+import type { AppUser } from '../types/models'
 
 type AuthContextType = {
-  currentUser: User | null
+  firebaseUser: User | null
+  appUser: AppUser | null
+  role: 'admin' | 'staff' | null
+  isAdmin: boolean
   loading: boolean
   signInWithGoogle: () => Promise<void>
   signOutUser: () => Promise<void>
   authError: string | null
+  accessDeniedMessage: string | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [firebaseUser, setFirebaseUser] = useState<User | null>(null)
+  const [appUser, setAppUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [accessDeniedMessage, setAccessDeniedMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!auth) {
@@ -31,9 +39,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user)
-      setLoading(false)
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setAccessDeniedMessage(null)
+      setAuthError(null)
+      setFirebaseUser(user)
+
+      if (!user) {
+        setAppUser(null)
+        setLoading(false)
+        return
+      }
+
+      try {
+        const appUserRecord = await getAppUser(user.uid)
+
+        if (!appUserRecord) {
+          setAppUser(null)
+          setAccessDeniedMessage('Your account is not authorized to use EventFlow.')
+          setLoading(false)
+          return
+        }
+
+        if (!appUserRecord.active) {
+          setAppUser(null)
+          setAccessDeniedMessage('Your EventFlow account is inactive. Contact an administrator.')
+          setLoading(false)
+          return
+        }
+
+        setAppUser(appUserRecord)
+      } catch (error) {
+        setAppUser(null)
+        setAuthError(error instanceof Error ? error.message : 'Failed to load user authorization.')
+      } finally {
+        setLoading(false)
+      }
     })
 
     return unsubscribe
@@ -46,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setAuthError(null)
+    setAccessDeniedMessage(null)
 
     try {
       const provider = new GoogleAuthProvider()
@@ -66,14 +107,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       await signOut(auth)
+      setAppUser(null)
+      setAccessDeniedMessage(null)
     } catch {
       setAuthError('Sign-out failed. Please try again.')
     }
   }
 
+  const role = appUser?.role ?? null
+  const isAdmin = role === 'admin'
+
   const value = useMemo(
-    () => ({ currentUser, loading, signInWithGoogle, signOutUser, authError }),
-    [currentUser, loading, authError],
+    () => ({
+      firebaseUser,
+      appUser,
+      role,
+      isAdmin,
+      loading,
+      signInWithGoogle,
+      signOutUser,
+      authError,
+      accessDeniedMessage,
+    }),
+    [firebaseUser, appUser, role, isAdmin, loading, authError, accessDeniedMessage],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
