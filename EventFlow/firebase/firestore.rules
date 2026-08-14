@@ -61,6 +61,48 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Students master data
+    match /students/{studentId} {
+      allow read: if isAuth() && isApproved(request.auth.uid);
+
+      // Only active approved Admin users may create or update student master data
+      allow create, update: if isAuth() && isAdmin(request.auth.uid) &&
+        // basic validation
+        request.resource.data.keys().hasAll(['firstName','lastName','displayName','grade','active']) &&
+        (request.resource.data.grade is int) &&
+        request.resource.data.grade >= 6 && request.resource.data.grade <= 12 &&
+        (request.resource.data.active is bool);
+
+      allow delete: if false;
+    }
+
+    // Event participants
+    match /eventParticipants/{participantId} {
+      allow read: if isAuth() && isApproved(request.auth.uid);
+
+      // Creating a participant: only approved Admin or Staff may add participants.
+      allow create: if isAuth() && isApproved(request.auth.uid) &&
+        // must be adding as the authenticated user
+        request.resource.data.addedByUserId == request.auth.uid &&
+        // required fields
+        request.resource.data.keys().hasAll(['eventId','studentId','status','addedByUserId','addedAt']) &&
+        // status must be either 'active' or 'removed'
+        (request.resource.data.status == 'active' || request.resource.data.status == 'removed') &&
+        // ensure the referenced student exists and is active
+        get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.active == true;
+
+      // Updates (used for marking removed). Allow approved Admin/Staff but prevent arbitrary event changes.
+      allow update: if isAuth() && isApproved(request.auth.uid) &&
+        // prevent changing eventId/studentId
+        request.resource.data.eventId == resource.data.eventId &&
+        request.resource.data.studentId == resource.data.studentId &&
+        // status can change to removed
+        (request.resource.data.status == resource.data.status || request.resource.data.status == 'removed');
+
+      // Prevent hard deletes
+      allow delete: if false;
+    }
+
     // Allow other documented collections to be read/created only by approved users where appropriate.
     // For this milestone, deny access to any other collections by default.
     match /{document=**} {

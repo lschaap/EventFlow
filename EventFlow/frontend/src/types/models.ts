@@ -73,3 +73,28 @@ export interface EventFormValues {
   equipmentNeeded: string
   notes: string
 }
+
+export interface StudentRecord {
+  studentId: string
+  firstName: string
+  lastName: string
+  displayName: string
+  grade: number
+  active: boolean
+  dietaryRestrictions: string[]
+  notes?: string | null
+  createdAt?: Timestamp
+  updatedAt?: Timestamp
+}
+
+export interface EventParticipantRecord {
+  eventParticipantId: string
+  eventId: string
+  studentId: string
+  status: 'active' | 'removed'
+  addedByUserId: string
+  addedAt: Timestamp | any
+  removedByUserId?: string | null
+  removedAt?: Timestamp | any | null
+  notes?: string | null
+}

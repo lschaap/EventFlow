@@ -14,10 +14,22 @@ import {
   updateEventType,
 } from '../services/eventTypes'
 import type { ActivityRecord, EventTypeRecord } from '../types/models'
+import type { StudentRecord } from '../types/models'
+import { createStudent, listStudents, listActiveStudents, updateStudent } from '../services/students'
 
 export default function AdminConfigurationPage() {
   const [activities, setActivities] = useState<ActivityRecord[]>([])
   const [eventTypes, setEventTypes] = useState<EventTypeRecord[]>([])
+  const [students, setStudents] = useState<StudentRecord[]>([])
+  const [newStudentFirstName, setNewStudentFirstName] = useState('')
+  const [newStudentLastName, setNewStudentLastName] = useState('')
+  const [newStudentGrade, setNewStudentGrade] = useState<number | ''>('')
+  const [newStudentDietary, setNewStudentDietary] = useState('')
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null)
+  const [editingStudentFirstName, setEditingStudentFirstName] = useState('')
+  const [editingStudentLastName, setEditingStudentLastName] = useState('')
+  const [editingStudentGrade, setEditingStudentGrade] = useState<number | ''>('')
+  const [editingStudentDietary, setEditingStudentDietary] = useState('')
   const [newActivityName, setNewActivityName] = useState('')
   const [newEventTypeName, setNewEventTypeName] = useState('')
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null)
@@ -33,6 +45,8 @@ export default function AdminConfigurationPage() {
     const [activityRecords, eventTypeRecords] = await Promise.all([listActivities(), listEventTypes()])
     setActivities(activityRecords)
     setEventTypes(eventTypeRecords)
+    const studentRecords = await listStudents()
+    setStudents(studentRecords)
     setLoading(false)
   }
 
@@ -177,6 +191,85 @@ export default function AdminConfigurationPage() {
     }
   }
 
+  const handleCreateStudent = async () => {
+    if (!newStudentFirstName.trim() || !newStudentLastName.trim() || !newStudentGrade) return
+    setSaving(true)
+    setMessage(null)
+    try {
+      await createStudent({
+        firstName: newStudentFirstName.trim(),
+        lastName: newStudentLastName.trim(),
+        displayName: `${newStudentFirstName.trim()} ${newStudentLastName.trim()}`,
+        grade: Number(newStudentGrade),
+        active: true,
+        dietaryRestrictions: newStudentDietary ? newStudentDietary.split(',').map((s) => s.trim()).filter(Boolean) : [],
+        notes: null,
+      })
+      setNewStudentFirstName('')
+      setNewStudentLastName('')
+      setNewStudentGrade('')
+      setNewStudentDietary('')
+      const studentRecords = await listStudents()
+      setStudents(studentRecords)
+      setMessage('Student created.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to create student.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleToggleStudent = async (student: StudentRecord) => {
+    setSaving(true)
+    setMessage(null)
+    try {
+      await updateStudent(student.studentId, { active: !student.active })
+      const studentRecords = await listStudents()
+      setStudents(studentRecords)
+      setMessage('Student updated.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to update student.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleStartEditingStudent = (student: StudentRecord) => {
+    setEditingStudentId(student.studentId)
+    setEditingStudentFirstName(student.firstName)
+    setEditingStudentLastName(student.lastName)
+    setEditingStudentGrade(student.grade)
+    setEditingStudentDietary(Array.isArray(student.dietaryRestrictions) ? student.dietaryRestrictions.join(', ') : '')
+  }
+
+  const handleSaveStudentName = async () => {
+    if (!editingStudentId || !editingStudentFirstName.trim() || !editingStudentLastName.trim() || !editingStudentGrade) return
+    setSaving(true)
+    setMessage(null)
+    try {
+      await updateStudent(editingStudentId, { firstName: editingStudentFirstName.trim(), lastName: editingStudentLastName.trim(), displayName: `${editingStudentFirstName.trim()} ${editingStudentLastName.trim()}`, grade: Number(editingStudentGrade), dietaryRestrictions: editingStudentDietary ? editingStudentDietary.split(',').map((s) => s.trim()).filter(Boolean) : [] })
+      setEditingStudentId(null)
+      setEditingStudentFirstName('')
+      setEditingStudentLastName('')
+      setEditingStudentGrade('')
+      setEditingStudentDietary('')
+      const studentRecords = await listStudents()
+      setStudents(studentRecords)
+      setMessage('Student updated.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to update student.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancelStudentEdit = () => {
+    setEditingStudentId(null)
+    setEditingStudentFirstName('')
+    setEditingStudentLastName('')
+    setEditingStudentGrade('')
+  }
+
   return (
     <div className="space-y-8">
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -200,7 +293,7 @@ export default function AdminConfigurationPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold">Activities</h2>
-          <p className="mt-2 text-sm text-slate-600">Only active activities are available when creating events.</p>
+          <p className="mt-2 text-sm text-slate-600">Activities represent the high-level event category.</p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end">
             <label className="flex-1 text-sm font-medium text-slate-800">
@@ -378,6 +471,95 @@ export default function AdminConfigurationPage() {
           </div>
         </section>
       </div>
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-xl font-semibold">Students</h2>
+        <p className="mt-2 text-sm text-slate-600">Manage student master data. Only Admins may create or update students.</p>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <input
+            type="text"
+            value={newStudentFirstName}
+            onChange={(e) => setNewStudentFirstName(e.target.value)}
+            placeholder="First name"
+            className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900"
+          />
+          <input
+            type="text"
+            value={newStudentLastName}
+            onChange={(e) => setNewStudentLastName(e.target.value)}
+            placeholder="Last name"
+            className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900"
+          />
+          <input
+            type="number"
+            min={6}
+            max={12}
+            value={newStudentGrade as any}
+            onChange={(e) => setNewStudentGrade(e.target.value ? Number(e.target.value) : '')}
+            placeholder="Grade"
+            className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900"
+          />
+        </div>
+        <div className="mt-4">
+          <input
+            type="text"
+            value={newStudentDietary}
+            onChange={(e) => setNewStudentDietary(e.target.value)}
+            placeholder="Dietary restrictions (comma-separated)"
+            className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900"
+          />
+        </div>
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={handleCreateStudent}
+            disabled={saving || !newStudentFirstName.trim() || !newStudentLastName.trim() || !newStudentGrade}
+            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+          >
+            Add Student
+          </button>
+        </div>
+
+        <div className="mt-6 space-y-3">
+          {loading ? (
+            <p className="text-sm text-slate-600">Loading students…</p>
+          ) : (
+            students.map((student) => (
+              <div key={student.studentId} className="flex flex-col rounded-2xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex-1">
+                    {editingStudentId === student.studentId ? (
+                    <div className="space-y-3 sm:flex sm:gap-3">
+                      <input value={editingStudentFirstName} onChange={(e) => setEditingStudentFirstName(e.target.value)} className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
+                      <input value={editingStudentLastName} onChange={(e) => setEditingStudentLastName(e.target.value)} className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
+                      <input type="number" min={6} max={12} value={editingStudentGrade as any} onChange={(e) => setEditingStudentGrade(e.target.value ? Number(e.target.value) : '')} className="w-28 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
+                      <input value={editingStudentDietary} onChange={(e) => setEditingStudentDietary(e.target.value)} placeholder="Dietary restrictions (comma-separated)" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" onClick={handleSaveStudentName} disabled={saving || !editingStudentFirstName.trim() || !editingStudentLastName.trim() || !editingStudentGrade} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50">Save</button>
+                        <button type="button" onClick={handleCancelStudentEdit} disabled={saving} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="font-medium">{student.displayName} · Grade {student.grade}</p>
+                      {student.notes ? <p className="mt-1 text-sm text-slate-600">{student.notes}</p> : null}
+                      {Array.isArray(student.dietaryRestrictions) && student.dietaryRestrictions.length > 0 ? (
+                        <p className="mt-1 text-xs text-amber-700">Dietary: {student.dietaryRestrictions.join(', ')}</p>
+                      ) : null}
+                    </>
+                  )}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2 sm:mt-0">
+                  <button type="button" onClick={() => void handleToggleStudent(student)} className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${student.active ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>{student.active ? 'Deactivate' : 'Activate'}</button>
+                  {editingStudentId !== student.studentId ? (
+                    <button type="button" onClick={() => handleStartEditingStudent(student)} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Edit</button>
+                  ) : null}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
     </div>
   )
 }

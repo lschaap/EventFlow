@@ -3,7 +3,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { cancelEvent, completeEvent, getEventById } from '../services/events'
 import { listActivities } from '../services/activities'
 import { listEventTypes } from '../services/eventTypes'
+import { listActiveStudents, listStudents } from '../services/students'
+import { listParticipantsForEvent, addStudentParticipant, removeStudentParticipant } from '../services/eventParticipants'
 import type { EventRecord } from '../types/models'
+import { useAuth } from '../context/AuthContext'
 
 function formatDate(value: Date) {
   return value.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
@@ -18,6 +21,22 @@ export default function EventDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [participants, setParticipants] = useState<any[]>([])
+  const [activeStudents, setActiveStudents] = useState<any[]>([])
+  const [selectedStudentId, setSelectedStudentId] = useState('')
+  const [allStudents, setAllStudents] = useState<any[]>([])
+  // derived dietary restrictions for the current event (from active student participants)
+  const eventDietaryRestrictions = Array.from(
+    new Set(
+      participants
+        .map((p) => allStudents.find((s) => s.studentId === p.studentId))
+        .filter(Boolean)
+        .flatMap((s: any) => (Array.isArray(s.dietaryRestrictions) ? s.dietaryRestrictions : []))
+        .map((d: string) => d.trim())
+        .filter(Boolean)
+    )
+  )
+  const { firebaseUser } = useAuth()
 
   useEffect(() => {
     async function loadEvent() {
@@ -28,7 +47,13 @@ export default function EventDetailsPage() {
       }
 
       try {
-        const [loaded, activities, eventTypes] = await Promise.all([getEventById(eventId), listActivities(), listEventTypes()])
+        const [loaded, activities, eventTypes, students, parts] = await Promise.all([
+          getEventById(eventId),
+          listActivities(),
+          listEventTypes(),
+          listStudents(),
+          listParticipantsForEvent(eventId),
+        ])
 
         if (!loaded) {
           setError('Event not found.')
@@ -38,6 +63,10 @@ export default function EventDetailsPage() {
         setEvent(loaded)
         setActivitiesMap(Object.fromEntries(activities.map((a) => [a.activityId, a.name])))
         setEventTypesMap(Object.fromEntries(eventTypes.map((t) => [t.eventTypeId, t.name])))
+        // students contains all students. activeStudents for selector should be filtered.
+        setAllStudents(students)
+        setActiveStudents(students.filter((s: any) => s.active))
+        setParticipants(parts.filter((p) => p.status === 'active'))
       } catch {
         setError('Unable to load event details.')
       } finally {
@@ -127,6 +156,77 @@ export default function EventDetailsPage() {
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
                 <div className="font-medium">Return</div>
                 <div>{formatDate(event.returnDateTime)}</div>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold">Student participants</h3>
+            <p className="mt-2 text-sm text-slate-600">Add or remove students for this event.</p>
+
+            <div className="mt-4 space-y-4">
+              <div className="flex gap-2">
+                <select value={selectedStudentId} onChange={(e) => setSelectedStudentId(e.target.value)} className="flex-1 rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm outline-none">
+                  <option value="">Select student to add</option>
+                  {activeStudents
+                    .filter((s) => !participants.find((p) => p.studentId === s.studentId))
+                    .map((s) => (
+                      <option key={s.studentId} value={s.studentId}>{s.displayName} · Grade {s.grade}</option>
+                    ))}
+                </select>
+                <button type="button" disabled={!selectedStudentId || saving} onClick={async () => {
+                  if (!selectedStudentId || !event) return
+                  setSaving(true)
+                  setError(null)
+                  try {
+                    await addStudentParticipant(event.eventId, selectedStudentId, firebaseUser?.uid || '')
+                    const parts = await listParticipantsForEvent(event.eventId)
+                    setParticipants(parts.filter((p) => p.status === 'active'))
+                    const refreshed = await getEventById(event.eventId)
+                    setEvent(refreshed)
+                    setSelectedStudentId('')
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : 'Failed to add participant.')
+                  } finally {
+                    setSaving(false)
+                  }
+                }} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Add</button>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm text-slate-600">Event dietary restrictions: {eventDietaryRestrictions.length ? eventDietaryRestrictions.join(', ') : 'None'}</div>
+                <div className="mt-2" />
+                {participants.length === 0 ? (
+                  <p className="text-sm text-slate-600">No active student participants.</p>
+                ) : (
+                  participants.map((p) => {
+                    const student = allStudents.find((s) => s.studentId === p.studentId)
+                    return (
+                      <div key={p.eventParticipantId} className="flex items-center justify-between rounded-2xl border border-slate-200 p-3">
+                        <div className="text-sm text-slate-700">{(student && student.displayName) || p.studentId}
+                          <div className="mt-1 text-xs text-slate-500">Dietary: {(student && Array.isArray(student.dietaryRestrictions) && student.dietaryRestrictions.length) ? student.dietaryRestrictions.join(', ') : 'None'}</div>
+                        </div>
+                        <div>
+                          <button type="button" disabled={saving} onClick={async () => {
+                            if (!event) return
+                            setSaving(true)
+                            setError(null)
+                            try {
+                              await removeStudentParticipant(event.eventId, p.studentId, firebaseUser?.uid || '')
+                              const parts = await listParticipantsForEvent(event.eventId)
+                              setParticipants(parts.filter((pp) => pp.status === 'active'))
+                              const refreshed = await getEventById(event.eventId)
+                              setEvent(refreshed)
+                            } catch (err) {
+                              setError(err instanceof Error ? err.message : 'Failed to remove participant.')
+                            } finally {
+                              setSaving(false)
+                            }
+                          }} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700">Remove</button>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </div>
           </div>
