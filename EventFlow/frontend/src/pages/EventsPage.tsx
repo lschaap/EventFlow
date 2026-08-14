@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listEvents } from '../services/events'
+import { listActivities } from '../services/activities'
+import { listEventTypes } from '../services/eventTypes'
 import type { EventRecord } from '../types/models'
 
 function formatDate(value: Date) {
@@ -20,14 +22,19 @@ function classifyEvent(event: EventRecord) {
 
 export default function EventsPage() {
   const [events, setEvents] = useState<EventRecord[]>([])
+  const [activitiesMap, setActivitiesMap] = useState<Record<string, string>>({})
+  const [eventTypesMap, setEventTypesMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
       try {
-        const loaded = await listEvents()
+        const [loaded, activities, eventTypes] = await Promise.all([listEvents(), listActivities(), listEventTypes()])
+          
         setEvents(loaded)
+        setActivitiesMap(Object.fromEntries(activities.map((a) => [a.activityId, a.name])))
+        setEventTypesMap(Object.fromEntries(eventTypes.map((t) => [t.eventTypeId, t.name])))
       } catch {
         setError('Failed to load events.')
       } finally {
@@ -101,7 +108,7 @@ export default function EventsPage() {
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         <div className="rounded-2xl bg-slate-50 p-3 text-sm text-slate-700">
                           <div className="font-medium">Activity / Type</div>
-                          <div>{event.activityId} · {event.eventTypeId}</div>
+                          <div>{activitiesMap[event.activityId] ?? event.activityId} · {eventTypesMap[event.eventTypeId] ?? event.eventTypeId}</div>
                         </div>
                         <div className="rounded-2xl bg-slate-50 p-3 text-sm text-slate-700">
                           <div className="font-medium">Meals / Diet</div>

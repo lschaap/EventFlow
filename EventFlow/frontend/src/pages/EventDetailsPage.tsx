@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { cancelEvent, completeEvent, getEventById } from '../services/events'
+import { listActivities } from '../services/activities'
+import { listEventTypes } from '../services/eventTypes'
 import type { EventRecord } from '../types/models'
 
 function formatDate(value: Date) {
@@ -11,6 +13,8 @@ export default function EventDetailsPage() {
   const { eventId } = useParams()
   const navigate = useNavigate()
   const [event, setEvent] = useState<EventRecord | null>(null)
+  const [activitiesMap, setActivitiesMap] = useState<Record<string, string>>({})
+  const [eventTypesMap, setEventTypesMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,12 +28,16 @@ export default function EventDetailsPage() {
       }
 
       try {
-        const loaded = await getEventById(eventId)
+        const [loaded, activities, eventTypes] = await Promise.all([getEventById(eventId), listActivities(), listEventTypes()])
+
         if (!loaded) {
           setError('Event not found.')
           return
         }
+
         setEvent(loaded)
+        setActivitiesMap(Object.fromEntries(activities.map((a) => [a.activityId, a.name])))
+        setEventTypesMap(Object.fromEntries(eventTypes.map((t) => [t.eventTypeId, t.name])))
       } catch {
         setError('Unable to load event details.')
       } finally {
@@ -106,11 +114,11 @@ export default function EventDetailsPage() {
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
                 <div className="font-medium">Activity</div>
-                <div>{event.activityId}</div>
+                <div>{activitiesMap[event.activityId] ?? event.activityId}</div>
               </div>
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
                 <div className="font-medium">Event type</div>
-                <div>{event.eventTypeId}</div>
+                <div>{eventTypesMap[event.eventTypeId] ?? event.eventTypeId}</div>
               </div>
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
                 <div className="font-medium">Departure</div>

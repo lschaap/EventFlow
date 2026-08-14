@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { listActiveActivities } from '../services/activities'
-import { listActiveEventTypes } from '../services/eventTypes'
+import { listActiveActivities, listActivities } from '../services/activities'
+import { listActiveEventTypes, listEventTypes } from '../services/eventTypes'
 import { createEvent, getEventById, updateEvent } from '../services/events'
 import { useAuth } from '../context/AuthContext'
 import type { EventFormValues, EventRecord, MealType } from '../types/models'
@@ -24,7 +24,7 @@ const emptyForm: EventFormValues = {
 export default function EventFormPage() {
   const { eventId } = useParams()
   const navigate = useNavigate()
-  const { appUser } = useAuth()
+  const { appUser, firebaseUser } = useAuth()
   const [formValues, setFormValues] = useState<EventFormValues>(emptyForm)
   const [activities, setActivities] = useState<{ activityId: string; name: string }[]>([])
   const [eventTypes, setEventTypes] = useState<{ eventTypeId: string; name: string }[]>([])
@@ -36,24 +36,42 @@ export default function EventFormPage() {
     async function load() {
       try {
         const [activityRecords, eventTypeRecords] = await Promise.all([listActiveActivities(), listActiveEventTypes()])
-        setActivities(activityRecords.map((record) => ({ activityId: record.activityId, name: record.name })))
-        setEventTypes(eventTypeRecords.map((record) => ({ eventTypeId: record.eventTypeId, name: record.name })))
+        const activeActivities = activityRecords.map((record) => ({ activityId: record.activityId, name: record.name }))
+        const activeEventTypes = eventTypeRecords.map((record) => ({ eventTypeId: record.eventTypeId, name: record.name }))
+        setActivities(activeActivities)
+        setEventTypes(activeEventTypes)
 
+        let existingEvent = null
         if (eventId) {
-          const event = await getEventById(eventId)
-          if (event) {
+          existingEvent = await getEventById(eventId)
+          if (existingEvent) {
             setFormValues({
-              name: event.name,
-              activityId: event.activityId,
-              eventTypeId: event.eventTypeId,
-              departureDateTime: event.departureDateTime.toISOString().slice(0, 16),
-              returnDateTime: event.returnDateTime.toISOString().slice(0, 16),
-              location: event.location,
-              purpose: event.purpose ?? '',
-              mealsMissed: event.mealsMissed,
-              equipmentNeeded: event.equipmentNeeded.join(', '),
-              notes: event.notes ?? '',
+              name: existingEvent.name,
+              activityId: existingEvent.activityId,
+              eventTypeId: existingEvent.eventTypeId,
+              departureDateTime: existingEvent.departureDateTime.toISOString().slice(0, 16),
+              returnDateTime: existingEvent.returnDateTime.toISOString().slice(0, 16),
+              location: existingEvent.location,
+              purpose: existingEvent.purpose ?? '',
+              mealsMissed: existingEvent.mealsMissed,
+              equipmentNeeded: existingEvent.equipmentNeeded.join(', '),
+              notes: existingEvent.notes ?? '',
             })
+          }
+        }
+
+        // Preserve historical selections: if the event references an inactive activity or event type,
+        // fetch the full lists and add the selected item to the dropdown so it remains selectable.
+        if (eventId && existingEvent) {
+          const [allActivities, allEventTypes] = await Promise.all([listActivities(), listEventTypes()])
+          const selectedActivity = allActivities.find((a) => a.activityId === existingEvent.activityId)
+          const selectedEventType = allEventTypes.find((t) => t.eventTypeId === existingEvent.eventTypeId)
+
+          if (selectedActivity && !activeActivities.find((a) => a.activityId === selectedActivity.activityId)) {
+            setActivities((cur) => [...cur, { activityId: selectedActivity.activityId, name: selectedActivity.name }])
+          }
+          if (selectedEventType && !activeEventTypes.find((t) => t.eventTypeId === selectedEventType.eventTypeId)) {
+            setEventTypes((cur) => [...cur, { eventTypeId: selectedEventType.eventTypeId, name: selectedEventType.name }])
           }
         }
       } catch (err) {
@@ -106,7 +124,8 @@ export default function EventFormPage() {
         await updateEvent(eventId, formValues)
         navigate(`/events/${eventId}`)
       } else {
-        const newEventId = await createEvent(formValues, appUser.userId, appUser.email)
+        const userName = firebaseUser?.displayName || firebaseUser?.email || appUser.email
+        const newEventId = await createEvent(formValues, appUser.userId, userName)
         navigate(`/events/${newEventId}`)
       }
     } catch {

@@ -82,14 +82,7 @@ export async function seedInitialEventTypes(): Promise<void> {
     const eventTypeRef = doc(db, 'eventTypes', eventTypeId)
     const existing = await getDoc(eventTypeRef)
 
-    if (existing.exists()) {
-      await updateDoc(eventTypeRef, {
-        name: item.name,
-        active: item.active,
-        sortOrder: item.sortOrder,
-        updatedAt: serverTimestamp(),
-      })
-    } else {
+    if (!existing.exists()) {
       await setDoc(eventTypeRef, {
         eventTypeId,
         name: item.name,

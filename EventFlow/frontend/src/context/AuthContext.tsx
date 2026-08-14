@@ -60,9 +60,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
 
+        // Runtime validation: approved user must be active and have role 'admin' or 'staff'
+        const role = appUserRecord.role
+        const isRoleValid = role === 'admin' || role === 'staff'
+
         if (!appUserRecord.active) {
           setAppUser(null)
           setAccessDeniedMessage('Your EventFlow account is inactive. Contact an administrator.')
+          setLoading(false)
+          return
+        }
+
+        if (!isRoleValid) {
+          setAppUser(null)
+          setAccessDeniedMessage('Your EventFlow account role is invalid. Contact an administrator.')
           setLoading(false)
           return
         }

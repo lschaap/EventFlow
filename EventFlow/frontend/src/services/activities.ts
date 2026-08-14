@@ -82,14 +82,7 @@ export async function seedInitialActivities(): Promise<void> {
     const activityRef = doc(db, 'activities', activityId)
     const existing = await getDoc(activityRef)
 
-    if (existing.exists()) {
-      await updateDoc(activityRef, {
-        name: item.name,
-        active: item.active,
-        sortOrder: item.sortOrder,
-        updatedAt: serverTimestamp(),
-      })
-    } else {
+    if (!existing.exists()) {
       await setDoc(activityRef, {
         activityId,
         name: item.name,

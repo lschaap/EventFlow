@@ -45,11 +45,17 @@ export default function AdminConfigurationPage() {
       return
     }
     setSaving(true)
-    await createActivity(newActivityName.trim())
-    setNewActivityName('')
-    await loadData()
-    setMessage('Activity created.')
-    setSaving(false)
+    setMessage(null)
+    try {
+      await createActivity(newActivityName.trim())
+      setNewActivityName('')
+      await loadData()
+      setMessage('Activity created.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to create activity.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleCreateEventType = async () => {
@@ -57,19 +63,31 @@ export default function AdminConfigurationPage() {
       return
     }
     setSaving(true)
-    await createEventType(newEventTypeName.trim())
-    setNewEventTypeName('')
-    await loadData()
-    setMessage('Event type created.')
-    setSaving(false)
+    setMessage(null)
+    try {
+      await createEventType(newEventTypeName.trim())
+      setNewEventTypeName('')
+      await loadData()
+      setMessage('Event type created.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to create event type.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleToggleActivity = async (activity: ActivityRecord) => {
     setSaving(true)
-    await updateActivity(activity.activityId, { active: !activity.active })
-    await loadData()
-    setMessage('Activity updated.')
-    setSaving(false)
+    setMessage(null)
+    try {
+      await updateActivity(activity.activityId, { active: !activity.active })
+      await loadData()
+      setMessage('Activity updated.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to update activity.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleStartEditingActivity = (activity: ActivityRecord) => {
@@ -81,14 +99,19 @@ export default function AdminConfigurationPage() {
     if (!editingActivityId || !editingActivityName.trim()) {
       return
     }
-
     setSaving(true)
-    await updateActivity(editingActivityId, { name: editingActivityName.trim() })
-    setEditingActivityId(null)
-    setEditingActivityName('')
-    await loadData()
-    setMessage('Activity name updated.')
-    setSaving(false)
+    setMessage(null)
+    try {
+      await updateActivity(editingActivityId, { name: editingActivityName.trim() })
+      setEditingActivityId(null)
+      setEditingActivityName('')
+      await loadData()
+      setMessage('Activity name updated.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to update activity name.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleCancelActivityEdit = () => {
@@ -98,10 +121,16 @@ export default function AdminConfigurationPage() {
 
   const handleToggleEventType = async (eventType: EventTypeRecord) => {
     setSaving(true)
-    await updateEventType(eventType.eventTypeId, { active: !eventType.active })
-    await loadData()
-    setMessage('Event type updated.')
-    setSaving(false)
+    setMessage(null)
+    try {
+      await updateEventType(eventType.eventTypeId, { active: !eventType.active })
+      await loadData()
+      setMessage('Event type updated.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to update event type.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleStartEditingEventType = (eventType: EventTypeRecord) => {
@@ -113,14 +142,19 @@ export default function AdminConfigurationPage() {
     if (!editingEventTypeId || !editingEventTypeName.trim()) {
       return
     }
-
     setSaving(true)
-    await updateEventType(editingEventTypeId, { name: editingEventTypeName.trim() })
-    setEditingEventTypeId(null)
-    setEditingEventTypeName('')
-    await loadData()
-    setMessage('Event type updated.')
-    setSaving(false)
+    setMessage(null)
+    try {
+      await updateEventType(editingEventTypeId, { name: editingEventTypeName.trim() })
+      setEditingEventTypeId(null)
+      setEditingEventTypeName('')
+      await loadData()
+      setMessage('Event type updated.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Failed to update event type name.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleCancelEventTypeEdit = () => {
@@ -130,11 +164,17 @@ export default function AdminConfigurationPage() {
 
   const handleSeed = async () => {
     setSaving(true)
-    await seedInitialActivities()
-    await seedInitialEventTypes()
-    await loadData()
-    setMessage('Seeded initial activities and event types.')
-    setSaving(false)
+    setMessage(null)
+    try {
+      await seedInitialActivities()
+      await seedInitialEventTypes()
+      await loadData()
+      setMessage('Seeded initial activities and event types.')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Seeding failed.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
