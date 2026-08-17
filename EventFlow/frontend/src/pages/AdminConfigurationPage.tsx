@@ -23,13 +23,19 @@ export default function AdminConfigurationPage() {
   const [students, setStudents] = useState<StudentRecord[]>([])
   const [newStudentFirstName, setNewStudentFirstName] = useState('')
   const [newStudentLastName, setNewStudentLastName] = useState('')
+  const [newStudentDisplayName, setNewStudentDisplayName] = useState('')
   const [newStudentGrade, setNewStudentGrade] = useState<number | ''>('')
   const [newStudentDietary, setNewStudentDietary] = useState('')
+  const [newStudentNotes, setNewStudentNotes] = useState('')
+  const [newStudentActive, setNewStudentActive] = useState(true)
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null)
   const [editingStudentFirstName, setEditingStudentFirstName] = useState('')
   const [editingStudentLastName, setEditingStudentLastName] = useState('')
+  const [editingStudentDisplayName, setEditingStudentDisplayName] = useState('')
   const [editingStudentGrade, setEditingStudentGrade] = useState<number | ''>('')
   const [editingStudentDietary, setEditingStudentDietary] = useState('')
+  const [editingStudentNotes, setEditingStudentNotes] = useState('')
+  const [editingStudentActive, setEditingStudentActive] = useState(true)
   const [newActivityName, setNewActivityName] = useState('')
   const [newEventTypeName, setNewEventTypeName] = useState('')
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null)
@@ -199,16 +205,19 @@ export default function AdminConfigurationPage() {
       await createStudent({
         firstName: newStudentFirstName.trim(),
         lastName: newStudentLastName.trim(),
-        displayName: `${newStudentFirstName.trim()} ${newStudentLastName.trim()}`,
+        displayName: newStudentDisplayName.trim() || `${newStudentFirstName.trim()} ${newStudentLastName.trim()}`,
         grade: Number(newStudentGrade),
-        active: true,
+        active: newStudentActive,
         dietaryRestrictions: newStudentDietary ? newStudentDietary.split(',').map((s) => s.trim()).filter(Boolean) : [],
-        notes: null,
+        notes: newStudentNotes.trim() || null,
       })
       setNewStudentFirstName('')
       setNewStudentLastName('')
+      setNewStudentDisplayName('')
       setNewStudentGrade('')
       setNewStudentDietary('')
+      setNewStudentNotes('')
+      setNewStudentActive(true)
       const studentRecords = await listStudents()
       setStudents(studentRecords)
       setMessage('Student created.')
@@ -238,8 +247,11 @@ export default function AdminConfigurationPage() {
     setEditingStudentId(student.studentId)
     setEditingStudentFirstName(student.firstName)
     setEditingStudentLastName(student.lastName)
+    setEditingStudentDisplayName(student.displayName)
     setEditingStudentGrade(student.grade)
     setEditingStudentDietary(Array.isArray(student.dietaryRestrictions) ? student.dietaryRestrictions.join(', ') : '')
+    setEditingStudentNotes(student.notes ?? '')
+    setEditingStudentActive(student.active)
   }
 
   const handleSaveStudentName = async () => {
@@ -247,12 +259,23 @@ export default function AdminConfigurationPage() {
     setSaving(true)
     setMessage(null)
     try {
-      await updateStudent(editingStudentId, { firstName: editingStudentFirstName.trim(), lastName: editingStudentLastName.trim(), displayName: `${editingStudentFirstName.trim()} ${editingStudentLastName.trim()}`, grade: Number(editingStudentGrade), dietaryRestrictions: editingStudentDietary ? editingStudentDietary.split(',').map((s) => s.trim()).filter(Boolean) : [] })
+      await updateStudent(editingStudentId, {
+        firstName: editingStudentFirstName.trim(),
+        lastName: editingStudentLastName.trim(),
+        displayName: editingStudentDisplayName.trim() || `${editingStudentFirstName.trim()} ${editingStudentLastName.trim()}`,
+        grade: Number(editingStudentGrade),
+        active: editingStudentActive,
+        dietaryRestrictions: editingStudentDietary ? editingStudentDietary.split(',').map((s) => s.trim()).filter(Boolean) : [],
+        notes: editingStudentNotes.trim() || null,
+      })
       setEditingStudentId(null)
       setEditingStudentFirstName('')
       setEditingStudentLastName('')
+      setEditingStudentDisplayName('')
       setEditingStudentGrade('')
       setEditingStudentDietary('')
+      setEditingStudentNotes('')
+      setEditingStudentActive(true)
       const studentRecords = await listStudents()
       setStudents(studentRecords)
       setMessage('Student updated.')
@@ -267,7 +290,11 @@ export default function AdminConfigurationPage() {
     setEditingStudentId(null)
     setEditingStudentFirstName('')
     setEditingStudentLastName('')
+    setEditingStudentDisplayName('')
     setEditingStudentGrade('')
+    setEditingStudentDietary('')
+    setEditingStudentNotes('')
+    setEditingStudentActive(true)
   }
 
   return (
@@ -476,7 +503,7 @@ export default function AdminConfigurationPage() {
         <h2 className="text-xl font-semibold">Students</h2>
         <p className="mt-2 text-sm text-slate-600">Manage student master data. Only Admins may create or update students.</p>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <input
             type="text"
             value={newStudentFirstName}
@@ -492,6 +519,13 @@ export default function AdminConfigurationPage() {
             className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900"
           />
           <input
+            type="text"
+            value={newStudentDisplayName}
+            onChange={(e) => setNewStudentDisplayName(e.target.value)}
+            placeholder="Display name (optional)"
+            className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900"
+          />
+          <input
             type="number"
             min={6}
             max={12}
@@ -501,12 +535,31 @@ export default function AdminConfigurationPage() {
             className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900"
           />
         </div>
+        <div className="mt-4 flex items-center gap-3">
+          <input
+            id="new-student-active"
+            type="checkbox"
+            checked={newStudentActive}
+            onChange={(e) => setNewStudentActive(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-300"
+          />
+          <label htmlFor="new-student-active" className="text-sm text-slate-700">Active</label>
+        </div>
         <div className="mt-4">
           <input
             type="text"
             value={newStudentDietary}
             onChange={(e) => setNewStudentDietary(e.target.value)}
             placeholder="Dietary restrictions (comma-separated)"
+            className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900"
+          />
+        </div>
+        <div className="mt-4">
+          <textarea
+            value={newStudentNotes}
+            onChange={(e) => setNewStudentNotes(e.target.value)}
+            placeholder="Notes"
+            rows={3}
             className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900"
           />
         </div>
@@ -529,11 +582,19 @@ export default function AdminConfigurationPage() {
               <div key={student.studentId} className="flex flex-col rounded-2xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex-1">
                     {editingStudentId === student.studentId ? (
-                    <div className="space-y-3 sm:flex sm:gap-3">
-                      <input value={editingStudentFirstName} onChange={(e) => setEditingStudentFirstName(e.target.value)} className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
-                      <input value={editingStudentLastName} onChange={(e) => setEditingStudentLastName(e.target.value)} className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
-                      <input type="number" min={6} max={12} value={editingStudentGrade as any} onChange={(e) => setEditingStudentGrade(e.target.value ? Number(e.target.value) : '')} className="w-28 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
+                    <div className="space-y-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input value={editingStudentFirstName} onChange={(e) => setEditingStudentFirstName(e.target.value)} placeholder="First name" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
+                        <input value={editingStudentLastName} onChange={(e) => setEditingStudentLastName(e.target.value)} placeholder="Last name" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
+                        <input value={editingStudentDisplayName} onChange={(e) => setEditingStudentDisplayName(e.target.value)} placeholder="Display name" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
+                        <input type="number" min={6} max={12} value={editingStudentGrade as any} onChange={(e) => setEditingStudentGrade(e.target.value ? Number(e.target.value) : '')} placeholder="Grade" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input id={`student-active-${student.studentId}`} type="checkbox" checked={editingStudentActive} onChange={(e) => setEditingStudentActive(e.target.checked)} className="h-4 w-4 rounded border-slate-300" />
+                        <label htmlFor={`student-active-${student.studentId}`} className="text-sm text-slate-700">Active</label>
+                      </div>
                       <input value={editingStudentDietary} onChange={(e) => setEditingStudentDietary(e.target.value)} placeholder="Dietary restrictions (comma-separated)" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
+                      <textarea value={editingStudentNotes} onChange={(e) => setEditingStudentNotes(e.target.value)} placeholder="Notes" rows={3} className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-slate-900" />
                       <div className="flex flex-wrap gap-2">
                         <button type="button" onClick={handleSaveStudentName} disabled={saving || !editingStudentFirstName.trim() || !editingStudentLastName.trim() || !editingStudentGrade} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50">Save</button>
                         <button type="button" onClick={handleCancelStudentEdit} disabled={saving} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancel</button>

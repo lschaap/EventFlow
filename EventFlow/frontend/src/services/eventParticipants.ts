@@ -1,16 +1,19 @@
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
   query,
+  runTransaction,
   serverTimestamp,
   where,
-  writeBatch,
 } from 'firebase/firestore'
 import { ensureDb } from '../lib/firestore'
 import type { EventParticipantRecord } from '../types/models'
+
+export function getDeterministicParticipantId(eventId: string, studentId: string): string {
+  return `${eventId}__${studentId}`
+}
 
 export async function listParticipantsForEvent(eventId: string): Promise<EventParticipantRecord[]> {
   const db = ensureDb()
@@ -19,117 +22,143 @@ export async function listParticipantsForEvent(eventId: string): Promise<EventPa
   return snap.docs.map((d) => ({ eventParticipantId: d.id, ...(d.data() as Omit<EventParticipantRecord, 'eventParticipantId'>) }))
 }
 
+async function evaluateDietaryFlag(studentIds: string[]): Promise<boolean> {
+  const db = ensureDb()
+  for (const studentId of studentIds) {
+    const studentSnap = await getDoc(doc(db, 'students', studentId))
+    const dietaryRestrictions = (studentSnap.data() as any)?.dietaryRestrictions
+    if (studentSnap.exists() && Array.isArray(dietaryRestrictions) && dietaryRestrictions.length > 0) {
+      return true
+    }
+  }
+  return false
+}
+
 export async function addStudentParticipant(eventId: string, studentId: string, addedByUserId: string): Promise<string> {
   const db = ensureDb()
+  const participantId = getDeterministicParticipantId(eventId, studentId)
+  const participantRef = doc(db, 'eventParticipants', participantId)
+  const eventRef = doc(db, 'events', eventId)
+  const studentRef = doc(db, 'students', studentId)
+  const activeParticipantsQ = query(collection(db, 'eventParticipants'), where('eventId', '==', eventId), where('status', '==', 'active'))
+  const activeSnapshot = await getDocs(activeParticipantsQ)
+  const activeStudentIds = activeSnapshot.docs
+    .map((docSnap) => String((docSnap.data() as any).studentId))
+    .filter(Boolean)
 
-  // Prevent duplicate active relationship
-  const existingQ = query(collection(db, 'eventParticipants'), where('eventId', '==', eventId), where('studentId', '==', studentId), where('status', '==', 'active'))
-  const existing = await getDocs(existingQ)
-  if (!existing.empty) {
+  const eventSnapshot = await getDoc(eventRef)
+  if (!eventSnapshot.exists()) {
+    throw new Error('Event does not exist.')
+  }
+
+  const studentSnapshot = await getDoc(studentRef)
+  if (!studentSnapshot.exists()) {
+    throw new Error('Student does not exist.')
+  }
+  if (studentSnapshot.data()?.active !== true) {
+    throw new Error('Student is inactive and cannot be added.')
+  }
+
+  const participantSnapshot = await getDoc(participantRef)
+  if (participantSnapshot.exists() && (participantSnapshot.data() as any)?.status === 'active') {
     throw new Error('Student is already an active participant for this event.')
   }
 
-  // Ensure student is active
-  const studentRef = doc(db, 'students', studentId)
-  const studentSnap = await getDoc(studentRef)
-  if (!studentSnap.exists() || !(studentSnap.data() as any).active) {
-    throw new Error('Student is not active or does not exist.')
-  }
-
-  const batch = writeBatch(db)
-
-  const participantRef = doc(collection(db, 'eventParticipants'))
-  const now = serverTimestamp()
-  const participant: Partial<EventParticipantRecord> = {
-    eventId,
-    studentId,
-    status: 'active',
-    addedByUserId: addedByUserId,
-    addedAt: now,
-    removedByUserId: null,
-    removedAt: null,
-    notes: null,
-  }
-  batch.set(participantRef, { ...participant, eventParticipantId: participantRef.id })
-
-  // Recalculate derived event fields: we will count active student participants
-  // Query current active participants (including the one we're adding)
-  const activeQ = query(collection(db, 'eventParticipants'), where('eventId', '==', eventId), where('status', '==', 'active'))
-  const activeSnap = await getDocs(activeQ)
-  const activeCount = activeSnap.size + 1 // optimistic add
-  // Determine dietary restrictions presence
-  const studentIds = activeSnap.docs.map((d) => (d.data() as any).studentId).concat([studentId])
-  let hasDiet = false
-  for (const sid of studentIds) {
-    const s = await getDoc(doc(db, 'students', sid))
-    if (s.exists()) {
-      const dr = (s.data() as any).dietaryRestrictions
-      if (Array.isArray(dr) && dr.length > 0) {
-        hasDiet = true
-        break
-      }
+  return runTransaction(db, async (transaction) => {
+    const currentEventSnap = await transaction.get(eventRef)
+    if (!currentEventSnap.exists()) {
+      throw new Error('Event does not exist.')
     }
-  }
 
-  // Update event doc
-  const eventRef = doc(db, 'events', eventId)
-  batch.update(eventRef, {
-    studentParticipantCount: activeCount,
-    participantCount: activeCount, // staffParticipantCount is preserved by backend assumption; frontend will merge later
-    hasDietaryRestrictions: hasDiet,
-    updatedAt: serverTimestamp(),
+    const currentStudentSnap = await transaction.get(studentRef)
+    if (!currentStudentSnap.exists()) {
+      throw new Error('Student does not exist.')
+    }
+    if (currentStudentSnap.data()?.active !== true) {
+      throw new Error('Student is inactive and cannot be added.')
+    }
+
+    const currentParticipantSnap = await transaction.get(participantRef)
+    if (currentParticipantSnap.exists() && (currentParticipantSnap.data() as any)?.status === 'active') {
+      throw new Error('Student is already an active participant for this event.')
+    }
+
+    const nextStudentCount = activeSnapshot.size + 1
+    const nextHasDiet = await evaluateDietaryFlag([...new Set([...activeStudentIds, studentId])])
+    const updatePayload = {
+      eventParticipantId: participantId,
+      eventId,
+      studentId,
+      status: 'active',
+      addedByUserId: addedByUserId,
+      addedAt: serverTimestamp(),
+      removedByUserId: null,
+      removedAt: null,
+      notes: currentParticipantSnap.exists() ? (currentParticipantSnap.data() as any)?.notes ?? null : null,
+    }
+
+    if (currentParticipantSnap.exists()) {
+      transaction.update(participantRef, updatePayload)
+    } else {
+      transaction.set(participantRef, updatePayload)
+    }
+
+    transaction.update(eventRef, {
+      studentParticipantCount: Math.max(0, nextStudentCount),
+      participantCount: Math.max(0, nextStudentCount) + Number(currentEventSnap.data()?.staffParticipantCount ?? 0),
+      hasDietaryRestrictions: nextHasDiet,
+      updatedAt: serverTimestamp(),
+    })
+
+    return participantId
   })
-
-  await batch.commit()
-
-  return participantRef.id
 }
 
 export async function removeStudentParticipant(eventId: string, studentId: string, removedByUserId: string): Promise<void> {
   const db = ensureDb()
-
-  // Find an active participant record for this event/student
-  const activeQ = query(collection(db, 'eventParticipants'), where('eventId', '==', eventId), where('studentId', '==', studentId), where('status', '==', 'active'))
-  const activeSnap = await getDocs(activeQ)
-  if (activeSnap.empty) {
-    throw new Error('Active participant not found.')
-  }
-
-  const batch = writeBatch(db)
-  // Mark the first active participant as removed
-  const participantDoc = activeSnap.docs[0]
-  const participantRef = doc(db, 'eventParticipants', participantDoc.id)
-  batch.update(participantRef, {
-    status: 'removed',
-    removedByUserId: removedByUserId,
-    removedAt: serverTimestamp(),
-  })
-
-  // Recalculate counts from remaining active participants
-  const remainingQ = query(collection(db, 'eventParticipants'), where('eventId', '==', eventId), where('status', '==', 'active'))
-  const remainingSnap = await getDocs(remainingQ)
-  const activeCount = remainingSnap.size - 1 >= 0 ? remainingSnap.size - 1 : 0
-  const studentIds = remainingSnap.docs.map((d) => (d.data() as any).studentId)
-
-  let hasDiet = false
-  for (const sid of studentIds) {
-    const s = await getDoc(doc(db, 'students', sid))
-    if (s.exists()) {
-      const dr = (s.data() as any).dietaryRestrictions
-      if (Array.isArray(dr) && dr.length > 0) {
-        hasDiet = true
-        break
-      }
-    }
-  }
-
+  const participantId = getDeterministicParticipantId(eventId, studentId)
+  const participantRef = doc(db, 'eventParticipants', participantId)
   const eventRef = doc(db, 'events', eventId)
-  batch.update(eventRef, {
-    studentParticipantCount: activeCount,
-    participantCount: activeCount,
-    hasDietaryRestrictions: hasDiet,
-    updatedAt: serverTimestamp(),
-  })
+  const activeParticipantsQ = query(collection(db, 'eventParticipants'), where('eventId', '==', eventId), where('status', '==', 'active'))
+  const activeSnapshot = await getDocs(activeParticipantsQ)
+  const remainingStudentIds = activeSnapshot.docs
+    .map((docSnap) => String((docSnap.data() as any).studentId))
+    .filter((id) => id !== studentId)
 
-  await batch.commit()
+  const participantSnapshot = await getDoc(participantRef)
+  if (!participantSnapshot.exists() || (participantSnapshot.data() as any)?.status !== 'active') {
+    throw new Error('Student is not active for this event.')
+  }
+
+  await runTransaction(db, async (transaction) => {
+    const currentEventSnap = await transaction.get(eventRef)
+    if (!currentEventSnap.exists()) {
+      throw new Error('Event does not exist.')
+    }
+
+    const currentParticipantSnap = await transaction.get(participantRef)
+    if (!currentParticipantSnap.exists() || (currentParticipantSnap.data() as any)?.status !== 'active') {
+      throw new Error('Student is not active for this event.')
+    }
+
+    const nextStudentCount = Math.max(0, activeSnapshot.size - 1)
+    const nextHasDiet = await evaluateDietaryFlag(remainingStudentIds)
+
+    transaction.update(participantRef, {
+      eventParticipantId: participantId,
+      eventId,
+      studentId,
+      status: 'removed',
+      removedByUserId,
+      removedAt: serverTimestamp(),
+      notes: (currentParticipantSnap.data() as any)?.notes ?? null,
+    })
+
+    transaction.update(eventRef, {
+      studentParticipantCount: nextStudentCount,
+      participantCount: nextStudentCount + Number(currentEventSnap.data()?.staffParticipantCount ?? 0),
+      hasDietaryRestrictions: nextHasDiet,
+      updatedAt: serverTimestamp(),
+    })
+  })
 }

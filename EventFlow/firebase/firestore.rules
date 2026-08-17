@@ -80,26 +80,45 @@ service cloud.firestore {
     match /eventParticipants/{participantId} {
       allow read: if isAuth() && isApproved(request.auth.uid);
 
-      // Creating a participant: only approved Admin or Staff may add participants.
       allow create: if isAuth() && isApproved(request.auth.uid) &&
-        // must be adding as the authenticated user
+        request.resource.data.keys().hasAll(['eventId','studentId','status','addedByUserId','addedAt','removedByUserId','removedAt','notes']) &&
+        request.resource.data.eventId is string &&
+        request.resource.data.studentId is string &&
         request.resource.data.addedByUserId == request.auth.uid &&
-        // required fields
-        request.resource.data.keys().hasAll(['eventId','studentId','status','addedByUserId','addedAt']) &&
-        // status must be either 'active' or 'removed'
-        (request.resource.data.status == 'active' || request.resource.data.status == 'removed') &&
-        // ensure the referenced student exists and is active
+        request.resource.data.status == 'active' &&
+        request.resource.data.removedByUserId == null &&
+        request.resource.data.removedAt == null &&
+        request.resource.data.notes == null || request.resource.data.notes is string &&
+        participantId == request.resource.data.eventId + '__' + request.resource.data.studentId &&
+        exists(/databases/$(database)/documents/events/$(request.resource.data.eventId)) &&
+        exists(/databases/$(database)/documents/students/$(request.resource.data.studentId)) &&
         get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.active == true;
 
-      // Updates (used for marking removed). Allow approved Admin/Staff but prevent arbitrary event changes.
       allow update: if isAuth() && isApproved(request.auth.uid) &&
-        // prevent changing eventId/studentId
         request.resource.data.eventId == resource.data.eventId &&
         request.resource.data.studentId == resource.data.studentId &&
-        // status can change to removed
-        (request.resource.data.status == resource.data.status || request.resource.data.status == 'removed');
+        participantId == request.resource.data.eventId + '__' + request.resource.data.studentId &&
+        request.resource.data.status in ['active', 'removed'] &&
+        request.resource.data.addedByUserId == request.auth.uid &&
+        request.resource.data.addedAt is timestamp &&
+        request.resource.data.removedByUserId == null || request.resource.data.removedByUserId == request.auth.uid &&
+        request.resource.data.removedAt == null || request.resource.data.removedAt is timestamp &&
+        (
+          (
+            resource.data.status == 'active' &&
+            request.resource.data.status == 'removed' &&
+            request.resource.data.removedByUserId == request.auth.uid &&
+            request.resource.data.removedAt is timestamp &&
+            request.resource.data.removedAt != null
+          ) || (
+            resource.data.status == 'removed' &&
+            request.resource.data.status == 'active' &&
+            request.resource.data.removedByUserId == null &&
+            request.resource.data.removedAt == null &&
+            request.resource.data.addedByUserId == request.auth.uid
+          )
+        );
 
-      // Prevent hard deletes
       allow delete: if false;
     }
 

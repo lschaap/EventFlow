@@ -12,6 +12,17 @@ import {
 import { ensureDb } from '../lib/firestore'
 import type { StudentRecord } from '../types/models'
 
+export function normalizeDietaryRestrictions(value: unknown): string[] {
+  const items = Array.isArray(value) ? value : []
+  return Array.from(
+    new Set(
+      items
+        .map((item) => String(item).trim())
+        .filter(Boolean)
+    )
+  )
+}
+
 export async function listActiveStudents(): Promise<StudentRecord[]> {
   const db = ensureDb()
   const q = query(collection(db, 'students'), orderBy('displayName', 'asc'))
@@ -38,6 +49,10 @@ export async function getStudentById(studentId: string): Promise<StudentRecord |
 
 function validateStudentInput(values: Partial<Omit<StudentRecord, 'studentId'>>) {
   if (!values.firstName || !values.lastName) throw new Error('First and last name are required.')
+  const firstName = String(values.firstName).trim()
+  const lastName = String(values.lastName).trim()
+  const displayName = String(values.displayName ?? `${firstName} ${lastName}`).trim()
+  if (!displayName) throw new Error('Display name is required.')
   const grade = Number(values.grade)
   if (!Number.isInteger(grade) || grade < 6 || grade > 12) throw new Error('Grade must be an integer between 6 and 12.')
 }
@@ -47,15 +62,19 @@ export async function createStudent(values: Partial<Omit<StudentRecord, 'student
   const db = ensureDb()
   const ref = doc(collection(db, 'students'))
   const now = serverTimestamp()
+  const firstName = String(values.firstName || '').trim()
+  const lastName = String(values.lastName || '').trim()
+  const displayName = String(values.displayName || `${firstName} ${lastName}`).trim()
+  const normalizedNotes = typeof values.notes === 'string' ? values.notes.trim() || null : values.notes ?? null
   const data = {
     studentId: ref.id,
-    firstName: (values.firstName || '').trim(),
-    lastName: (values.lastName || '').trim(),
-    displayName: (values.displayName || `${(values.firstName || '').trim()} ${(values.lastName || '').trim()}`).trim(),
+    firstName,
+    lastName,
+    displayName,
     grade: Number(values.grade),
     active: values.active !== false,
-    dietaryRestrictions: Array.isArray(values.dietaryRestrictions) ? values.dietaryRestrictions.map((s) => s.trim()).filter(Boolean) : [],
-    notes: values.notes || null,
+    dietaryRestrictions: normalizeDietaryRestrictions(values.dietaryRestrictions),
+    notes: normalizedNotes,
     createdAt: now,
     updatedAt: now,
   }
@@ -67,15 +86,26 @@ export async function createStudent(values: Partial<Omit<StudentRecord, 'student
 export async function updateStudent(studentId: string, values: Partial<Omit<StudentRecord, 'studentId'>>): Promise<void> {
   const db = ensureDb()
   const ref = doc(db, 'students', studentId)
-  validateStudentInput({ ...values, grade: values.grade ?? 6, firstName: values.firstName ?? 'x', lastName: values.lastName ?? 'x' })
-  await updateDoc(ref, {
-    ...(values.firstName ? { firstName: (values.firstName || '').trim() } : {}),
-    ...(values.lastName ? { lastName: (values.lastName || '').trim() } : {}),
-    ...(values.displayName ? { displayName: (values.displayName || '').trim() } : {}),
+  const current = await getDoc(ref)
+  if (!current.exists()) throw new Error('Student not found.')
+  const currentData = current.data() as Partial<StudentRecord>
+  validateStudentInput({
+    firstName: values.firstName ?? currentData.firstName ?? 'x',
+    lastName: values.lastName ?? currentData.lastName ?? 'x',
+    displayName: values.displayName ?? currentData.displayName ?? `${currentData.firstName ?? 'x'} ${currentData.lastName ?? 'x'}`,
+    grade: values.grade ?? currentData.grade ?? 6,
+  })
+
+  const updates: Record<string, unknown> = {
+    ...(values.firstName !== undefined ? { firstName: String(values.firstName).trim() } : {}),
+    ...(values.lastName !== undefined ? { lastName: String(values.lastName).trim() } : {}),
+    ...(values.displayName !== undefined ? { displayName: String(values.displayName).trim() } : {}),
     ...(values.grade !== undefined ? { grade: Number(values.grade) } : {}),
     ...(values.active !== undefined ? { active: !!values.active } : {}),
-    ...(values.dietaryRestrictions !== undefined ? { dietaryRestrictions: Array.isArray(values.dietaryRestrictions) ? values.dietaryRestrictions.map((s) => s.trim()).filter(Boolean) : [] } : {}),
-    ...(values.notes !== undefined ? { notes: values.notes } : {}),
+    ...(values.dietaryRestrictions !== undefined ? { dietaryRestrictions: normalizeDietaryRestrictions(values.dietaryRestrictions) } : {}),
+    ...(values.notes !== undefined ? { notes: typeof values.notes === 'string' ? values.notes.trim() || null : values.notes ?? null } : {}),
     updatedAt: serverTimestamp(),
-  })
+  }
+
+  await updateDoc(ref, updates)
 }
