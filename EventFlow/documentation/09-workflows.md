@@ -27,10 +27,10 @@ Select active student → prevent duplicate → create/restore active relationsh
 Set relationship to removed → record remover/time → recalculate counts and dietary indicator.
 
 ## 09 - Add Staff Participant
-Select active staff → prevent duplicate → create/restore active relationship → recalculate counts.
+Select active staff → prevent duplicate → create/restore active relationship → recalculate counts and dietary indicator.
 
 ## 10 - Remove Staff Participant
-Set relationship to removed → record remover/time → recalculate counts.
+Set relationship to removed → record remover/time → recalculate counts and dietary indicator.
 
 ## 11 - Assign Driver
 Select active staff where `canDrive = true` → prevent duplicate → optionally select active vehicle → create assignment.
@@ -77,7 +77,7 @@ Inactive students disappear from future participant selectors while historical r
 Create staff master record.
 
 ## A05 - Update Staff
-Update identity/title and operational fields.
+Update identity/title, dietary restrictions, and operational fields.
 
 ## A06 - Activate / Deactivate Staff
 Inactive staff disappear from future participant/driver selectors while history remains.

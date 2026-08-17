@@ -87,10 +87,36 @@ export interface StudentRecord {
   updatedAt?: Timestamp
 }
 
+export interface StaffRecord {
+  staffId: string
+  firstName: string
+  lastName: string
+  displayName: string
+  email: string
+  roleTitle: string
+  dietaryRestrictions: string[]
+  active: boolean
+  canDrive: boolean
+  createdAt?: Timestamp
+  updatedAt?: Timestamp
+}
+
 export interface EventParticipantRecord {
   eventParticipantId: string
   eventId: string
   studentId: string
+  status: 'active' | 'removed'
+  addedByUserId: string
+  addedAt: Timestamp | any
+  removedByUserId?: string | null
+  removedAt?: Timestamp | any | null
+  notes?: string | null
+}
+
+export interface EventStaffParticipantRecord {
+  eventStaffParticipantId: string
+  eventId: string
+  staffId: string
   status: 'active' | 'removed'
   addedByUserId: string
   addedAt: Timestamp | any

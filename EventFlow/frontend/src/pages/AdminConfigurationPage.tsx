@@ -16,11 +16,16 @@ import {
 import type { ActivityRecord, EventTypeRecord } from '../types/models'
 import type { StudentRecord } from '../types/models'
 import { createStudent, listStudents, listActiveStudents, updateStudent } from '../services/students'
+import StaffManagementPage from './StaffManagementPage'
+
+type AdminTab = 'students' | 'staff' | 'eventTypes' | 'activities'
 
 export default function AdminConfigurationPage() {
+  const [activeTab, setActiveTab] = useState<AdminTab>('students')
   const [activities, setActivities] = useState<ActivityRecord[]>([])
   const [eventTypes, setEventTypes] = useState<EventTypeRecord[]>([])
   const [students, setStudents] = useState<StudentRecord[]>([])
+  const [showStudentCreate, setShowStudentCreate] = useState(false)
   const [newStudentFirstName, setNewStudentFirstName] = useState('')
   const [newStudentLastName, setNewStudentLastName] = useState('')
   const [newStudentDisplayName, setNewStudentDisplayName] = useState('')
@@ -218,6 +223,7 @@ export default function AdminConfigurationPage() {
       setNewStudentDietary('')
       setNewStudentNotes('')
       setNewStudentActive(true)
+      setShowStudentCreate(false)
       const studentRecords = await listStudents()
       setStudents(studentRecords)
       setMessage('Student created.')
@@ -303,22 +309,27 @@ export default function AdminConfigurationPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Admin Configuration</h1>
-            <p className="mt-1 text-sm text-slate-600">Manage activities and event types for EventFlow.</p>
+            <p className="mt-1 text-sm text-slate-600">Manage EventFlow master data.</p>
           </div>
-          <button
+          {(activeTab === 'activities' || activeTab === 'eventTypes') ? <button
             type="button"
             onClick={handleSeed}
             disabled={saving}
             className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
           >
             Seed initial values
-          </button>
+          </button> : null}
         </div>
         {message ? <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{message}</div> : null}
+        <div role="tablist" aria-label="Admin configuration sections" className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {([['students', 'Students'], ['staff', 'Staff'], ['eventTypes', 'Event Types'], ['activities', 'Activities']] as const).map(([value, label]) => (
+            <button key={value} type="button" role="tab" aria-selected={activeTab === value} onClick={() => setActiveTab(value)} className={`rounded-xl px-3 py-3 text-sm font-semibold transition ${activeTab === value ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{label}</button>
+          ))}
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className={activeTab === 'activities' || activeTab === 'eventTypes' ? 'grid gap-6' : 'hidden'}>
+        <section className={`${activeTab === 'activities' ? '' : 'hidden'} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm`}>
           <h2 className="text-xl font-semibold">Activities</h2>
           <p className="mt-2 text-sm text-slate-600">Activities represent the high-level event category.</p>
 
@@ -408,7 +419,7 @@ export default function AdminConfigurationPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className={`${activeTab === 'eventTypes' ? '' : 'hidden'} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm`}>
           <h2 className="text-xl font-semibold">Event Types</h2>
           <p className="mt-2 text-sm text-slate-600">Only active event types are available when creating events.</p>
 
@@ -499,10 +510,13 @@ export default function AdminConfigurationPage() {
         </section>
       </div>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold">Students</h2>
-        <p className="mt-2 text-sm text-slate-600">Manage student master data. Only Admins may create or update students.</p>
+      {activeTab === 'staff' ? <StaffManagementPage /> : null}
 
+      <section className={`${activeTab === 'students' ? '' : 'hidden'} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm`}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-semibold">Students</h2><p className="mt-2 text-sm text-slate-600">Manage student master data. Only Admins may create or update students.</p></div><button type="button" onClick={() => { handleCancelStudentEdit(); setShowStudentCreate(true) }} disabled={saving || showStudentCreate} className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">Add Student</button></div>
+
+        {showStudentCreate ? <div className="mt-5 rounded-2xl border border-slate-200 p-4">
+        <h3 className="mb-4 font-semibold">New student</h3>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <input
             type="text"
@@ -570,9 +584,11 @@ export default function AdminConfigurationPage() {
             disabled={saving || !newStudentFirstName.trim() || !newStudentLastName.trim() || !newStudentGrade}
             className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
           >
-            Add Student
+            Save
           </button>
+          <button type="button" onClick={() => setShowStudentCreate(false)} disabled={saving} className="ml-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold">Cancel</button>
         </div>
+        </div> : null}
 
         <div className="mt-6 space-y-3">
           {loading ? (

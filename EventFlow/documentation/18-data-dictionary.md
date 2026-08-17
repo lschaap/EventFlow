@@ -20,6 +20,7 @@
 | displayName | string | UI name |
 | email | string | Staff email |
 | roleTitle | string | School title |
+| dietaryRestrictions | string[] | Dietary restrictions |
 | active | boolean | Available for new assignments |
 | canDrive | boolean | Eligible as driver |
 | createdAt | timestamp | Creation |
@@ -87,7 +88,7 @@
 | studentParticipantCount | number | Derived active student count |
 | staffParticipantCount | number | Derived active staff count |
 | participantCount | number | Derived total count |
-| hasDietaryRestrictions | boolean | Any active student has restriction |
+| hasDietaryRestrictions | boolean | Any active student or staff participant has restriction |
 | createdByUserId | string | Creator user |
 | createdByUserName | string | Creator display name |
 | createdAt | timestamp | Creation |

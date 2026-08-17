@@ -111,10 +111,11 @@ export default function EventsPage() {
                           <div>{activitiesMap[event.activityId] ?? event.activityId} · {eventTypesMap[event.eventTypeId] ?? event.eventTypeId}</div>
                         </div>
                         <div className="rounded-2xl bg-slate-50 p-3 text-sm text-slate-700">
-                          <div className="font-medium">Meals / Diet</div>
-                          <div>{event.mealsMissed.join(', ') || 'None'} · {event.hasDietaryRestrictions ? 'Dietary restrictions' : 'No dietary restrictions'}</div>
+                          <div className="font-medium">Meals missed</div>
+                          <div>{event.mealsMissed.join(', ') || 'None'}</div>
                         </div>
                       </div>
+                      {event.hasDietaryRestrictions ? <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">Dietary restrictions</div> : null}
                     </Link>
                   ))}
                 </div>

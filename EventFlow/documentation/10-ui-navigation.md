@@ -9,8 +9,6 @@ Login
   ↓
 Dashboard
   ├── Events
-  ├── Students
-  ├── Staff
   ├── Vehicles
   └── Admin Configuration
 ```
@@ -73,6 +71,8 @@ Students are grouped/sorted by grade, with staff participants separate.
 
 Detailed dietary restrictions remain inside EventFlow and are not copied to Google Calendar.
 
+The dietary-restriction indicator is hidden on event cards and the event overview when false. When true, Event Details shows a separate section listing each affected active student or staff participant and their restrictions.
+
 ## Search and Filtering
 - Event name
 - Date/date range
@@ -84,8 +84,13 @@ Detailed dietary restrictions remain inside EventFlow and are not copied to Goog
 - Staff participant name
 - Driver name
 
-## Admin Screens
+## Admin Configuration
+Admin Configuration uses separate mobile-friendly tabs:
 - Students: list/create/edit/activate
-- Staff: list/create/edit/activate/change driver eligibility
-- Vehicles: list/create/edit/activate
-- Configuration: activities, event types, users/roles
+- Staff: list/create/edit/activate/change driver eligibility/manage dietary restrictions
+- Event Types: list/create/edit/activate
+- Activities: list/create/edit/activate
+
+Vehicles and users/roles remain future Admin Configuration additions.
+
+Student and Staff tabs use an Add button to reveal the creation form. Editing expands the selected record in place.

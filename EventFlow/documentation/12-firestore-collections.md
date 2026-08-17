@@ -23,6 +23,7 @@ Use top-level collections to support cross-event queries and avoid deeply nested
   "displayName": "Jane Smith",
   "email": "jane@example.org",
   "roleTitle": "Teacher",
+  "dietaryRestrictions": ["Example restriction"],
   "active": true,
   "canDrive": true,
   "createdAt": "Timestamp",
@@ -160,9 +161,9 @@ Stored on `events` for efficient rendering:
 - studentParticipantCount
 - staffParticipantCount
 - participantCount
-- hasDietaryRestrictions
+- hasDietaryRestrictions (active student or staff participant has a restriction)
 
-Recalculate when active participant records change.
+Recalculate when active student or staff participant records change.
 
 ## Historical Integrity
 Do not delete master-data records merely because they become inactive. Use `active = false` so historical relationships remain resolvable.

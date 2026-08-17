@@ -5,7 +5,9 @@ import { listActivities } from '../services/activities'
 import { listEventTypes } from '../services/eventTypes'
 import { listActiveStudents, listStudents } from '../services/students'
 import { listParticipantsForEvent, addStudentParticipant, removeStudentParticipant } from '../services/eventParticipants'
-import type { EventRecord } from '../types/models'
+import { listStaff } from '../services/staff'
+import { addStaffParticipant, listStaffParticipantsForEvent, removeStaffParticipant } from '../services/eventStaffParticipants'
+import type { EventRecord, EventStaffParticipantRecord, StaffRecord } from '../types/models'
 import { useAuth } from '../context/AuthContext'
 
 function formatDate(value: Date) {
@@ -25,17 +27,23 @@ export default function EventDetailsPage() {
   const [activeStudents, setActiveStudents] = useState<any[]>([])
   const [selectedStudentId, setSelectedStudentId] = useState('')
   const [allStudents, setAllStudents] = useState<any[]>([])
-  // derived dietary restrictions for the current event (from active student participants)
-  const eventDietaryRestrictions = Array.from(
-    new Set(
-      participants
-        .map((p) => allStudents.find((s) => s.studentId === p.studentId))
-        .filter(Boolean)
-        .flatMap((s: any) => (Array.isArray(s.dietaryRestrictions) ? s.dietaryRestrictions : []))
-        .map((d: string) => d.trim())
-        .filter(Boolean)
-    )
-  )
+  const [allStaff, setAllStaff] = useState<StaffRecord[]>([])
+  const [staffParticipants, setStaffParticipants] = useState<EventStaffParticipantRecord[]>([])
+  const [selectedStaffId, setSelectedStaffId] = useState('')
+  const peopleWithDietaryRestrictions = [
+    ...participants.map((participant) => {
+      const person = allStudents.find((student) => student.studentId === participant.studentId)
+      return person && Array.isArray(person.dietaryRestrictions) && person.dietaryRestrictions.some((item: string) => item.trim())
+        ? { id: `student-${person.studentId}`, name: person.displayName, restrictions: person.dietaryRestrictions }
+        : null
+    }),
+    ...staffParticipants.map((participant) => {
+      const person = allStaff.find((staff) => staff.staffId === participant.staffId)
+      return person && Array.isArray(person.dietaryRestrictions) && person.dietaryRestrictions.some((item) => item.trim())
+        ? { id: `staff-${person.staffId}`, name: person.displayName, restrictions: person.dietaryRestrictions }
+        : null
+    }),
+  ].filter((person): person is { id: string; name: string; restrictions: string[] } => person !== null)
   const { firebaseUser } = useAuth()
 
   useEffect(() => {
@@ -47,12 +55,14 @@ export default function EventDetailsPage() {
       }
 
       try {
-        const [loaded, activities, eventTypes, students, parts] = await Promise.all([
+        const [loaded, activities, eventTypes, students, parts, staffRecords, staffParts] = await Promise.all([
           getEventById(eventId),
           listActivities(),
           listEventTypes(),
           listStudents(),
           listParticipantsForEvent(eventId),
+          listStaff(),
+          listStaffParticipantsForEvent(eventId),
         ])
 
         if (!loaded) {
@@ -67,6 +77,8 @@ export default function EventDetailsPage() {
         setAllStudents(students)
         setActiveStudents(students.filter((s: any) => s.active))
         setParticipants(parts.filter((p) => p.status === 'active'))
+        setAllStaff(staffRecords)
+        setStaffParticipants(staffParts.filter((p) => p.status === 'active'))
       } catch {
         setError('Unable to load event details.')
       } finally {
@@ -123,10 +135,12 @@ export default function EventDetailsPage() {
         </div>
       </div>
 
+      {error && event ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 shadow-sm">{error}</div> : null}
+
       {loading ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">Loading event details…</div>
-      ) : error ? (
-        <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700 shadow-sm">{error}</div>
+      ) : !event ? (
+        <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700 shadow-sm">{error ?? 'Event not found.'}</div>
       ) : event ? (
         <div className="space-y-6">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -158,6 +172,12 @@ export default function EventDetailsPage() {
                 <div>{formatDate(event.returnDateTime)}</div>
               </div>
             </div>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-2xl bg-slate-50 p-3"><div className="text-xl font-semibold">{event.studentParticipantCount}</div><div className="text-xs text-slate-600">Students</div></div>
+              <div className="rounded-2xl bg-slate-50 p-3"><div className="text-xl font-semibold">{event.staffParticipantCount}</div><div className="text-xs text-slate-600">Staff</div></div>
+              <div className="rounded-2xl bg-slate-900 p-3 text-white"><div className="text-xl font-semibold">{event.participantCount}</div><div className="text-xs text-slate-200">Total</div></div>
+            </div>
+            {event.hasDietaryRestrictions ? <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">Dietary restrictions</div> : null}
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold">Student participants</h3>
@@ -193,8 +213,6 @@ export default function EventDetailsPage() {
               </div>
 
               <div className="space-y-2">
-                <div className="text-sm text-slate-600">Event dietary restrictions: {eventDietaryRestrictions.length ? eventDietaryRestrictions.join(', ') : 'None'}</div>
-                <div className="mt-2" />
                 {participants.length === 0 ? (
                   <p className="text-sm text-slate-600">No active student participants.</p>
                 ) : (
@@ -202,9 +220,7 @@ export default function EventDetailsPage() {
                     const student = allStudents.find((s) => s.studentId === p.studentId)
                     return (
                       <div key={p.eventParticipantId} className="flex items-center justify-between rounded-2xl border border-slate-200 p-3">
-                        <div className="text-sm text-slate-700">{(student && student.displayName) || p.studentId}
-                          <div className="mt-1 text-xs text-slate-500">Dietary: {(student && Array.isArray(student.dietaryRestrictions) && student.dietaryRestrictions.length) ? student.dietaryRestrictions.join(', ') : 'None'}</div>
-                        </div>
+                        <div className="text-sm text-slate-700">{(student && student.displayName) || p.studentId}</div>
                         <div>
                           <button type="button" disabled={saving} onClick={async () => {
                             if (!event) return
@@ -230,6 +246,53 @@ export default function EventDetailsPage() {
               </div>
             </div>
           </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold">Staff participants</h3>
+            <p className="mt-2 text-sm text-slate-600">Staff participation is separate from driver eligibility and future driver assignments.</p>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <select value={selectedStaffId} onChange={(e) => setSelectedStaffId(e.target.value)} disabled={saving} className="min-w-0 flex-1 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm disabled:opacity-50">
+                <option value="">Select active staff to add</option>
+                {allStaff.filter((record) => record.active && !staffParticipants.some((participant) => participant.staffId === record.staffId)).map((record) => <option key={record.staffId} value={record.staffId}>{record.displayName} · {record.roleTitle}</option>)}
+              </select>
+              <button type="button" disabled={!selectedStaffId || saving} onClick={async () => {
+                if (!event || !selectedStaffId || !firebaseUser) return
+                setSaving(true); setError(null)
+                try {
+                  await addStaffParticipant(event.eventId, selectedStaffId, firebaseUser.uid)
+                  const [parts, refreshed] = await Promise.all([listStaffParticipantsForEvent(event.eventId), getEventById(event.eventId)])
+                  setStaffParticipants(parts.filter((part) => part.status === 'active')); setEvent(refreshed); setSelectedStaffId('')
+                } catch (reason) {
+                  const known = reason instanceof Error && ['Staff member is already an active participant for this event.', 'Inactive staff cannot be added to an event.'].includes(reason.message)
+                  setError(known ? (reason as Error).message : 'Unable to add the staff participant. Please try again.')
+                } finally { setSaving(false) }
+              }} className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{saving ? 'Saving…' : 'Add staff'}</button>
+            </div>
+            <div className="mt-4 space-y-2">
+              {staffParticipants.length === 0 ? <p className="text-sm text-slate-600">No active staff participants.</p> : staffParticipants.map((participant) => {
+                const record = allStaff.find((item) => item.staffId === participant.staffId)
+                return <div key={participant.eventStaffParticipantId} className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium">{record?.displayName ?? participant.staffId}</p><p className="text-xs text-slate-500">{record?.roleTitle || 'Staff'}{record && !record.active ? ' · Inactive staff record' : ''}</p></div><button type="button" disabled={saving} onClick={async () => {
+                  if (!event || !firebaseUser) return
+                  setSaving(true); setError(null)
+                  try {
+                    await removeStaffParticipant(event.eventId, participant.staffId, firebaseUser.uid)
+                    const [parts, refreshed] = await Promise.all([listStaffParticipantsForEvent(event.eventId), getEventById(event.eventId)])
+                    setStaffParticipants(parts.filter((part) => part.status === 'active')); setEvent(refreshed)
+                  } catch { setError('Unable to remove the staff participant. Please try again.') }
+                  finally { setSaving(false) }
+                }} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold disabled:opacity-50 sm:w-auto">Remove</button></div>
+              })}
+            </div>
+          </div>
+
+          {event.hasDietaryRestrictions && peopleWithDietaryRestrictions.length > 0 ? (
+            <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-amber-950">Dietary restrictions</h3>
+              <div className="mt-4 space-y-3">
+                {peopleWithDietaryRestrictions.map((person) => <div key={person.id} className="rounded-2xl bg-white p-4"><p className="font-semibold text-slate-900">{person.name}</p><p className="mt-1 text-sm text-amber-800">{person.restrictions.join(', ')}</p></div>)}
+              </div>
+            </section>
+          ) : null}
 
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

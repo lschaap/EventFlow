@@ -57,8 +57,9 @@
 - REQ-044: The system displays active staff participant count.
 - REQ-045: The system displays total active participant count.
 - REQ-046: Meals missed may include zero or more of breakfast, lunch, snack, dinner.
-- REQ-047: The system identifies whether any active student participant has dietary restrictions.
+- REQ-047: The system identifies whether any active student or staff participant has dietary restrictions.
 - REQ-048: Kitchen staff can view participant names/counts, meals missed, and whether dietary restrictions are present.
+- REQ-048A: Event details list each active participant with dietary restrictions and their specific restrictions when the event dietary indicator is true.
 - REQ-049: Teachers can view student participants sorted by grade.
 
 ## Views, Dashboard, Search, Filtering
@@ -85,6 +86,7 @@
 - REQ-066: Admin can activate/deactivate staff.
 - REQ-067: Admin can update canDrive.
 - REQ-068: Deactivated staff are unavailable for new assignments while historical references remain.
+- REQ-068A: Admin can maintain dietary restrictions for staff.
 
 ## Vehicles - Admin Only
 - REQ-069: Admin can create vehicles.

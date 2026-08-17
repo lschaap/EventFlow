@@ -21,6 +21,17 @@ service cloud.firestore {
       return u != null && u.active == true && u.role == 'admin';
     }
 
+    function staffCountTransitionIsValid(eventId, delta) {
+      let before = get(/databases/$(database)/documents/events/$(eventId)).data;
+      let after = getAfter(/databases/$(database)/documents/events/$(eventId)).data;
+      return after.studentParticipantCount == before.studentParticipantCount &&
+        after.staffParticipantCount == before.staffParticipantCount + delta &&
+        after.staffParticipantCount >= 0 &&
+        after.participantCount == after.studentParticipantCount + after.staffParticipantCount &&
+        after.hasDietaryRestrictions is bool &&
+        after.updatedAt is timestamp;
+    }
+
     // Users collection
     match /users/{userId} {
       allow get, list: if isAuth() && (request.auth.uid == userId || isAdmin(request.auth.uid));
@@ -76,6 +87,39 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Staff master data
+    match /staff/{staffId} {
+      allow read: if isAuth() && isApproved(request.auth.uid);
+
+      allow create: if isAuth() && isAdmin(request.auth.uid) &&
+        request.resource.data.keys().hasAll(['staffId','firstName','lastName','displayName','email','roleTitle','dietaryRestrictions','active','canDrive','createdAt','updatedAt']) &&
+        request.resource.data.keys().hasOnly(['staffId','firstName','lastName','displayName','email','roleTitle','dietaryRestrictions','active','canDrive','createdAt','updatedAt']) &&
+        request.resource.data.staffId == staffId &&
+        request.resource.data.firstName is string && request.resource.data.firstName.size() > 0 &&
+        request.resource.data.lastName is string && request.resource.data.lastName.size() > 0 &&
+        request.resource.data.displayName is string && request.resource.data.displayName.size() > 0 &&
+        request.resource.data.email is string && request.resource.data.email.size() > 0 &&
+        request.resource.data.roleTitle is string && request.resource.data.roleTitle.size() > 0 &&
+        request.resource.data.dietaryRestrictions is list &&
+        request.resource.data.active is bool && request.resource.data.canDrive is bool &&
+        request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp;
+
+      allow update: if isAuth() && isAdmin(request.auth.uid) &&
+        request.resource.data.staffId == resource.data.staffId &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstName','lastName','displayName','email','roleTitle','dietaryRestrictions','active','canDrive','updatedAt']) &&
+        request.resource.data.firstName is string && request.resource.data.firstName.size() > 0 &&
+        request.resource.data.lastName is string && request.resource.data.lastName.size() > 0 &&
+        request.resource.data.displayName is string && request.resource.data.displayName.size() > 0 &&
+        request.resource.data.email is string && request.resource.data.email.size() > 0 &&
+        request.resource.data.roleTitle is string && request.resource.data.roleTitle.size() > 0 &&
+        request.resource.data.dietaryRestrictions is list &&
+        request.resource.data.active is bool && request.resource.data.canDrive is bool &&
+        request.resource.data.updatedAt is timestamp;
+
+      allow delete: if false;
+    }
+
     // Event participants
     match /eventParticipants/{participantId} {
       allow read: if isAuth() && isApproved(request.auth.uid);
@@ -117,6 +161,49 @@ service cloud.firestore {
             request.resource.data.removedAt == null &&
             request.resource.data.addedByUserId == request.auth.uid
           )
+        );
+
+      allow delete: if false;
+    }
+
+    // Staff-event participant relationships
+    match /eventStaffParticipants/{participantId} {
+      allow read: if isAuth() && isApproved(request.auth.uid);
+
+      allow create: if isAuth() && isApproved(request.auth.uid) &&
+        request.resource.data.keys().hasAll(['eventStaffParticipantId','eventId','staffId','status','addedByUserId','addedAt','removedByUserId','removedAt','notes']) &&
+        request.resource.data.keys().hasOnly(['eventStaffParticipantId','eventId','staffId','status','addedByUserId','addedAt','removedByUserId','removedAt','notes']) &&
+        request.resource.data.eventStaffParticipantId == participantId &&
+        participantId == request.resource.data.eventId + '__' + request.resource.data.staffId &&
+        request.resource.data.status == 'active' &&
+        request.resource.data.addedByUserId == request.auth.uid && request.resource.data.addedAt is timestamp &&
+        request.resource.data.removedByUserId == null && request.resource.data.removedAt == null &&
+        (request.resource.data.notes == null || request.resource.data.notes is string) &&
+        exists(/databases/$(database)/documents/events/$(request.resource.data.eventId)) &&
+        exists(/databases/$(database)/documents/staff/$(request.resource.data.staffId)) &&
+        get(/databases/$(database)/documents/staff/$(request.resource.data.staffId)).data.active == true &&
+        staffCountTransitionIsValid(request.resource.data.eventId, 1);
+
+      allow update: if isAuth() && isApproved(request.auth.uid) &&
+        request.resource.data.eventStaffParticipantId == resource.data.eventStaffParticipantId &&
+        request.resource.data.eventId == resource.data.eventId && request.resource.data.staffId == resource.data.staffId &&
+        participantId == request.resource.data.eventId + '__' + request.resource.data.staffId &&
+        request.resource.data.notes == resource.data.notes &&
+        request.resource.data.status in ['active', 'removed'] &&
+        exists(/databases/$(database)/documents/events/$(request.resource.data.eventId)) &&
+        exists(/databases/$(database)/documents/staff/$(request.resource.data.staffId)) &&
+        (
+          (resource.data.status == 'active' && request.resource.data.status == 'removed' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','removedByUserId','removedAt']) &&
+            request.resource.data.addedByUserId == resource.data.addedByUserId && request.resource.data.addedAt == resource.data.addedAt &&
+            request.resource.data.removedByUserId == request.auth.uid && request.resource.data.removedAt is timestamp &&
+            staffCountTransitionIsValid(request.resource.data.eventId, -1)) ||
+          (resource.data.status == 'removed' && request.resource.data.status == 'active' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','addedByUserId','addedAt','removedByUserId','removedAt']) &&
+            get(/databases/$(database)/documents/staff/$(request.resource.data.staffId)).data.active == true &&
+            request.resource.data.addedByUserId == request.auth.uid && request.resource.data.addedAt is timestamp &&
+            request.resource.data.removedByUserId == null && request.resource.data.removedAt == null &&
+            staffCountTransitionIsValid(request.resource.data.eventId, 1))
         );
 
       allow delete: if false;

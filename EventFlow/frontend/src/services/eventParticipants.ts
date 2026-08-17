@@ -22,14 +22,22 @@ export async function listParticipantsForEvent(eventId: string): Promise<EventPa
   return snap.docs.map((d) => ({ eventParticipantId: d.id, ...(d.data() as Omit<EventParticipantRecord, 'eventParticipantId'>) }))
 }
 
-async function evaluateDietaryFlag(studentIds: string[]): Promise<boolean> {
+async function evaluateDietaryFlag(eventId: string, studentIds: string[]): Promise<boolean> {
   const db = ensureDb()
   for (const studentId of studentIds) {
     const studentSnap = await getDoc(doc(db, 'students', studentId))
     const dietaryRestrictions = (studentSnap.data() as any)?.dietaryRestrictions
-    if (studentSnap.exists() && Array.isArray(dietaryRestrictions) && dietaryRestrictions.length > 0) {
+    if (studentSnap.exists() && Array.isArray(dietaryRestrictions) && dietaryRestrictions.some((item) => String(item).trim())) {
       return true
     }
+  }
+  const staffParticipants = await getDocs(query(collection(db, 'eventStaffParticipants'), where('eventId', '==', eventId)))
+  for (const participant of staffParticipants.docs.filter((item) => item.data().status === 'active')) {
+    const staffId = String(participant.data().staffId ?? '')
+    if (!staffId) continue
+    const staffSnapshot = await getDoc(doc(db, 'staff', staffId))
+    const dietaryRestrictions = staffSnapshot.data()?.dietaryRestrictions
+    if (staffSnapshot.exists() && Array.isArray(dietaryRestrictions) && dietaryRestrictions.some((item) => String(item).trim())) return true
   }
   return false
 }
@@ -84,7 +92,7 @@ export async function addStudentParticipant(eventId: string, studentId: string, 
     }
 
     const nextStudentCount = activeSnapshot.size + 1
-    const nextHasDiet = await evaluateDietaryFlag([...new Set([...activeStudentIds, studentId])])
+    const nextHasDiet = await evaluateDietaryFlag(eventId, [...new Set([...activeStudentIds, studentId])])
     const updatePayload = {
       eventParticipantId: participantId,
       eventId,
@@ -142,7 +150,7 @@ export async function removeStudentParticipant(eventId: string, studentId: strin
     }
 
     const nextStudentCount = Math.max(0, activeSnapshot.size - 1)
-    const nextHasDiet = await evaluateDietaryFlag(remainingStudentIds)
+    const nextHasDiet = await evaluateDietaryFlag(eventId, remainingStudentIds)
 
     transaction.update(participantRef, {
       eventParticipantId: participantId,

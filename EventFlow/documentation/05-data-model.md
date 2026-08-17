@@ -16,6 +16,7 @@
 - displayName
 - email
 - roleTitle
+- dietaryRestrictions[]
 - active
 - canDrive
 - createdAt
@@ -91,7 +92,7 @@ Initial values:
 - studentParticipantCount
 - staffParticipantCount
 - participantCount
-- hasDietaryRestrictions
+- hasDietaryRestrictions (derived from active student and staff participants)
 - createdByUserId (FK)
 - createdByUserName
 - createdAt
@@ -154,7 +155,7 @@ Stored on events for efficient rendering:
 - participantCount
 - hasDietaryRestrictions
 
-Recalculate when active participant records change.
+Recalculate when active student or staff participant records change.
 
 ## Relationships
 

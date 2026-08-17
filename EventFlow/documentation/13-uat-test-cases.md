@@ -52,11 +52,15 @@
 | UAT-031 | Admin deactivates staff | Removed from future selectors |
 | UAT-032 | Admin sets canDrive false | No longer appears as driver |
 | UAT-033 | Staff attempts staff master-data update | Denied |
+| UAT-033A | Admin updates staff dietary restrictions | Staff record updates |
 | UAT-034 | Add active staff participant | Appears once |
 | UAT-035 | Add same staff participant twice | Duplicate prevented |
 | UAT-036 | Add inactive staff participant | Unavailable/rejected |
 | UAT-037 | Remove staff participant | Relationship becomes removed |
 | UAT-038 | Totals after staff add/remove | Recalculate |
+| UAT-038A | Add/remove staff with dietary restrictions | Event dietary indicator recalculates |
+| UAT-038B | Event has an active restricted participant | Event card and overview show the dietary indicator; details list the participant and restriction |
+| UAT-038C | Event has no active restricted participants | Dietary indicator and detailed restriction section are hidden |
 
 ## Drivers and Vehicles
 
