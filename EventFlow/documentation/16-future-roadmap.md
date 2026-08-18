@@ -2,6 +2,10 @@
 
 All items are outside MVP unless formally promoted.
 
+## Things to Fix
+
+1. When changing an event's departure or return date/time, list every current participant who is assigned to another event that conflicts with the requested time. Warn the user before saving, and, after confirmation, remove those participants from the conflicting events.
+
 ## Version 1.1 - Operational Improvements
 - Richer dashboard
 - Improved search
