@@ -159,5 +159,6 @@ The following integration requirements remain pending and are not implemented by
 - REQ-111: Staff/Admin return edits validate active participation, an active eligible departed target trip before return start, uniqueness, overlap, and recalculated capacity; warnings do not hard-block.
 - REQ-112: Cancelling Depart or Start Return review performs no writes and unassigned warnings list every applicable active participant.
 - REQ-113: Correction recalculation preserves cancelled, returns to confirmed when no active trip departed, uses in_progress while applicable trips remain out, and completes when all applicable trips returned; `startedAt`/`completedAt` remain consistent.
+- REQ-114: Planned trips store `returnDriverMirrorsDeparture`. While true, departure-driver changes atomically update return driver; an explicit return selection or clear sets false; Same as departure restores true and copies the departure driver.
 
 The complete authoritative behavior and acceptance criteria are in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md).

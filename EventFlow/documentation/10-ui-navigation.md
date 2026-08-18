@@ -103,6 +103,8 @@ The planned Event Details page adds transportation grouped by vehicle and **Unas
 
 Admins edit departure passengers, both drivers, vehicles, corrections, and the default destination inside Admin Configuration > Vehicles. Staff/Admin may edit return passengers for eligible departed vehicles until Start Return; Staff cannot edit drivers or departure. Both roles see the next valid forward action. Vehicle-based events hide manual Start/Complete; vehicle-free events retain them with planned status/timestamps.
 
+The in-progress driver-planning milestone replaces Event Details legacy controls with Admin-only vehicle-trip cards containing departure driver, return driver, and Same as departure. Staff see the same plan read-only. Passenger planning remains absent. Event-list summaries temporarily remain legacy `eventDrivers` reads without dual writes until their later cutover.
+
 Depart and Start Return open an explicit review of vehicle, driver, occupants, count/capacity, overcapacity, and all event participants unassigned for that leg. Warnings do not disable confirmation. Corrections use a separate warning and required-reason confirmation.
 
 WhatsApp controls appear only on Event Details: confirmation after confirmation, outbound after arrival, return after return starts. Preview edits do not change EventFlow. Copy explicitly copies. Open WhatsApp is best-effort; preview remains visible with instructions to use Copy if it does not open. The UI never reports opened/sent/delivered/received.

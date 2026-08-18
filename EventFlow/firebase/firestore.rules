@@ -43,6 +43,10 @@ service cloud.firestore {
         get(/databases/$(database)/documents/staff/$(staffId)).data.canDrive == true);
     }
 
+    function validTripDriverParticipant(eventId, staffId) {
+      return staffId == null || (existsAfter(/databases/$(database)/documents/eventStaffParticipants/$(eventId + '__' + staffId)) && getAfter(/databases/$(database)/documents/eventStaffParticipants/$(eventId + '__' + staffId)).data.status == 'active');
+    }
+
     function validEventStatus(status) {
       return status in ['draft', 'confirmed', 'in_progress', 'completed', 'cancelled'];
     }
@@ -275,8 +279,8 @@ service cloud.firestore {
       allow read: if isAuth() && isApproved(request.auth.uid);
 
       allow create: if isAuth() && isAdmin(request.auth.uid) &&
-        request.resource.data.keys().hasAll(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','departedAt','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
-        request.resource.data.keys().hasOnly(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','departedAt','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
+        request.resource.data.keys().hasAll(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
+        request.resource.data.keys().hasOnly(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
         request.resource.data.eventVehicleTripId == tripId &&
         tripId == request.resource.data.eventId + '__' + request.resource.data.vehicleId &&
         request.resource.data.eventId is string && request.resource.data.vehicleId is string &&
@@ -289,6 +293,8 @@ service cloud.firestore {
         request.resource.data.returnStartedAt == null && request.resource.data.returnedAt == null &&
         validTripDriver(request.resource.data.departureDriverStaffId) &&
         validTripDriver(request.resource.data.returnDriverStaffId) &&
+        request.resource.data.returnDriverMirrorsDeparture is bool &&
+        (!request.resource.data.returnDriverMirrorsDeparture || request.resource.data.returnDriverStaffId == request.resource.data.departureDriverStaffId) &&
         request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp &&
         request.resource.data.correctedAt == null && request.resource.data.correctedByUserId == null && request.resource.data.correctionReason == null;
 
@@ -298,10 +304,17 @@ service cloud.firestore {
         request.resource.data.vehicleId == resource.data.vehicleId &&
         request.resource.data.createdAt == resource.data.createdAt &&
         tripId == request.resource.data.eventId + '__' + request.resource.data.vehicleId &&
-        resource.data.assignmentStatus == 'active' && request.resource.data.assignmentStatus == 'removed' &&
+        request.resource.data.assignmentStatus in ['active','removed'] &&
         resource.data.stage == 'planned' && request.resource.data.stage == 'planned' &&
+        request.resource.data.departedAt == null && request.resource.data.arrivedAtEventAt == null && request.resource.data.returnStartedAt == null && request.resource.data.returnedAt == null &&
+        request.resource.data.correctedAt == null && request.resource.data.correctedByUserId == null && request.resource.data.correctionReason == null &&
+        request.resource.data.returnDriverMirrorsDeparture is bool &&
+        (!request.resource.data.returnDriverMirrorsDeparture || request.resource.data.returnDriverStaffId == request.resource.data.departureDriverStaffId) &&
+        validTripDriver(request.resource.data.departureDriverStaffId) && validTripDriver(request.resource.data.returnDriverStaffId) &&
+        validTripDriverParticipant(request.resource.data.eventId, request.resource.data.departureDriverStaffId) && validTripDriverParticipant(request.resource.data.eventId, request.resource.data.returnDriverStaffId) &&
+        (request.resource.data.assignmentStatus != 'active' || get(/databases/$(database)/documents/vehicles/$(request.resource.data.vehicleId)).data.active == true) &&
         request.resource.data.updatedAt is timestamp &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus','updatedAt']);
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','updatedAt']);
 
       allow delete: if false;
     }

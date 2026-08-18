@@ -167,6 +167,7 @@ Before departure, `returnVehicleId` mirrors `departureVehicleId`. Depart creates
 | stage | enum | `planned`, `departed`, `arrived_at_event`, `return_started`, or `returned` |
 | departureDriverStaffId | string/null | Departure driver FK |
 | returnDriverStaffId | string/null | Return driver FK |
+| returnDriverMirrorsDeparture | boolean | True while departure changes must atomically copy to return; explicit return selection/clear sets false |
 | departedAt | timestamp/null | Server departure time |
 | arrivedAtEventAt | timestamp/null | Server event-arrival time |
 | returnStartedAt | timestamp/null | Server return-start time |

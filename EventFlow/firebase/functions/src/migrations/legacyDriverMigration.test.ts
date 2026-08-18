@@ -13,6 +13,7 @@ const candidate = planLegacyDriverMigration({ ...base, existingTripIds: [], driv
 assert.equal(candidate.legacyRecordsExamined, 1)
 assert.equal(candidate.tripsToCreate.length, 1)
 assert.equal(candidate.tripsToCreate[0].tripId, 'event-1__vehicle-1')
+assert.equal(candidate.tripsToCreate[0].returnDriverMirrorsDeparture, true)
 
 const idempotent = planLegacyDriverMigration({ ...base, existingTripIds: ['event-1__vehicle-1'], drivers: [{ eventDriverId: 'd1', eventId: 'event-1', staffId: 'staff-1', vehicleId: 'vehicle-1', status: 'assigned' }] })
 assert.deepEqual(idempotent.tripsAlreadyMigrated, ['event-1__vehicle-1'])

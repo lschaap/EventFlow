@@ -215,3 +215,10 @@ These cases define future acceptance; they are not evidence that CR-001 is imple
 | UAT-128 | Transportation setting permissions | Admin updates default destination in Vehicles tab; Staff direct write is rejected |
 | UAT-129 | Staff reads destination | Staff can use configured destination in operational display and return preview |
 | UAT-130 | Capacity migration review | Existing test values are verified/corrected as total seats including driver before migration acceptance |
+| UAT-131 | New trip mirror default | New planned trip has null drivers and returnDriverMirrorsDeparture true |
+| UAT-132 | Mirrored departure changes | Assign/change/clear departure atomically updates return while mirroring |
+| UAT-133 | Independent return | Explicit return select/clear sets mirroring false; later departure changes preserve return |
+| UAT-134 | Restore driver mirror | Same as departure sets true and immediately copies departure, including null |
+| UAT-135 | Driver synchronization | Different eligible drivers become active participants once; replacement/clear never removes participation |
+| UAT-136 | Driver/trip authorization | Ineligible/overlapping/duplicate plans fail and Staff writes are denied |
+| UAT-137 | Planned soft removal | Admin removal clears drivers, marks removed, and retains the document |

@@ -35,6 +35,7 @@ import type {
   VehicleRecord,
 } from "../types/models";
 import { useAuth } from "../context/AuthContext";
+import VehicleTripPlanning from "../components/VehicleTripPlanning";
 
 function formatDate(value: Date) {
   return value.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
@@ -615,7 +616,9 @@ export default function EventDetailsPage() {
             </section>
           ) : null}
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <VehicleTripPlanning eventId={event.eventId} vehicles={vehicles} staff={allStaff} />
+          {false && (
+          <section className="hidden">
             <h3 className="text-lg font-semibold">Drivers and Vehicles</h3>
             <p className="mt-2 text-sm text-slate-600">
               Assigning a driver also adds them as a staff participant when needed.
@@ -834,6 +837,7 @@ export default function EventDetailsPage() {
               )}
             </div>
           </section>
+          )}
 
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

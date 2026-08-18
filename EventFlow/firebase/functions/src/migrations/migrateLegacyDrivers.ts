@@ -46,6 +46,7 @@ async function main() {
         stage: 'planned',
         departureDriverStaffId: candidate.driverStaffId,
         returnDriverStaffId: candidate.driverStaffId,
+        returnDriverMirrorsDeparture: true,
         departedAt: null,
         arrivedAtEventAt: null,
         returnStartedAt: null,

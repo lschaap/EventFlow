@@ -15,6 +15,22 @@
         { "fieldPath": "vehicleId", "order": "ASCENDING" },
         { "fieldPath": "assignmentStatus", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "eventVehicleTrips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "departureDriverStaffId", "order": "ASCENDING" },
+        { "fieldPath": "assignmentStatus", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "eventVehicleTrips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "returnDriverStaffId", "order": "ASCENDING" },
+        { "fieldPath": "assignmentStatus", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

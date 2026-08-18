@@ -1,71 +1,22 @@
-import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, where } from 'firebase/firestore'
 import { ensureDb } from '../lib/firestore'
 import type { EventVehicleTripRecord, ResolvedEventVehicleTrip } from '../types/models'
 
-export const getEventVehicleTripId = (eventId: string, vehicleId: string) => `${eventId}__${vehicleId}`
+export const getEventVehicleTripId=(eventId:string,vehicleId:string)=>`${eventId}__${vehicleId}`
+const parse=(id:string,data:any):EventVehicleTripRecord=>({eventVehicleTripId:id,...data,returnDriverMirrorsDeparture:data.returnDriverMirrorsDeparture===true})
+export async function getEventVehicleTrip(eventId:string,vehicleId:string){const s=await getDoc(doc(ensureDb(),'eventVehicleTrips',getEventVehicleTripId(eventId,vehicleId)));return s.exists()?parse(s.id,s.data()):null}
+export async function listActiveEventVehicleTrips(eventId:string){const s=await getDocs(query(collection(ensureDb(),'eventVehicleTrips'),where('eventId','==',eventId),where('assignmentStatus','==','active')));return s.docs.map(x=>parse(x.id,x.data()))}
+export async function listActiveVehicleTrips(vehicleId:string){const s=await getDocs(query(collection(ensureDb(),'eventVehicleTrips'),where('vehicleId','==',vehicleId),where('assignmentStatus','==','active')));return s.docs.map(x=>parse(x.id,x.data()))}
+export async function resolveEventVehicleTripNames(trips:EventVehicleTripRecord[]):Promise<ResolvedEventVehicleTrip[]>{const db=ensureDb();return Promise.all(trips.map(async t=>{const [v,d,r]=await Promise.all([getDoc(doc(db,'vehicles',t.vehicleId)),t.departureDriverStaffId?getDoc(doc(db,'staff',t.departureDriverStaffId)):null,t.returnDriverStaffId?getDoc(doc(db,'staff',t.returnDriverStaffId)):null]);return{...t,vehicleName:v.exists()?String(v.data().name??t.vehicleId):t.vehicleId,departureDriverName:d?.exists()?String(d.data().displayName??t.departureDriverStaffId):null,returnDriverName:r?.exists()?String(r.data().displayName??t.returnDriverStaffId):null}}))}
 
-function asTrip(id: string, data: Record<string, unknown>): EventVehicleTripRecord {
-  return { eventVehicleTripId: id, ...data } as EventVehicleTripRecord
-}
+async function eventWindow(eventId:string){const s=await getDoc(doc(ensureDb(),'events',eventId));if(!s.exists())throw new Error('Event does not exist.');return{start:s.data().departureDateTime.toDate(),end:s.data().returnDateTime.toDate(),name:String(s.data().name??eventId)}}
+const overlaps=(a:{start:Date;end:Date},b:{start:Date;end:Date})=>a.start<b.end&&a.end>b.start
+async function assertVehicleAvailable(eventId:string,vehicleId:string){const target=await eventWindow(eventId);for(const trip of (await listActiveVehicleTrips(vehicleId)).filter(t=>t.eventId!==eventId)){const other=await eventWindow(trip.eventId);if(overlaps(target,other))throw new Error(`Vehicle is already planned for ${other.name} during this time.`)}}
+async function assertDriverAvailable(eventId:string,vehicleId:string,leg:'departure'|'return',staffId:string){const db=ensureDb(),target=await eventWindow(eventId),field=leg==='departure'?'departureDriverStaffId':'returnDriverStaffId';const matches=await getDocs(query(collection(db,'eventVehicleTrips'),where(field,'==',staffId),where('assignmentStatus','==','active')));for(const trip of matches.docs){const otherId=String(trip.data().eventId);if(otherId===eventId){if(String(trip.data().vehicleId)!==vehicleId)throw new Error(`Driver is already assigned to another ${leg} vehicle for this event.`);continue}const other=await eventWindow(otherId);if(overlaps(target,other))throw new Error(`Driver is already assigned to ${other.name} during this time.`)}}
 
-export async function getEventVehicleTrip(eventId: string, vehicleId: string): Promise<EventVehicleTripRecord | null> {
-  const snapshot = await getDoc(doc(ensureDb(), 'eventVehicleTrips', getEventVehicleTripId(eventId, vehicleId)))
-  return snapshot.exists() ? asTrip(snapshot.id, snapshot.data()) : null
-}
+export async function addPlannedEventVehicleTrip(eventId:string,vehicleId:string){await assertVehicleAvailable(eventId,vehicleId);const db=ensureDb(),id=getEventVehicleTripId(eventId,vehicleId),ref=doc(db,'eventVehicleTrips',id);await runTransaction(db,async tx=>{const [current,event,vehicle]=await Promise.all([tx.get(ref),tx.get(doc(db,'events',eventId)),tx.get(doc(db,'vehicles',vehicleId))]);if(!event.exists())throw new Error('Event does not exist.');if(!vehicle.exists()||vehicle.data().active!==true)throw new Error('Vehicle is inactive or unavailable.');const payload={eventVehicleTripId:id,eventId,vehicleId,assignmentStatus:'active',stage:'planned',departureDriverStaffId:null,returnDriverStaffId:null,returnDriverMirrorsDeparture:true,departedAt:null,arrivedAtEventAt:null,returnStartedAt:null,returnedAt:null,updatedAt:serverTimestamp(),correctedAt:null,correctedByUserId:null,correctionReason:null};if(current.exists()){if(current.data().assignmentStatus==='active')throw new Error('Vehicle is already planned for this event.');tx.update(ref,{...payload,createdAt:current.data().createdAt})}else tx.set(ref,{...payload,createdAt:serverTimestamp()})});return id}
+export async function removePlannedEventVehicleTrip(eventId:string,vehicleId:string){const ref=doc(ensureDb(),'eventVehicleTrips',getEventVehicleTripId(eventId,vehicleId));await runTransaction(ensureDb(),async tx=>{const s=await tx.get(ref);if(!s.exists()||s.data().assignmentStatus!=='active'||s.data().stage!=='planned')throw new Error('Only an active planned trip can be removed.');tx.update(ref,{assignmentStatus:'removed',departureDriverStaffId:null,returnDriverStaffId:null,returnDriverMirrorsDeparture:true,updatedAt:serverTimestamp()})})}
 
-export async function listActiveEventVehicleTrips(eventId: string): Promise<EventVehicleTripRecord[]> {
-  const snapshot = await getDocs(query(collection(ensureDb(), 'eventVehicleTrips'), where('eventId', '==', eventId), where('assignmentStatus', '==', 'active')))
-  return snapshot.docs.map((item) => asTrip(item.id, item.data()))
-}
-
-export async function listActiveVehicleTrips(vehicleId: string): Promise<EventVehicleTripRecord[]> {
-  const snapshot = await getDocs(query(collection(ensureDb(), 'eventVehicleTrips'), where('vehicleId', '==', vehicleId), where('assignmentStatus', '==', 'active')))
-  return snapshot.docs.map((item) => asTrip(item.id, item.data()))
-}
-
-export async function resolveEventVehicleTripNames(trips: EventVehicleTripRecord[]): Promise<ResolvedEventVehicleTrip[]> {
-  const db = ensureDb()
-  return Promise.all(trips.map(async (trip) => {
-    const [vehicle, departureDriver, returnDriver] = await Promise.all([
-      getDoc(doc(db, 'vehicles', trip.vehicleId)),
-      trip.departureDriverStaffId ? getDoc(doc(db, 'staff', trip.departureDriverStaffId)) : null,
-      trip.returnDriverStaffId ? getDoc(doc(db, 'staff', trip.returnDriverStaffId)) : null,
-    ])
-    return {
-      ...trip,
-      vehicleName: vehicle?.exists() ? String(vehicle.data().name ?? trip.vehicleId) : trip.vehicleId,
-      departureDriverName: departureDriver?.exists() ? String(departureDriver.data().displayName ?? trip.departureDriverStaffId) : null,
-      returnDriverName: returnDriver?.exists() ? String(returnDriver.data().displayName ?? trip.returnDriverStaffId) : null,
-    }
-  }))
-}
-
-export async function createPlannedEventVehicleTrip(eventId: string, vehicleId: string, driverStaffId: string | null): Promise<string> {
-  const id = getEventVehicleTripId(eventId, vehicleId)
-  await setDoc(doc(ensureDb(), 'eventVehicleTrips', id), {
-    eventVehicleTripId: id,
-    eventId,
-    vehicleId,
-    assignmentStatus: 'active',
-    stage: 'planned',
-    departureDriverStaffId: driverStaffId,
-    returnDriverStaffId: driverStaffId,
-    departedAt: null,
-    arrivedAtEventAt: null,
-    returnStartedAt: null,
-    returnedAt: null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    correctedAt: null,
-    correctedByUserId: null,
-    correctionReason: null,
-  })
-  return id
-}
-
-export async function removePlannedEventVehicleTrip(eventId: string, vehicleId: string): Promise<void> {
-  const ref = doc(ensureDb(), 'eventVehicleTrips', getEventVehicleTripId(eventId, vehicleId))
-  const current = await getDoc(ref)
-  if (!current.exists() || current.data().assignmentStatus !== 'active' || current.data().stage !== 'planned') throw new Error('Only an active planned vehicle trip can be removed.')
-  await updateDoc(ref, { assignmentStatus: 'removed', updatedAt: serverTimestamp() })
-}
+async function ensureParticipant(tx:any,eventId:string,staffId:string,userId:string){const db=ensureDb(),p=doc(db,'eventStaffParticipants',`${eventId}__${staffId}`),e=doc(db,'events',eventId),s=doc(db,'staff',staffId);const [ps,es,ss]=await Promise.all([tx.get(p),tx.get(e),tx.get(s)]);if(!ss.exists()||!ss.data().active||!ss.data().canDrive)throw new Error('Staff member is not eligible to drive.');if(ps.exists()&&ps.data().status==='active')return;const staffCount=Number(es.data().staffParticipantCount??0)+1,studentCount=Number(es.data().studentParticipantCount??0);const payload={eventStaffParticipantId:`${eventId}__${staffId}`,eventId,staffId,status:'active',addedByUserId:userId,addedAt:serverTimestamp(),removedByUserId:null,removedAt:null,notes:ps.exists()?ps.data().notes??null:null};ps.exists()?tx.update(p,payload):tx.set(p,payload);tx.update(e,{staffParticipantCount:staffCount,participantCount:studentCount+staffCount,hasDietaryRestrictions:es.data().hasDietaryRestrictions===true||(Array.isArray(ss.data().dietaryRestrictions)&&ss.data().dietaryRestrictions.some((x:unknown)=>String(x).trim())),updatedAt:serverTimestamp()})}
+export async function setPlannedTripDriver(eventId:string,vehicleId:string,leg:'departure'|'return',staffId:string|null,userId:string){if(staffId)await assertDriverAvailable(eventId,vehicleId,leg,staffId);const db=ensureDb(),ref=doc(db,'eventVehicleTrips',getEventVehicleTripId(eventId,vehicleId));await runTransaction(db,async tx=>{const trip=await tx.get(ref);if(!trip.exists()||trip.data().assignmentStatus!=='active'||trip.data().stage!=='planned')throw new Error('Trip is not actively planned.');if(staffId)await ensureParticipant(tx,eventId,staffId,userId);if(leg==='departure'){const change:any={departureDriverStaffId:staffId,updatedAt:serverTimestamp()};if(trip.data().returnDriverMirrorsDeparture===true)change.returnDriverStaffId=staffId;tx.update(ref,change)}else tx.update(ref,{returnDriverStaffId:staffId,returnDriverMirrorsDeparture:false,updatedAt:serverTimestamp()})})}
+export async function mirrorReturnDriver(eventId:string,vehicleId:string){const db=ensureDb(),ref=doc(db,'eventVehicleTrips',getEventVehicleTripId(eventId,vehicleId));await runTransaction(db,async tx=>{const s=await tx.get(ref);if(!s.exists()||s.data().stage!=='planned'||s.data().assignmentStatus!=='active')throw new Error('Trip is not actively planned.');tx.update(ref,{returnDriverStaffId:s.data().departureDriverStaffId??null,returnDriverMirrorsDeparture:true,updatedAt:serverTimestamp()})})}

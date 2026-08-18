@@ -129,6 +129,8 @@ The workflows above describe the implemented baseline. Where they describe a sin
 
 Admin adds vehicles and both leg drivers, then bulk-assigns or individually moves departure participants. Before Depart, return passengers mirror departure and cannot be edited independently. Capacity means total seats including the driver. Each leg has independent warnings and overlap validation.
 
+During the driver-planning milestone, new trips set `returnDriverMirrorsDeparture = true`. Departure changes update both drivers while true. Explicit return selection or clear makes the return independent; Same as departure restores mirroring and copies the current departure driver. Future Depart will end mirroring after its snapshot, but is not implemented in this milestone.
+
 ### T2 - Depart
 
 Staff or Admin selects **Depart**. Review shows the vehicle, driver, occupants, total-seat capacity, overcapacity, and every unassigned active departure participant. Cancel writes nothing. Confirmation atomically records `departedAt`, advances the trip, snapshots return assignments for that vehicle's occupants, reveals the return list, and applies first-departure status/`startedAt`.

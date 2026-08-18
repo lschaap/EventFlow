@@ -14,6 +14,8 @@
 
 Implemented in the foundation milestone: shared `in_progress` and nullable `startedAt` compatibility; `eventVehicleTrips` types/foundation services; transportation-settings model/service and Admin Vehicles-tab control; restrictive Rules; two foundation indexes; and dry-run-first migration tooling with fictional-fixture tests. The foundation Firestore Rules were deployed to the configured Firebase project on 2026-08-18; indexes were not deployed.
 
+The current milestone implements Admin Event Details vehicle-trip and driver planning plus required `returnDriverMirrorsDeparture`. New/migrated trips default true; explicit return selection/clear sets false; Same as departure restores true and copies atomically. Missing legacy target fields safely parse false. Passenger fields, lifecycle actions, event-list cutover, and target deactivation remain planned. Updated Rules/indexes are not deployed by this milestone.
+
 The current driver/vehicle UI continues to read/write only `eventDrivers`; no dual writes or live migration occurred. Participant vehicle fields, snapshots, stage actions, Staff return editing, corrections, automatic status transitions, vehicle-free controls, WhatsApp, Calendar/email, and UI cutover remain unimplemented. CR-001 is not Ready for UAT, Accepted, or Released.
 
 ## Scope

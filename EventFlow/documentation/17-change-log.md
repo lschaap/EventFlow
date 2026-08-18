@@ -1,5 +1,11 @@
 # Change Log
 
+## CR-001 Trip and Driver Planning - In Implementation (Not Deployed)
+
+- Documented and implemented deterministic `returnDriverMirrorsDeparture` semantics.
+- Cut Event Details planning over to `eventVehicleTrips` for Admin vehicle/departure/return driver planning with Staff read-only visibility.
+- Kept passenger planning, lifecycle actions, event-list cutover, and target-model vehicle deactivation for later milestones.
+
 ## CR-001 Foundation - In Implementation (Not Deployed)
 
 - Added vehicle-trip/settings types and services, two indexes, and restrictive Rules configuration; deployed only the Rules on 2026-08-18.

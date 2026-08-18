@@ -16,6 +16,7 @@ export type MigrationCandidate = {
   eventId: string
   vehicleId: string
   driverStaffId: string
+  returnDriverMirrorsDeparture: true
   legacyDriverIds: string[]
 }
 
@@ -94,7 +95,7 @@ export function planLegacyDriverMigration(input: {
       continue
     }
     const driver = drivers[0]
-    report.tripsToCreate.push({ tripId, eventId: driver.eventId, vehicleId: driver.vehicleId!, driverStaffId: driver.staffId, legacyDriverIds: [driver.eventDriverId] })
+    report.tripsToCreate.push({ tripId, eventId: driver.eventId, vehicleId: driver.vehicleId!, driverStaffId: driver.staffId, returnDriverMirrorsDeparture: true, legacyDriverIds: [driver.eventDriverId] })
   }
 
   report.tripsAlreadyMigrated = uniqueSorted(report.tripsAlreadyMigrated)

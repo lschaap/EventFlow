@@ -184,6 +184,7 @@ The schemas above describe the current Firestore baseline. CR-001 plans—but do
 - extend both participant collections with nullable `departureVehicleId`, `returnVehicleId`, and latest transport-correction metadata;
 - use planned event status domain `draft | confirmed | in_progress | completed | cancelled` and add nullable `startedAt` (not currently deployed);
 - replace `eventDrivers` with deterministic `eventVehicleTrips/{eventId__vehicleId}` documents containing active/removed state, the five-stage lifecycle, separate leg drivers, four server timestamps, and latest correction metadata;
+- require Boolean `returnDriverMirrorsDeparture`; missing pre-field target records parse as false, while new/migrated records use true;
 - add `settings/transportation` with `defaultReturnDestination` (initially `Mill Village`) and update metadata, managed in Admin Configuration > Vehicles;
 - derive occupancy, capacity, warnings, and WhatsApp content without storing messages or delivery state.
 

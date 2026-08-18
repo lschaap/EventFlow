@@ -164,6 +164,8 @@ The structures above are the implemented baseline. For CR-001, the planned event
 
 The planned `eventVehicleTrips/{eventId__vehicleId}` aggregate replaces `eventDrivers`. It stores `eventId`, `vehicleId`, `assignmentStatus`, the five-stage lifecycle, independent departure and return driver staff IDs, the four lifecycle timestamps, creation/update metadata, and latest-correction metadata. This makes the vehicle trip—not a driver assignment—the lifecycle owner while preserving one driver per vehicle per leg.
 
+`returnDriverMirrorsDeparture` is required Boolean state. New and migrated planned trips use `true`. Explicit return-driver selection/clear sets it to `false`; Same as departure restores `true` and copies the departure driver atomically. Missing legacy target fields parse safely as `false` because equality alone does not prove intent. Future Depart will synchronize a true mirror and then snapshot it as false; that action is not implemented yet.
+
 Before departure, return assignments mirror departure without independent editing. Depart atomically snapshots return assignments for that vehicle's occupants. Subsequent return changes do not mutate departure history or get silently overwritten by departure corrections. Latest correction fields overwrite on a later correction and are not full history.
 
 `settings/transportation` stores `defaultReturnDestination`, initially `Mill Village`, plus update metadata and is surfaced in Admin Configuration > Vehicles. WhatsApp messages, edits, handoffs, and delivery state are not stored. Counts, occupancy, capacity, warnings, and message content remain derived. Capacity means total seats including the driver.

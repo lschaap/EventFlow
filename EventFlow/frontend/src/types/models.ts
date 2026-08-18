@@ -134,6 +134,7 @@ export interface EventVehicleTripRecord {
   stage: EventVehicleTripStage
   departureDriverStaffId: string | null
   returnDriverStaffId: string | null
+  returnDriverMirrorsDeparture: boolean
   departedAt: Timestamp | null
   arrivedAtEventAt: Timestamp | null
   returnStartedAt: Timestamp | null
