@@ -177,7 +177,7 @@ New events are created in one write with `eventId` equal to the Firestore docume
 ## Historical Integrity
 Do not delete master-data records merely because they become inactive. Use `active = false` so historical relationships remain resolvable.
 
-## Approved Planned Transportation Collections (CR-001)
+## CR-001 Transportation Collections (Foundation In Implementation)
 
 The schemas above describe the current Firestore baseline. CR-001 plans—but does not yet deploy—the following changes:
 
@@ -187,4 +187,4 @@ The schemas above describe the current Firestore baseline. CR-001 plans—but do
 - add `settings/transportation` with `defaultReturnDestination` (initially `Mill Village`) and update metadata, managed in Admin Configuration > Vehicles;
 - derive occupancy, capacity, warnings, and WhatsApp content without storing messages or delivery state.
 
-Before Depart, return fields mirror departure and cannot be independently edited. Depart atomically creates the vehicle's return snapshot. Planned rules reserve departure/drivers/vehicles/settings/corrections for Admin, permit Staff/Admin valid forward transitions, and permit Staff/Admin return-passenger writes only for eligible departed vehicles before Start Return. Correction atomically recalculates event status and timestamps. Current rules/indexes remain unchanged by this documentation milestone.
+Before Depart, return fields mirror departure and cannot be independently edited; later snapshot behavior remains planned. Foundation Rules allow approved reads, Admin-only planned creation/removal, and Admin-only settings writes. Lifecycle, correction, and participant-transport writes remain disabled. The Rules were deployed on 2026-08-18. Two indexes support the implemented active-trip queries but were not deployed, and no migration occurred. See [legacy migration procedure](migrations/CR-001-legacy-event-drivers.md).

@@ -4,10 +4,17 @@
 
 | Field | Value |
 |---|---|
-| State | Approved for implementation |
+| State | In implementation |
 | Decision date | 2026-08-18 |
 | Scope | Per-leg transportation planning, trip execution, capacity review, status automation, manual vehicle-free lifecycle, and user-initiated WhatsApp handoff |
 | Current implementation | Event-level driver/vehicle assignment, overlap checks, and capacity warnings exist; the per-leg model, `in_progress`, trip lifecycle, return snapshot, and WhatsApp handoff do not |
+| Current milestone | Vehicle-trip data foundation and legacy driver migration |
+
+## Implementation progress
+
+Implemented in the foundation milestone: shared `in_progress` and nullable `startedAt` compatibility; `eventVehicleTrips` types/foundation services; transportation-settings model/service and Admin Vehicles-tab control; restrictive Rules; two foundation indexes; and dry-run-first migration tooling with fictional-fixture tests. The foundation Firestore Rules were deployed to the configured Firebase project on 2026-08-18; indexes were not deployed.
+
+The current driver/vehicle UI continues to read/write only `eventDrivers`; no dual writes or live migration occurred. Participant vehicle fields, snapshots, stage actions, Staff return editing, corrections, automatic status transitions, vehicle-free controls, WhatsApp, Calendar/email, and UI cutover remain unimplemented. CR-001 is not Ready for UAT, Accepted, or Released.
 
 ## Scope
 

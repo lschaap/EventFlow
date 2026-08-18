@@ -14,13 +14,20 @@ import {
 import { ensureDb } from '../lib/firestore'
 import type { EventFormValues, EventRecord } from '../types/models'
 
+const eventStatuses = ['draft', 'confirmed', 'in_progress', 'completed', 'cancelled'] as const
+
+function parseEventStatus(value: unknown): EventRecord['status'] {
+  if (typeof value === 'string' && eventStatuses.includes(value as EventRecord['status'])) return value as EventRecord['status']
+  throw new Error(`Event has an unsupported status: ${String(value)}`)
+}
+
 function toEventRecord(id: string, data: any): EventRecord {
   return {
     eventId: id,
     name: data.name,
     activityId: data.activityId,
     eventTypeId: data.eventTypeId,
-    status: data.status,
+    status: parseEventStatus(data.status),
     departureDateTime: data.departureDateTime.toDate(),
     returnDateTime: data.returnDateTime.toDate(),
     location: data.location,
@@ -36,6 +43,7 @@ function toEventRecord(id: string, data: any): EventRecord {
     createdByUserName: data.createdByUserName,
     createdAt: data.createdAt.toDate(),
     updatedAt: data.updatedAt.toDate(),
+    startedAt: data.startedAt ? data.startedAt.toDate() : null,
     completedAt: data.completedAt ? data.completedAt.toDate() : null,
     cancelledAt: data.cancelledAt ? data.cancelledAt.toDate() : null,
     calendarEventId: data.calendarEventId ?? null,
@@ -92,6 +100,7 @@ export async function createEvent(formValues: EventFormValues, userId: string, u
     createdByUserName: userName,
     createdAt: now,
     updatedAt: now,
+    startedAt: null,
     completedAt: null,
     cancelledAt: null,
     calendarEventId: null,

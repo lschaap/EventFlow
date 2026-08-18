@@ -1,4 +1,21 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "eventVehicleTrips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "eventId", "order": "ASCENDING" },
+        { "fieldPath": "assignmentStatus", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "eventVehicleTrips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "vehicleId", "order": "ASCENDING" },
+        { "fieldPath": "assignmentStatus", "order": "ASCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

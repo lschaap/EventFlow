@@ -142,7 +142,7 @@
 
 ## Approved Planned Transportation Fields (CR-001)
 
-These definitions are approved but are not present in the current deployed schema.
+Vehicle-trip/settings definitions now have foundation types/services and undeployed Rules/index configuration. They are not released or populated by this milestone; participant additions and lifecycle behavior remain planned.
 
 ### Participant collection additions
 

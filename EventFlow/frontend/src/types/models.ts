@@ -1,6 +1,8 @@
 import type { Timestamp } from 'firebase/firestore'
 
-export type EventStatus = 'draft' | 'confirmed' | 'completed' | 'cancelled'
+export type EventStatus = 'draft' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+export type EventVehicleTripAssignmentStatus = 'active' | 'removed'
+export type EventVehicleTripStage = 'planned' | 'departed' | 'arrived_at_event' | 'return_started' | 'returned'
 export type CalendarSyncStatus = 'not_synced' | 'pending' | 'synced' | 'failed'
 export type MealType = 'breakfast' | 'lunch' | 'snack' | 'dinner'
 
@@ -53,6 +55,7 @@ export interface EventRecord {
   createdByUserName: string
   createdAt: Date
   updatedAt: Date
+  startedAt?: Date | null
   completedAt?: Date | null
   cancelledAt?: Date | null
   calendarEventId?: string | null
@@ -121,6 +124,37 @@ export interface EventDriverRecord {
   removedByUserId?: string | null
   removedAt?: Timestamp | any | null
   notes?: string | null
+}
+
+export interface EventVehicleTripRecord {
+  eventVehicleTripId: string
+  eventId: string
+  vehicleId: string
+  assignmentStatus: EventVehicleTripAssignmentStatus
+  stage: EventVehicleTripStage
+  departureDriverStaffId: string | null
+  returnDriverStaffId: string | null
+  departedAt: Timestamp | null
+  arrivedAtEventAt: Timestamp | null
+  returnStartedAt: Timestamp | null
+  returnedAt: Timestamp | null
+  createdAt: Timestamp
+  updatedAt: Timestamp
+  correctedAt: Timestamp | null
+  correctedByUserId: string | null
+  correctionReason: string | null
+}
+
+export interface ResolvedEventVehicleTrip extends EventVehicleTripRecord {
+  vehicleName: string
+  departureDriverName: string | null
+  returnDriverName: string | null
+}
+
+export interface TransportationSettingsRecord {
+  defaultReturnDestination: string
+  updatedAt?: Timestamp
+  updatedByUserId?: string
 }
 
 export interface EventParticipantRecord {

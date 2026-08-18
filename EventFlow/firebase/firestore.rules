@@ -36,6 +36,17 @@ service cloud.firestore {
       return vehicleId == null || (vehicleId is string && exists(/databases/$(database)/documents/vehicles/$(vehicleId)) && get(/databases/$(database)/documents/vehicles/$(vehicleId)).data.active == true);
     }
 
+    function validTripDriver(staffId) {
+      return staffId == null || (staffId is string &&
+        exists(/databases/$(database)/documents/staff/$(staffId)) &&
+        get(/databases/$(database)/documents/staff/$(staffId)).data.active == true &&
+        get(/databases/$(database)/documents/staff/$(staffId)).data.canDrive == true);
+    }
+
+    function validEventStatus(status) {
+      return status in ['draft', 'confirmed', 'in_progress', 'completed', 'cancelled'];
+    }
+
     function eventIsStructurallyValid(data) {
       return data.name is string && data.name.size() > 0 &&
         data.activityId is string && data.activityId.size() > 0 &&
@@ -75,7 +86,8 @@ service cloud.firestore {
       allow create: if isAuth() && isApproved(request.auth.uid) &&
         // enforce createdByUserId matches the authenticated user
         request.resource.data.createdByUserId == request.auth.uid &&
-        request.resource.data.eventId == eventId;
+        request.resource.data.eventId == eventId &&
+        request.resource.data.status == 'draft';
 
       allow update: if isAuth() && isApproved(request.auth.uid) &&
         request.resource.data.eventId == resource.data.eventId &&
@@ -83,6 +95,7 @@ service cloud.firestore {
         request.resource.data.createdByUserName == resource.data.createdByUserName &&
         request.resource.data.createdAt == resource.data.createdAt &&
         request.resource.data.updatedAt is timestamp &&
+        validEventStatus(request.resource.data.status) &&
         eventStatusTransitionIsValid();
 
       // Hard deletes are not allowed in this milestone
@@ -255,6 +268,56 @@ service cloud.firestore {
         (resource.data.status == 'assigned' && request.resource.data.status == 'removed' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','removedByUserId','removedAt','role']) && request.resource.data.assignedByUserId == resource.data.assignedByUserId && request.resource.data.assignedAt == resource.data.assignedAt && request.resource.data.vehicleId == resource.data.vehicleId && request.resource.data.removedByUserId == request.auth.uid && request.resource.data.removedAt is timestamp) ||
         (resource.data.status == 'removed' && request.resource.data.status == 'assigned' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','vehicleId','role','assignedByUserId','assignedAt','removedByUserId','removedAt']) && exists(/databases/$(database)/documents/staff/$(request.resource.data.staffId)) && get(/databases/$(database)/documents/staff/$(request.resource.data.staffId)).data.active == true && get(/databases/$(database)/documents/staff/$(request.resource.data.staffId)).data.canDrive == true && request.resource.data.assignedByUserId == request.auth.uid && request.resource.data.assignedAt is timestamp && request.resource.data.removedByUserId == null && request.resource.data.removedAt == null && validDriverVehicle(request.resource.data.vehicleId))
       );
+      allow delete: if false;
+    }
+
+    match /eventVehicleTrips/{tripId} {
+      allow read: if isAuth() && isApproved(request.auth.uid);
+
+      allow create: if isAuth() && isAdmin(request.auth.uid) &&
+        request.resource.data.keys().hasAll(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','departedAt','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
+        request.resource.data.keys().hasOnly(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','departedAt','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
+        request.resource.data.eventVehicleTripId == tripId &&
+        tripId == request.resource.data.eventId + '__' + request.resource.data.vehicleId &&
+        request.resource.data.eventId is string && request.resource.data.vehicleId is string &&
+        exists(/databases/$(database)/documents/events/$(request.resource.data.eventId)) &&
+        exists(/databases/$(database)/documents/vehicles/$(request.resource.data.vehicleId)) &&
+        get(/databases/$(database)/documents/vehicles/$(request.resource.data.vehicleId)).data.active == true &&
+        request.resource.data.assignmentStatus == 'active' &&
+        request.resource.data.stage == 'planned' &&
+        request.resource.data.departedAt == null && request.resource.data.arrivedAtEventAt == null &&
+        request.resource.data.returnStartedAt == null && request.resource.data.returnedAt == null &&
+        validTripDriver(request.resource.data.departureDriverStaffId) &&
+        validTripDriver(request.resource.data.returnDriverStaffId) &&
+        request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp &&
+        request.resource.data.correctedAt == null && request.resource.data.correctedByUserId == null && request.resource.data.correctionReason == null;
+
+      allow update: if isAuth() && isAdmin(request.auth.uid) &&
+        request.resource.data.eventVehicleTripId == resource.data.eventVehicleTripId &&
+        request.resource.data.eventId == resource.data.eventId &&
+        request.resource.data.vehicleId == resource.data.vehicleId &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        tripId == request.resource.data.eventId + '__' + request.resource.data.vehicleId &&
+        resource.data.assignmentStatus == 'active' && request.resource.data.assignmentStatus == 'removed' &&
+        resource.data.stage == 'planned' && request.resource.data.stage == 'planned' &&
+        request.resource.data.updatedAt is timestamp &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus','updatedAt']);
+
+      allow delete: if false;
+    }
+
+    match /settings/transportation {
+      allow read: if isAuth() && isApproved(request.auth.uid);
+      allow create, update: if isAuth() && isAdmin(request.auth.uid) &&
+        request.resource.data.keys().hasAll(['defaultReturnDestination','updatedAt','updatedByUserId']) &&
+        request.resource.data.keys().hasOnly(['defaultReturnDestination','updatedAt','updatedByUserId']) &&
+        request.resource.data.defaultReturnDestination is string &&
+        request.resource.data.defaultReturnDestination.size() > 0 &&
+        request.resource.data.defaultReturnDestination.size() <= 200 &&
+        request.resource.data.defaultReturnDestination.matches('^\\S.*') &&
+        request.resource.data.defaultReturnDestination.matches('.*\\S$') &&
+        request.resource.data.updatedAt is timestamp &&
+        request.resource.data.updatedByUserId == request.auth.uid;
       allow delete: if false;
     }
 

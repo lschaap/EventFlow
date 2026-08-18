@@ -1,5 +1,13 @@
 # Change Log
 
+## CR-001 Foundation - In Implementation (Not Deployed)
+
+- Added vehicle-trip/settings types and services, two indexes, and restrictive Rules configuration; deployed only the Rules on 2026-08-18.
+- Added `in_progress` and nullable `startedAt` compatibility without lifecycle actions or stored-status changes.
+- Added Admin Vehicles-tab default destination editing; missing settings display `Mill Village` without an implicit write.
+- Added dry-run-first, explicit-confirmation, idempotent migration tooling and fictional-fixture tests; no migration ran and `eventDrivers` remains the UI source.
+- Participant assignments, lifecycle automation, Staff return editing, WhatsApp, and UI cutover remain unimplemented.
+
 ## Approved Change Definition - 2026-08-18 (Not Implemented)
 
 - Added the change-management process and CR-001 transportation trip lifecycle specification.

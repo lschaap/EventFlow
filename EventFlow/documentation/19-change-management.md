@@ -53,7 +53,7 @@ Approval to define a change does not authorize code changes, data migration, dep
 
 | ID | Change | State | Record |
 |---|---|---|---|
-| CR-001 | Transportation trip lifecycle and participant vehicle assignments | Approved for implementation | [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md) |
+| CR-001 | Transportation trip lifecycle and participant vehicle assignments | In implementation | [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md) |
 
 ## CR-001 approval record
 
