@@ -176,3 +176,15 @@ New events are created in one write with `eventId` equal to the Firestore docume
 
 ## Historical Integrity
 Do not delete master-data records merely because they become inactive. Use `active = false` so historical relationships remain resolvable.
+
+## Approved Planned Transportation Collections (CR-001)
+
+The schemas above describe the current Firestore baseline. CR-001 plans—but does not yet deploy—the following changes:
+
+- extend both participant collections with nullable `departureVehicleId`, `returnVehicleId`, and latest transport-correction metadata;
+- add `in_progress` to the event status domain;
+- replace `eventDrivers` with deterministic `eventVehicleTrips/{eventId__vehicleId}` documents containing active/removed state, the five-stage lifecycle, separate leg drivers, four server timestamps, and latest correction metadata;
+- add `settings/transportation` with `defaultReturnDestination` (initially `Mill Village`) and update metadata;
+- derive occupancy, capacity, warnings, and WhatsApp content without storing messages or delivery state.
+
+Planned rules restrict plan and correction writes to Admin while permitting active approved Staff only valid forward transitions. Transactions and indexes follow [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md). Current rules and indexes remain unchanged by this documentation milestone.

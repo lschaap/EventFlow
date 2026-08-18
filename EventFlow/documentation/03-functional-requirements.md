@@ -1,5 +1,7 @@
 # Functional Requirements
 
+> Existing requirements describe the implemented baseline unless marked otherwise. The CR-001 requirements below are approved and planned, not implemented.
+
 ## Authentication and Access
 - REQ-001: Authorized users must authenticate before accessing the application.
 - REQ-002: The system must restrict application access to approved users with active accounts.
@@ -136,3 +138,24 @@ The following integration requirements remain pending and are not implemented by
 The following notification requirement remains pending and is not implemented by the current application-only confirmation workflow.
 
 - REQ-094: The system sends a plain-text email notification when an event is confirmed.
+
+## Transportation Trip Lifecycle - Approved and Planned (CR-001)
+
+- REQ-095: Each active event vehicle follows `planned -> departed -> arrived_at_event -> return_started -> returned` without ordinary skipping or reversal.
+- REQ-096: Depart, Arrive at Event, Start Return, and Returned record their corresponding server timestamps.
+- REQ-097: The first vehicle departure moves a confirmed vehicle-based event to `in_progress`, and the last applicable return moves it to `completed`.
+- REQ-098: Vehicle-based events do not expose ordinary manual Start Event or Complete Event actions; events without vehicles retain them.
+- REQ-099: Active student and staff participants may have independent departure and return vehicle assignments, with return initially copied from departure.
+- REQ-100: Only active approved Admins may edit transportation plans; active approved Staff may view plans and perform valid forward lifecycle actions.
+- REQ-101: Each vehicle has at most one eligible active staff driver per leg, and assigning that driver also ensures staff participation and vehicle occupancy for that leg.
+- REQ-102: Drivers consume one seat exactly once. Capacity, unassigned warnings, and overlap validation are evaluated independently for each leg.
+- REQ-103: Overcapacity and unassigned participants require a strong warning and explicit review but do not hard-block Depart or Start Return.
+- REQ-104: Removing a participant atomically clears both vehicle fields; removing a staff participant also removes applicable driver assignments after warning and confirmation.
+- REQ-105: After a leg begins, only an Admin may use an explicit correction workflow requiring confirmation, reason, correcting UID, and server timestamp.
+- REQ-106: Vehicle deactivation lists affected future events and clears eligible participant and driver assignments only for not-started events whose departure is in the future.
+- REQ-107: The default return destination is configurable and initially displays as `Mill Village`.
+- REQ-108: Event Details provides user-initiated, editable WhatsApp message preparation with copy/open handoff and a clipboard fallback; it does not send or track messages.
+- REQ-109: Confirmation messages become available after confirmation, outbound vehicle messages after Arrive at Event, and return vehicle messages after Start Return.
+- REQ-110: Confirmation messages exclude participant names and restriction details; vehicle messages contain only the leg-specific operational content approved in CR-001.
+
+The complete authoritative behavior and acceptance criteria are in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md).

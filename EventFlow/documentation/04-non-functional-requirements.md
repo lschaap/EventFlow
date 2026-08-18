@@ -35,3 +35,14 @@
 
 ## Availability
 - NFR-024: Offline operation is not required for MVP.
+
+## Transportation Expansion - Approved and Planned (CR-001)
+
+- NFR-025: Lifecycle transitions, coupled event-status changes, driver participation, and participant assignment cleanup must be atomic.
+- NFR-026: Operational and correction timestamps must be server-authored.
+- NFR-027: Firestore Rules must enforce Admin-only planning/correction and permit Staff only the valid forward operational transitions.
+- NFR-028: Capacity calculations must be deterministic and deduplicate a driver who is already a staff participant.
+- NFR-029: Transportation correction metadata may record the latest correction on the affected record; this change does not require a general activity log.
+- NFR-030: WhatsApp content must be generated locally, manually handed off, and must not persist delivery state, group identifiers, phone numbers, credentials, or message templates.
+- NFR-031: Confirmation messages must not disclose participant names, dietary details, or contact information.
+- NFR-032: Transportation controls and reviews must remain usable on supported mobile layouts and clearly distinguish warnings from hard validation failures.

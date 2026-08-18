@@ -158,6 +158,16 @@ Stored on events for efficient rendering:
 
 Recalculate when active student or staff participant records change.
 
+## Approved Planned Transportation Model (CR-001)
+
+The structures above are the implemented baseline. For CR-001, `events.status` adds `in_progress`; `eventParticipants` and `eventStaffParticipants` add nullable `departureVehicleId` and `returnVehicleId` plus latest-correction reason, UID, and server timestamp.
+
+The planned `eventVehicleTrips/{eventId__vehicleId}` aggregate replaces `eventDrivers`. It stores `eventId`, `vehicleId`, `assignmentStatus`, the five-stage lifecycle, independent departure and return driver staff IDs, the four lifecycle timestamps, creation/update metadata, and latest-correction metadata. This makes the vehicle trip—not a driver assignment—the lifecycle owner while preserving one driver per vehicle per leg.
+
+`settings/transportation` stores `defaultReturnDestination`, initially `Mill Village`, plus update metadata. WhatsApp messages and delivery state are not stored. Counts, occupancy, capacity, warnings, and message content remain derived.
+
+Migration and atomic-write boundaries are defined in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md). They are planned and have not been applied to Firestore.
+
 ## Relationships
 
 ```text

@@ -1,5 +1,12 @@
 # Change Log
 
+## Approved Change Definition - 2026-08-18 (Not Implemented)
+
+- Added the change-management process and CR-001 transportation trip lifecycle specification.
+- Documented the approved lifecycle, per-leg assignments, permissions, reviews, corrections, status automation, deactivation behavior, destination, and manual WhatsApp handoff.
+- Added planned data, architecture, workflow, UI, security, integration, migration, and UAT impacts while preserving the implemented baseline.
+- No application code, Firestore Rules, indexes, test data, dependencies, deployments, or generated files changed.
+
 ## v0.5 - Admin Configuration Consistency
 - Aligned Activity and Event Type configuration with Student, Staff, and Vehicle management patterns.
 - Added hidden creation forms, separate record sections, consistent actions, and alphabetical display without visible sort-order values.

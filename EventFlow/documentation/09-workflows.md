@@ -120,3 +120,39 @@ Assign `admin` or `staff`.
 
 ## A19 - Activate / Deactivate Application User
 Inactive user cannot access protected functionality.
+
+## Approved Planned Transportation Workflows (CR-001)
+
+The workflows above describe the implemented baseline. Where they describe a single event driver/vehicle assignment or universal manual completion, this approved target supersedes them.
+
+### T1 - Plan departure and return
+
+Admin adds active vehicles and eligible departure drivers, then bulk-assigns or individually moves active participants among vehicles or Unassigned. Driver assignment atomically ensures staff participation and occupancy. Return drivers and occupants initially copy departure and can then be revised independently. Each leg separately displays capacity, warnings, and overlap conflicts.
+
+### T2 - Depart
+
+Staff or Admin selects **Depart** on a planned trip. EventFlow validates the departure driver and presents the vehicle, driver, occupants, count/capacity, overcapacity, and all unassigned departure participants. Confirmation atomically records server `departedAt`, advances the trip, reveals its return plan, and moves a confirmed event to `in_progress` on its first departure.
+
+### T3 - Arrive at Event
+
+Staff or Admin confirms **Arrive at Event**. EventFlow records server `arrivedAtEventAt`, advances the trip, and enables that vehicle's outbound WhatsApp preview.
+
+### T4 - Start Return
+
+The return equivalent of T2 validates and reviews the return plan. Confirmation records server `returnStartedAt`, advances the trip, and enables that vehicle's return preview without changing event status.
+
+### T5 - Returned
+
+EventFlow records server `returnedAt`; when every applicable trip is returned, it atomically completes the event. Vehicle-based events have no ordinary manual Start/Complete actions. Vehicle-free events retain them.
+
+### T6 - Correct a begun trip or assignment
+
+Admin uses an explicit correction action, reviews a warning, supplies a required reason, and confirms. The atomic change records the reason, Admin UID, and server timestamp. Staff cannot undo stages. Completed and cancelled events expose no normal transportation operations.
+
+### T7 - Deactivate a vehicle
+
+EventFlow lists affected future event names. Confirmation clears departure/return participant assignments and applicable drivers only where the event has not started and departure is still in the future. Historical and started records remain readable.
+
+### T8 - Prepare a WhatsApp message
+
+From Event Details, the user previews and edits an eligible message, copies it or opens WhatsApp, chooses an existing staff-only group, and sends manually. Failed handoff copies the text and explains the fallback. No send state is recorded.

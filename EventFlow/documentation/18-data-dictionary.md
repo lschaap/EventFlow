@@ -139,3 +139,46 @@
 | removedByUserId | string/null | User who removed |
 | removedAt | timestamp/null | Removal time |
 | notes | string/null | Optional notes |
+
+## Approved Planned Transportation Fields (CR-001)
+
+These definitions are approved but are not present in the current deployed schema.
+
+### Participant collection additions
+
+| Field | Type | Description |
+|---|---|---|
+| departureVehicleId | string/null | Vehicle used for departure |
+| returnVehicleId | string/null | Vehicle used for return |
+| transportCorrectedAt | timestamp/null | Server time of latest assignment correction |
+| transportCorrectedByUserId | string/null | Admin UID for latest assignment correction |
+| transportCorrectionReason | string/null | Required latest correction reason |
+
+### eventVehicleTrips
+
+| Field | Type | Description |
+|---|---|---|
+| eventVehicleTripId | string | Deterministic `eventId__vehicleId` key |
+| eventId | string | Event FK |
+| vehicleId | string | Vehicle FK |
+| assignmentStatus | enum | `active` or `removed` |
+| stage | enum | `planned`, `departed`, `arrived_at_event`, `return_started`, or `returned` |
+| departureDriverStaffId | string/null | Departure driver FK |
+| returnDriverStaffId | string/null | Return driver FK |
+| departedAt | timestamp/null | Server departure time |
+| arrivedAtEventAt | timestamp/null | Server event-arrival time |
+| returnStartedAt | timestamp/null | Server return-start time |
+| returnedAt | timestamp/null | Server returned time |
+| createdAt | timestamp | Creation time |
+| updatedAt | timestamp | Last update time |
+| correctedAt | timestamp/null | Server time of latest trip correction |
+| correctedByUserId | string/null | Admin UID for latest trip correction |
+| correctionReason | string/null | Required latest correction reason |
+
+### settings/transportation
+
+| Field | Type | Description |
+|---|---|---|
+| defaultReturnDestination | string | Default destination, initially `Mill Village` |
+| updatedAt | timestamp | Server update time |
+| updatedByUserId | string | Admin UID that updated the setting |

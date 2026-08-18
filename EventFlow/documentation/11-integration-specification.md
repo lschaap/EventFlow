@@ -152,3 +152,15 @@ Email should be initiated server-side. The specific provider/mechanism may be se
 
 ## 5. Future Integrations
 Future integrations are documented in `16-future-roadmap.md` and are not part of MVP.
+
+## 6. WhatsApp User Handoff - Approved and Planned (CR-001)
+
+This is a client-side convenience, not automated integration. EventFlow creates editable text on Event Details and attempts to open WhatsApp so the user can choose an existing staff-only group and send manually. Failed opening copies the message and explains the fallback.
+
+EventFlow will not call the WhatsApp Business API, discover or store groups, store phone numbers or credentials, persist templates, send automatically, or record sent/share timestamps.
+
+- After confirmation: event name, planned times, location, counts, drivers, vehicles, meals, dietary Yes/No, and EventFlow link; no participant names, restriction details, or contacts.
+- After a vehicle arrives: `departedAt`, departure occupant names, driver, vehicle, event location, and expected return.
+- After a vehicle starts return: `returnStartedAt`, return occupant names, driver, vehicle, planned arrival, and configured default destination.
+
+CR-001 is authoritative if an earlier messaging concept conflicts with these activation points.

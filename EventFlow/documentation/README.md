@@ -21,5 +21,8 @@ This package defines the MVP implementation baseline for EventFlow, a mobile-fir
 16. `16-future-roadmap.md`
 17. `17-change-log.md`
 18. `18-data-dictionary.md`
+19. `19-change-management.md`
+
+Approved material changes are recorded under `change-requests/`. The first record is `change-requests/CR-001-transportation-trip-lifecycle.md`.
 
 The MVP requirements are considered frozen after this revision. New ideas should go to the Future Roadmap unless they address a defect, security issue, or genuine missing requirement.

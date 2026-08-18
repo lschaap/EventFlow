@@ -8,7 +8,9 @@ Operational user who can manage events and assignments.
 ### Admin
 Inherits all Staff capabilities and manages users and master data.
 
-## Permission Matrix
+## Implemented Permission Matrix
+
+This matrix describes the current application. Its driver/vehicle assignment permissions are superseded for the planned CR-001 target by the matrix below.
 
 | Capability | Admin | Staff |
 |---|:---:|:---:|
@@ -41,3 +43,19 @@ Drivers are active staff members with:
 ```text
 canDrive = true
 ```
+
+## Approved Planned Transportation Permissions (CR-001)
+
+| Transportation capability | Staff | Admin |
+|---|---:|---:|
+| View transportation plan and trip progress | Yes | Yes |
+| Assign/change participant departure or return vehicle | No | Yes |
+| Assign/change departure or return driver | No | Yes |
+| Add/remove an event vehicle | No | Yes |
+| Perform the next valid Depart/Arrive/Start Return/Returned action | Yes | Yes |
+| Skip or undo a stage through normal controls | No | No |
+| Use explicit correction workflow after a leg begins | No | Yes |
+| Configure default return destination | No | Yes |
+| Preview/copy/open an available Event Details WhatsApp message | Yes | Yes |
+
+All users must still be authenticated, approved, and active. A driver must additionally be active staff with `canDrive = true`. Firestore Rules, not UI visibility alone, enforce these boundaries.

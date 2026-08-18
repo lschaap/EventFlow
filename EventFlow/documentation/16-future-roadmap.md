@@ -2,6 +2,10 @@
 
 All items are outside MVP unless formally promoted.
 
+## Approved Change Queue
+
+CR-001, [Transportation Trip Lifecycle](change-requests/CR-001-transportation-trip-lifecycle.md), is approved for implementation and is no longer an unapproved future idea. It covers per-leg participant and driver assignments, the five-stage lifecycle, status automation, capacity review, corrections, default destination, vehicle-deactivation cleanup, and user-initiated WhatsApp handoff. It is not implemented by this documentation milestone.
+
 ## Things to Fix
 
 1. When changing an event's departure or return date/time, list every current participant who is assigned to another event that conflicts with the requested time. Warn the user before saving, and, after confirmation, remove those participants from the conflicting events.
@@ -51,14 +55,14 @@ Potential actions:
 
 ## Version 2 - Advanced Operations
 - Driver availability
-- Scheduling-conflict detection
-- Vehicle-capacity warnings
 - Route planning
 - Transportation optimization
 - Budgeting
 - Equipment inventory
 - Parent communication portal
 - Advanced analytics
+
+Scheduling-conflict detection and vehicle-capacity warnings are already in the implemented MVP baseline. CR-001 expands their application independently to each transportation leg.
 
 ## Future Integrations
 - AI / Gemini or other LLM service

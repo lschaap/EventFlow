@@ -66,6 +66,8 @@ The placeholder UI will run before Firebase is configured.
 
 ## Documentation
 
+The maintained documentation is under [`documentation/`](documentation/README.md). Material approved changes use [`documentation/19-change-management.md`](documentation/19-change-management.md); the planned transportation expansion is defined in [`CR-001`](documentation/change-requests/CR-001-transportation-trip-lifecycle.md).
+
 Start with:
 - `docs/01-project-charter.md`
 - `docs/02-requirements.md`

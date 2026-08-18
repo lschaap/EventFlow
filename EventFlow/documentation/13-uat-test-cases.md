@@ -164,3 +164,31 @@ These cases remain pending the confirmation-email milestone.
 | UAT-084 | Event details on mobile | Sections navigable |
 | UAT-085 | Sign out | Protected routes inaccessible |
 | UAT-086 | Production build | Build completes successfully |
+
+## Approved Planned Transportation UAT (CR-001)
+
+These cases define future acceptance; they are not evidence that CR-001 is implemented.
+
+| ID | Scenario | Expected Result |
+|---|---|---|
+| UAT-087 | Assign departure driver | Eligible driver becomes active staff participant and one departure occupant atomically |
+| UAT-088 | Copy/edit return plan | Return initially matches departure and Admin can change it independently |
+| UAT-089 | Staff attempts plan edit | UI withholds controls and Firestore Rules reject direct write |
+| UAT-090 | Depart with warnings | Full review appears; confirmation proceeds and records server time |
+| UAT-091 | Depart without driver | Action is blocked with a clear driver requirement |
+| UAT-092 | First vehicle departs | Trip becomes departed and confirmed event becomes in_progress atomically |
+| UAT-093 | Skip or Staff undo | Action is unavailable and direct write is rejected |
+| UAT-094 | Arrive at event | Arrival time records and outbound message becomes available only then |
+| UAT-095 | Start return | Independent review runs, time records, and return message becomes available |
+| UAT-096 | Last vehicle returns | Trip becomes returned and event becomes completed atomically |
+| UAT-097 | Vehicle-free event | Manual Start Event and Complete Event remain available |
+| UAT-098 | Driver seat count | Driver consumes exactly one seat, including when already a participant |
+| UAT-099 | Driver-only vehicle | Vehicle can depart with count one |
+| UAT-100 | Remove participant-driver | Warning appears; confirmation clears participation, vehicle fields, and driver references atomically |
+| UAT-101 | Per-leg overlap | Conflicts are independently detected for people, drivers, and vehicles |
+| UAT-102 | Admin correction | Warning, confirmation, reason, UID, and server timestamp are required |
+| UAT-103 | Deactivate vehicle | Eligible future references clear; historical/started records remain |
+| UAT-104 | Confirmation message privacy | Approved summary appears without participant names, restriction details, or contacts |
+| UAT-105 | Vehicle messages | Outbound/return previews appear only at authoritative stages with correct leg data |
+| UAT-106 | WhatsApp failure | Message copies with guidance and no send record is written |
+| UAT-107 | Completed/cancelled event | Normal transportation actions are unavailable; only authorized explicit correction remains |

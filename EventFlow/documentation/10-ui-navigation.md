@@ -96,3 +96,13 @@ Admin Configuration uses separate mobile-friendly tabs:
 Users/roles remain a future Admin Configuration addition.
 
 Student, Staff, Vehicle, Event Type, and Activity tabs use an Add button to reveal a creation form in a section above the separate records section. Editing expands the selected record in place, with Edit shown before Deactivate/Reactivate. Activity and Event Type records are displayed alphabetically; internal sort-order values are not shown.
+
+## Event Details Transportation - Approved and Planned (CR-001)
+
+The planned Event Details page adds transportation grouped by vehicle and **Unassigned**, with separate departure and return views. It shows drivers, participant names, counts, capacity, warnings, stage, and recorded lifecycle times. A vehicle's return plan becomes visible when it departs.
+
+Admins see vehicle, occupant, driver, default destination, and explicit correction controls. Staff see the plan but cannot edit it. Both roles see only the next valid forward action. Vehicle-based events hide ordinary Start Event/Complete Event controls; vehicle-free events retain them.
+
+Depart and Start Return open an explicit review of vehicle, driver, occupants, count/capacity, overcapacity, and all event participants unassigned for that leg. Warnings do not disable confirmation. Corrections use a separate warning and required-reason confirmation.
+
+WhatsApp controls appear only on Event Details: confirmation after event confirmation, per-vehicle outbound after arrival, and per-vehicle return after return starts. Each provides editable Preview, Copy, and Open WhatsApp actions plus a clear clipboard fallback.
