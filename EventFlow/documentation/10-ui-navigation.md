@@ -66,6 +66,8 @@ Recommended mobile sections:
 6. Notes
 7. Calendar Sync
 
+Draft events show a **Confirm Event** action. The action requires a confirmation prompt and changes only the application event status; it does not yet create a Google Calendar event or send email. Confirmed, Completed, and Cancelled events do not show an enabled confirmation action.
+
 Students are grouped/sorted by grade, with staff participants separate.
 
 Detailed dietary restrictions remain inside EventFlow and are not copied to Google Calendar.

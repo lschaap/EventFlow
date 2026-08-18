@@ -37,6 +37,8 @@ Normal CRUD may occur through the authenticated frontend subject to Firestore Se
 
 ## 3. Google Calendar API
 
+Implementation status: pending. Application confirmation currently leaves Calendar fields unchanged and does not call Google Calendar.
+
 ### Purpose
 Represent confirmed EventFlow events on the configured school Google Calendar.
 
@@ -127,6 +129,8 @@ Dietary restrictions present: Yes/No
 Synchronization must use stored `calendarEventId` to prevent duplicate events.
 
 ## 4. Email Notification
+
+Implementation status: pending. Application confirmation currently sends no email.
 
 ### MVP Requirement
 Send a plain-text email when an event is confirmed.

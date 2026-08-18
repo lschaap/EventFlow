@@ -36,6 +36,26 @@ service cloud.firestore {
       return vehicleId == null || (vehicleId is string && exists(/databases/$(database)/documents/vehicles/$(vehicleId)) && get(/databases/$(database)/documents/vehicles/$(vehicleId)).data.active == true);
     }
 
+    function eventIsStructurallyValid(data) {
+      return data.name is string && data.name.size() > 0 &&
+        data.activityId is string && data.activityId.size() > 0 &&
+        data.eventTypeId is string && data.eventTypeId.size() > 0 &&
+        data.departureDateTime is timestamp && data.returnDateTime is timestamp &&
+        data.returnDateTime > data.departureDateTime &&
+        data.location is string && data.location.size() > 0;
+    }
+
+    function eventStatusTransitionIsValid() {
+      return request.resource.data.status == resource.data.status ||
+        (resource.data.status == 'draft' && request.resource.data.status == 'confirmed' &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']) &&
+          eventIsStructurallyValid(request.resource.data)) ||
+        ((resource.data.status == 'draft' || resource.data.status == 'confirmed') && request.resource.data.status == 'cancelled' &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','cancelledAt','updatedAt'])) ||
+        ((resource.data.status == 'draft' || resource.data.status == 'confirmed') && request.resource.data.status == 'completed' &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','completedAt','updatedAt']));
+    }
+
     // Users collection
     match /users/{userId} {
       allow get, list: if isAuth() && (request.auth.uid == userId || isAdmin(request.auth.uid));
@@ -54,9 +74,16 @@ service cloud.firestore {
 
       allow create: if isAuth() && isApproved(request.auth.uid) &&
         // enforce createdByUserId matches the authenticated user
-        request.resource.data.createdByUserId == request.auth.uid;
+        request.resource.data.createdByUserId == request.auth.uid &&
+        request.resource.data.eventId == eventId;
 
-      allow update: if isAuth() && isApproved(request.auth.uid);
+      allow update: if isAuth() && isApproved(request.auth.uid) &&
+        request.resource.data.eventId == resource.data.eventId &&
+        request.resource.data.createdByUserId == resource.data.createdByUserId &&
+        request.resource.data.createdByUserName == resource.data.createdByUserName &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.updatedAt is timestamp &&
+        eventStatusTransitionIsValid();
 
       // Hard deletes are not allowed in this milestone
       allow delete: if false;

@@ -20,6 +20,8 @@
 - REQ-015: An event must include name, departure date/time, return date/time, location, activity, and event type before it can be saved.
 - REQ-016: Return date/time cannot occur before departure date/time.
 - REQ-017: Required operational information must be present before an event is Confirmed.
+- REQ-017A: Application confirmation permits only `draft` to `confirmed`, updates the existing event, and does not require participants, drivers, vehicles, sufficient vehicle capacity, meals, equipment, purpose, or notes.
+- REQ-017B: Calendar synchronization and confirmation email are separate pending integration steps and are not performed by the application-only confirmation workflow.
 - REQ-018: Events store location, departure/return date-times, purpose, meals missed, equipment needed, and notes.
 - REQ-019: Events record creator user ID and display name.
 - REQ-020: Events record created date/time.
@@ -117,6 +119,8 @@
 - REQ-083: Automatic deletion after one year is a future enhancement, not MVP.
 
 ## Google Calendar
+The following integration requirements remain pending and are not implemented by the current application-only confirmation workflow.
+
 - REQ-084: Confirming an event creates a Calendar event in the configured school calendar.
 - REQ-085: Confirming must not create more than one Calendar event.
 - REQ-086: Calendar event ID is stored on the EventFlow event.
@@ -129,4 +133,6 @@
 - REQ-093: The system records the most recent successful Calendar sync time.
 
 ## Notifications
+The following notification requirement remains pending and is not implemented by the current application-only confirmation workflow.
+
 - REQ-094: The system sends a plain-text email notification when an event is confirmed.

@@ -1,12 +1,13 @@
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
+  setDoc,
   Timestamp,
   updateDoc,
 } from 'firebase/firestore'
@@ -66,7 +67,9 @@ export async function getEventById(eventId: string): Promise<EventRecord | null>
 export async function createEvent(formValues: EventFormValues, userId: string, userName: string): Promise<string> {
   const db = ensureDb()
   const now = serverTimestamp()
+  const eventRef = doc(collection(db, 'events'))
   const payload = {
+    eventId: eventRef.id,
     name: formValues.name,
     activityId: formValues.activityId,
     eventTypeId: formValues.eventTypeId,
@@ -97,8 +100,7 @@ export async function createEvent(formValues: EventFormValues, userId: string, u
     lastCalendarSyncAt: null,
   }
 
-  const eventRef = await addDoc(collection(db, 'events'), payload)
-  await updateDoc(eventRef, { eventId: eventRef.id })
+  await setDoc(eventRef, payload)
   return eventRef.id
 }
 
@@ -120,6 +122,41 @@ export async function updateEvent(eventId: string, formValues: EventFormValues):
       .filter((value) => value.length > 0),
     notes: formValues.notes || null,
     updatedAt: serverTimestamp(),
+  })
+}
+
+function getConfirmationReadinessError(data: Record<string, any>): string | null {
+  if (typeof data.name !== 'string' || !data.name.trim()) return 'Event name is required before confirmation.'
+  if (typeof data.activityId !== 'string' || !data.activityId.trim()) return 'Activity is required before confirmation.'
+  if (typeof data.eventTypeId !== 'string' || !data.eventTypeId.trim()) return 'Event type is required before confirmation.'
+  if (!data.departureDateTime || typeof data.departureDateTime.toDate !== 'function') return 'Departure date/time is required before confirmation.'
+  if (!data.returnDateTime || typeof data.returnDateTime.toDate !== 'function') return 'Return date/time is required before confirmation.'
+  if (data.returnDateTime.toDate() <= data.departureDateTime.toDate()) return 'Return must occur after departure before confirmation.'
+  if (typeof data.location !== 'string' || !data.location.trim()) return 'Location is required before confirmation.'
+  return null
+}
+
+export async function confirmEvent(eventId: string, userId: string): Promise<void> {
+  if (!userId) throw new Error('An approved signed-in user is required to confirm an event.')
+  const db = ensureDb()
+  const eventRef = doc(db, 'events', eventId)
+
+  await runTransaction(db, async (transaction) => {
+    const eventSnapshot = await transaction.get(eventRef)
+    if (!eventSnapshot.exists()) throw new Error('Event does not exist.')
+
+    const data = eventSnapshot.data()
+    if (data.status !== 'draft') {
+      throw new Error('Only a draft event can be confirmed.')
+    }
+
+    const readinessError = getConfirmationReadinessError(data)
+    if (readinessError) throw new Error(readinessError)
+
+    transaction.update(eventRef, {
+      status: 'confirmed',
+      updatedAt: serverTimestamp(),
+    })
   })
 }
 

@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { cancelEvent, completeEvent, getEventById } from "../services/events";
+import {
+  cancelEvent,
+  completeEvent,
+  confirmEvent,
+  getEventById,
+} from "../services/events";
 import { listActivities } from "../services/activities";
 import { listEventTypes } from "../services/eventTypes";
 import { listActiveStudents, listStudents } from "../services/students";
@@ -159,21 +164,47 @@ export default function EventDetailsPage() {
     void loadEvent();
   }, [eventId]);
 
-  const handleAction = async (action: "complete" | "cancel") => {
-    if (!eventId) return;
+  const handleAction = async (action: "confirm" | "complete" | "cancel") => {
+    if (!eventId || !event) return;
+    if (action === "confirm") {
+      if (!firebaseUser) {
+        setError("An approved signed-in user is required to confirm an event.");
+        return;
+      }
+      if (
+        !window.confirm(
+          "Confirm this event? Its status will move from Draft to Confirmed.",
+        )
+      ) {
+        return;
+      }
+    }
     setSaving(true);
     setError(null);
 
     try {
-      if (action === "complete") {
+      if (action === "confirm") {
+        await confirmEvent(eventId, firebaseUser!.uid);
+      } else if (action === "complete") {
         await completeEvent(eventId);
       } else {
         await cancelEvent(eventId);
       }
       const refreshed = await getEventById(eventId);
       setEvent(refreshed);
-    } catch {
-      setError("Unable to update event. Please try again.");
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : "";
+      const isExpectedConfirmationError =
+        action === "confirm" &&
+        (message === "Event does not exist." ||
+          message === "Only a draft event can be confirmed." ||
+          message.endsWith("is required before confirmation.") ||
+          message === "Return must occur after departure before confirmation.");
+      setError(
+        isExpectedConfirmationError
+          ? message
+          : `Unable to ${action} the event. Please try again.`,
+      );
     } finally {
       setSaving(false);
     }
@@ -846,6 +877,16 @@ export default function EventDetailsPage() {
                 </div>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
+                {event.status === "draft" ? (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => void handleAction("confirm")}
+                    className="rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Confirm Event
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   disabled={

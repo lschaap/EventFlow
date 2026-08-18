@@ -24,6 +24,12 @@
 | UAT-013 | Mark event Completed | Status/completedAt update |
 | UAT-014 | Edit completed event | Update succeeds |
 | UAT-015 | Event-list operational summary | Required fields visible |
+| UAT-015A | Active Staff or Admin confirms a valid Draft event | Same event becomes Confirmed and `updatedAt` changes |
+| UAT-015B | User cancels the confirmation prompt | No Firestore fields change |
+| UAT-015C | Confirmed, Completed, or Cancelled event confirmation | Action unavailable and service/rules reject invalid transition |
+| UAT-015D | Confirm structurally incomplete persisted Draft event | Rejected with a useful readiness message |
+| UAT-015E | Confirm event with capacity or other operational warnings | Confirmation succeeds because warnings are not blockers |
+| UAT-015F | Confirm event application-only integration check | No Calendar event, fabricated Calendar ID, synced status, or email is produced |
 
 ## Students and Student Participants
 
@@ -121,6 +127,8 @@
 
 ## Google Calendar
 
+These cases remain pending the Calendar integration milestone.
+
 | ID | Scenario | Expected Result |
 |---|---|---|
 | UAT-068 | Confirm complete Draft event | Exactly one Calendar event created |
@@ -135,6 +143,8 @@
 | UAT-077 | Calendar delete fails | Event remains cancelled; failure recorded |
 
 ## Email
+
+These cases remain pending the confirmation-email milestone.
 
 | ID | Scenario | Expected Result |
 |---|---|---|

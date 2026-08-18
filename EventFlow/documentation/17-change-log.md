@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.4 - Application Event Confirmation
+- Added the Firestore-backed `draft` to `confirmed` transition for approved Admin and Staff users.
+- Added persisted-event readiness validation and a confirmation prompt on Event Details.
+- Protected event status transitions and creation audit fields in Firestore rules.
+- Kept Calendar synchronization and confirmation email explicitly pending.
+
 ## v0.3 - Vehicle and Driver Operations
 - Added Admin vehicle master-data management.
 - Added deterministic event driver assignments with optional vehicles.

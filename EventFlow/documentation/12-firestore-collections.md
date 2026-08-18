@@ -168,5 +168,11 @@ Stored on `events` for efficient rendering:
 
 Recalculate when active student or staff participant records change.
 
+## Application Confirmation Transition
+
+Confirmation updates the existing `events/{eventId}` document from `draft` to `confirmed` and updates only `status` and `updatedAt`. It requires structurally valid persisted event data. Creation audit fields, relationships, participant counts, dietary status, vehicle assignments, and Calendar fields remain unchanged. No confirmation-specific audit fields are currently defined.
+
+New events are created in one write with `eventId` equal to the Firestore document ID; security rules protect that identity field from later changes.
+
 ## Historical Integrity
 Do not delete master-data records merely because they become inactive. Use `active = false` so historical relationships remain resolvable.

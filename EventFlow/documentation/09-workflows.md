@@ -12,7 +12,7 @@ User enters required information → validation → save to Firestore as Draft.
 Open event → edit → validation → update same document → update `updatedAt`.
 
 ## 04 - Confirm Event
-Draft → required operational information present? → Confirmed → Calendar sync pending → Calendar Create → plain-text confirmation email.
+Draft → validate persisted name, activity, event type, departure, return, return-after-departure, and location → user confirmation prompt → update the existing event to Confirmed and update `updatedAt`. Calendar synchronization and confirmation email are pending separate milestones; confirmation leaves Calendar fields unchanged.
 
 ## 05 - Complete Event
 Mark Completed → set `completedAt`. Completed events remain editable.
