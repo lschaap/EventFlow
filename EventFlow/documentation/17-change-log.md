@@ -11,6 +11,7 @@
 - Added overlap validation for student and staff participation.
 - Corrected legacy driver-record compatibility during vehicle and participant removal.
 - Aligned Student configuration creation and record sections with Staff configuration.
+- Added explicit confirmation before removing a staff participant who is also an active driver.
 
 ## v0.2 - Requirements Baseline
 - Established Admin and Staff roles.

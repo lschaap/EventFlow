@@ -96,7 +96,7 @@
 - REQ-070: Admin can update vehicles.
 - REQ-071: Admin can activate/deactivate vehicles.
 - REQ-071A: Before deactivating a vehicle assigned to future events, Admin sees the affected event names and confirms; deactivation clears only `vehicleId` for events whose departure is later than the current time.
-- REQ-071B: Removing a staff participant automatically removes that person's driver assignment for the same event without an additional warning.
+- REQ-071B: Removing a staff participant who is also an active driver requires explicit confirmation and then atomically removes both assignments; cancelling makes no changes.
 - REQ-072: Vehicle records contain name, capacity, and active status.
 
 ## Activities - Admin Only

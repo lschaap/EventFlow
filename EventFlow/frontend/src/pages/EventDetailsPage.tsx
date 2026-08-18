@@ -488,6 +488,9 @@ export default function EventDetailsPage() {
                   const record = allStaff.find(
                     (item) => item.staffId === participant.staffId,
                   );
+                  const isActiveDriver = drivers.some(
+                    (driver) => driver.staffId === participant.staffId,
+                  );
                   return (
                     <div
                       key={participant.eventStaffParticipantId}
@@ -509,6 +512,14 @@ export default function EventDetailsPage() {
                         disabled={saving}
                         onClick={async () => {
                           if (!event || !firebaseUser) return;
+                          if (
+                            isActiveDriver &&
+                            !window.confirm(
+                              "This staff participant is also assigned as a driver. Removing them will also remove their driver assignment, assigned vehicle, and driver role. Continue?",
+                            )
+                          ) {
+                            return;
+                          }
                           setSaving(true);
                           setError(null);
                           try {
@@ -531,9 +542,11 @@ export default function EventDetailsPage() {
                                 (item) => item.status === "assigned",
                               ),
                             );
-                          } catch {
+                          } catch (reason) {
                             setError(
-                              "Unable to remove the staff participant. Please try again.",
+                              reason instanceof Error
+                                ? `Unable to remove the staff participant: ${reason.message}`
+                                : "Unable to remove the staff participant. Please try again.",
                             );
                           } finally {
                             setSaving(false);

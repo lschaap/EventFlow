@@ -30,7 +30,7 @@ Set relationship to removed → record remover/time → recalculate counts and d
 Select active staff → prevent duplicate → create/restore active relationship → recalculate counts and dietary indicator.
 
 ## 10 - Remove Staff Participant
-Set relationship to removed → record remover/time → recalculate counts and dietary indicator.
+If the staff participant is an active driver, warn that continuing also removes the driver assignment, assigned vehicle, and driver role → cancel with no writes or confirm → atomically set the applicable relationships to removed → record remover/time → recalculate counts and dietary indicator.
 
 ## 11 - Assign Driver
 Select active staff where `canDrive = true` → reject overlapping participation → prevent duplicate → optionally select active vehicle → atomically add the staff participant when needed and create the driver assignment.

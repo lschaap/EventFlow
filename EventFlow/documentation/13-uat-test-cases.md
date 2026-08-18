@@ -80,7 +80,7 @@
 | UAT-048B | Remove and re-add driver | Same deterministic document is reused |
 | UAT-048C | Event-list transportation summary | Driver and unique vehicle names display; warning appears only when upcoming-event capacity is below participant count |
 | UAT-048D | Deactivate a vehicle used by future events | Confirmation lists event names; confirming clears only the future `vehicleId` values |
-| UAT-048E | Remove a staff participant who is also a driver | Driver assignment is removed automatically without another warning |
+| UAT-048E | Remove a staff participant who is also a driver | Warning explains both assignments and associated vehicle/role are removed; cancel makes no changes and confirm removes both assignments atomically |
 | UAT-048F | Assign a driver who is not yet participating | Driver and staff-participant records are created together; counts and dietary flag update |
 | UAT-048G | Add a student, staff participant, or driver to an overlapping event | Operation is rejected and identifies the conflicting event |
 | UAT-048H | Remove only a driver | Driver is removed while the staff participant remains |
