@@ -12,7 +12,7 @@
 | Accountant | Budget visibility | Future enhancement |
 
 ## Change Management
-- Keep MVP simpler than the WhatsApp/notes process.
+- Keep EventFlow simpler than fragmented notes while retaining WhatsApp only as an intentional communication handoff, not the source of truth.
 - Train users on a small number of core flows.
 - Use realistic pilot events before broad rollout.
 - Prioritize mobile usability.

@@ -12,7 +12,7 @@ User enters required information → validation → save to Firestore as Draft.
 Open event → edit → validation → update same document → update `updatedAt`.
 
 ## 04 - Confirm Event
-Draft → validate persisted name, activity, event type, departure, return, return-after-departure, and location → user confirmation prompt → update the existing event to Confirmed and update `updatedAt`. Calendar synchronization and confirmation email are pending separate milestones; confirmation leaves Calendar fields unchanged.
+Draft → validate persisted name, activity, event type, departure, return, return-after-departure, and location → user confirmation prompt → update the existing event to Confirmed and update `updatedAt`. Calendar synchronization is a pending separate milestone; confirmation leaves Calendar fields unchanged. Automated email is not MVP scope.
 
 ## 05 - Complete Event
 Mark Completed → set `completedAt`. Completed events remain editable.
@@ -127,11 +127,15 @@ The workflows above describe the implemented baseline. Where they describe a sin
 
 ### T1 - Plan departure and return
 
-Admin adds active vehicles and eligible departure drivers, then bulk-assigns or individually moves active participants among vehicles or Unassigned. Driver assignment atomically ensures staff participation and occupancy. Return drivers and occupants initially copy departure and can then be revised independently. Each leg separately displays capacity, warnings, and overlap conflicts.
+Admin adds vehicles and both leg drivers, then bulk-assigns or individually moves departure participants. Before Depart, return passengers mirror departure and cannot be edited independently. Capacity means total seats including the driver. Each leg has independent warnings and overlap validation.
 
 ### T2 - Depart
 
-Staff or Admin selects **Depart** on a planned trip. EventFlow validates the departure driver and presents the vehicle, driver, occupants, count/capacity, overcapacity, and all unassigned departure participants. Confirmation atomically records server `departedAt`, advances the trip, reveals its return plan, and moves a confirmed event to `in_progress` on its first departure.
+Staff or Admin selects **Depart**. Review shows the vehicle, driver, occupants, total-seat capacity, overcapacity, and every unassigned active departure participant. Cancel writes nothing. Confirmation atomically records `departedAt`, advances the trip, snapshots return assignments for that vehicle's occupants, reveals the return list, and applies first-departure status/`startedAt`.
+
+### T2A - Edit return passengers
+
+After a vehicle departs and before the target vehicle starts return, Staff/Admin may immediately save validated individual or bulk return-passenger changes among eligible departed vehicles or Unassigned. Changes never alter departure history. Staff cannot edit drivers or vehicles. Start Return locks ordinary return editing.
 
 ### T3 - Arrive at Event
 
@@ -143,11 +147,15 @@ The return equivalent of T2 validates and reviews the return plan. Confirmation 
 
 ### T5 - Returned
 
-EventFlow records server `returnedAt`; when every applicable trip is returned, it atomically completes the event. Vehicle-based events have no ordinary manual Start/Complete actions. Vehicle-free events retain them.
+EventFlow records server `returnedAt`. It completes only after at least one vehicle departed and every applicable trip—active and actually departed—returned. Planned unused/removed trips do not block. Vehicle-based events have no manual Start/Complete controls.
+
+### T5A - Operate a vehicle-free event
+
+Staff/Admin uses Start Event to record server `startedAt` and change confirmed to in_progress. Complete Event records `completedAt` and changes confirmed or in_progress to completed. Cancelled/completed invalid actions are unavailable. No scheduler or browser/read-time behavior completes events automatically.
 
 ### T6 - Correct a begun trip or assignment
 
-Admin uses an explicit correction action, reviews a warning, supplies a required reason, and confirms. The atomic change records the reason, Admin UID, and server timestamp. Staff cannot undo stages. Completed and cancelled events expose no normal transportation operations.
+Admin uses an explicit correction action, reviews a warning, supplies a required reason, and confirms. One transaction updates stage/timestamps, overwrites latest correction metadata, and recalculates event status plus `startedAt`/`completedAt`. Cancelled remains cancelled; backward/forward corrections can move completed to in_progress and back. Staff cannot undo stages.
 
 ### T7 - Deactivate a vehicle
 
@@ -155,4 +163,4 @@ EventFlow lists affected future event names. Confirmation clears departure/retur
 
 ### T8 - Prepare a WhatsApp message
 
-From Event Details, the user previews and edits an eligible message, copies it or opens WhatsApp, chooses an existing staff-only group, and sends manually. Failed handoff copies the text and explains the fallback. No send state is recorded.
+From Event Details, the user previews/edits eligible text without changing data. Copy explicitly copies. Open WhatsApp makes a best-effort attempt while the preview remains visible and instructs use of Copy if it does not open. The user selects a staff-only group and sends manually. EventFlow claims/stores no launch, send, delivery, receipt, or attempt state.

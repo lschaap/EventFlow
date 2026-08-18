@@ -16,7 +16,7 @@ React + TypeScript + Vite
       Firebase Cloud Functions
           │             │
           ▼             ▼
-Google Calendar API   Email Delivery
+Google Calendar API   User-initiated WhatsApp handoff
 ```
 
 ## Data Flow
@@ -48,6 +48,7 @@ Firestore sync-status update
 - Search/filtering
 - Dashboard
 - Client-side validation
+- Editable WhatsApp preparation with explicit Copy and best-effort Open WhatsApp
 
 ### Firebase Authentication
 - Google sign-in
@@ -60,7 +61,6 @@ users, staff, students, vehicles, activities, eventTypes, events, eventParticipa
 
 ### Cloud Functions
 - Calendar create/update/delete
-- Plain-text confirmation email
 - Future server-side automation
 
 ### Google Calendar
@@ -81,8 +81,8 @@ Public Firebase web configuration may be in frontend environment variables. Sens
 
 The implemented baseline uses `eventDrivers`. CR-001 replaces that relationship in the target architecture with deterministic `eventVehicleTrips/{eventId__vehicleId}` aggregates containing the vehicle lifecycle, separate leg drivers, timestamps, active/removed state, and latest correction metadata. Existing participant collections gain departure and return vehicle IDs. `settings/transportation` stores the default return destination.
 
-Firestore remains authoritative. Transactions couple driver/participant occupancy, participant removal, lifecycle/event-status changes, corrections, and eligible future cleanup during vehicle deactivation. Firestore Rules must mirror Admin planning permissions and Staff forward-operation permissions. Composite indexes are finalized with the implementation queries.
+Firestore remains authoritative. Transactions couple driver/participant occupancy, Depart return snapshots, participant removal, lifecycle/event-status changes, bounded return edits, corrections, and eligible future cleanup. Rules mirror Admin planning permissions, Staff/Admin forward actions, and Staff return-passenger edits only after Depart and before Start Return. Composite indexes are finalized with implementation queries.
 
-WhatsApp remains a client-side, user-initiated handoff from Event Details. EventFlow generates editable text and opens WhatsApp or copies to the clipboard; there is no messaging backend, credential, recipient directory, delivery record, or Business API integration.
+WhatsApp is a client-side, user-initiated handoff from Event Details and replaces confirmation email in target MVP. Copy explicitly copies; Open WhatsApp is best-effort, leaves the preview visible, and provides Copy guidance. There is no messaging backend, launch/delivery detection, credential, recipient directory, state record, or Business API integration.
 
 See [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md) for the authoritative boundaries and migration plan.

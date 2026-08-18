@@ -49,13 +49,16 @@ canDrive = true
 | Transportation capability | Staff | Admin |
 |---|---:|---:|
 | View transportation plan and trip progress | Yes | Yes |
-| Assign/change participant departure or return vehicle | No | Yes |
+| Assign/change participant departure vehicle | No | Yes |
+| Edit return passengers before Depart | No | No; return mirrors departure |
+| Edit return passengers after relevant vehicle Depart and before Start Return | Yes | Yes |
+| Edit return passengers after Start Return through ordinary controls | No | No |
 | Assign/change departure or return driver | No | Yes |
 | Add/remove an event vehicle | No | Yes |
 | Perform the next valid Depart/Arrive/Start Return/Returned action | Yes | Yes |
 | Skip or undo a stage through normal controls | No | No |
 | Use explicit correction workflow after a leg begins | No | Yes |
-| Configure default return destination | No | Yes |
+| Configure default return destination in Admin Configuration > Vehicles | No | Yes |
 | Preview/copy/open an available Event Details WhatsApp message | Yes | Yes |
 
-All users must still be authenticated, approved, and active. A driver must additionally be active staff with `canDrive = true`. Firestore Rules, not UI visibility alone, enforce these boundaries.
+All users must still be authenticated, approved, and active. A driver must additionally be active staff with `canDrive = true`. Staff return edits save immediately after the same participant/trip/overlap/capacity validation used for Admin edits and target only departed vehicles before return start. Rules, not UI visibility alone, enforce these boundaries.

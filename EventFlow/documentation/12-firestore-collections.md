@@ -182,9 +182,9 @@ Do not delete master-data records merely because they become inactive. Use `acti
 The schemas above describe the current Firestore baseline. CR-001 plans—but does not yet deploy—the following changes:
 
 - extend both participant collections with nullable `departureVehicleId`, `returnVehicleId`, and latest transport-correction metadata;
-- add `in_progress` to the event status domain;
+- use planned event status domain `draft | confirmed | in_progress | completed | cancelled` and add nullable `startedAt` (not currently deployed);
 - replace `eventDrivers` with deterministic `eventVehicleTrips/{eventId__vehicleId}` documents containing active/removed state, the five-stage lifecycle, separate leg drivers, four server timestamps, and latest correction metadata;
-- add `settings/transportation` with `defaultReturnDestination` (initially `Mill Village`) and update metadata;
+- add `settings/transportation` with `defaultReturnDestination` (initially `Mill Village`) and update metadata, managed in Admin Configuration > Vehicles;
 - derive occupancy, capacity, warnings, and WhatsApp content without storing messages or delivery state.
 
-Planned rules restrict plan and correction writes to Admin while permitting active approved Staff only valid forward transitions. Transactions and indexes follow [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md). Current rules and indexes remain unchanged by this documentation milestone.
+Before Depart, return fields mirror departure and cannot be independently edited. Depart atomically creates the vehicle's return snapshot. Planned rules reserve departure/drivers/vehicles/settings/corrections for Admin, permit Staff/Admin valid forward transitions, and permit Staff/Admin return-passenger writes only for eligible departed vehicles before Start Return. Correction atomically recalculates event status and timestamps. Current rules/indexes remain unchanged by this documentation milestone.

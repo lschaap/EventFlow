@@ -9,7 +9,6 @@
 - [ ] Cloud Functions deployed
 - [ ] Calendar API configured
 - [ ] School Calendar ID configured securely
-- [ ] Email delivery configured
 
 ## Security
 - [ ] Firestore Security Rules reviewed
@@ -42,7 +41,7 @@
 - [ ] Search/filtering tested
 - [ ] Dashboard tested
 - [ ] Calendar create/update/delete/failure tested
-- [ ] Confirmation email tested
+- [ ] WhatsApp preview/edit/Copy/best-effort Open tested without launch or delivery claims (when CR-001 is released)
 - [ ] Mobile layout tested on real phone
 
 ## User Acceptance

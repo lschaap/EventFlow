@@ -160,11 +160,13 @@ Recalculate when active student or staff participant records change.
 
 ## Approved Planned Transportation Model (CR-001)
 
-The structures above are the implemented baseline. For CR-001, `events.status` adds `in_progress`; `eventParticipants` and `eventStaffParticipants` add nullable `departureVehicleId` and `returnVehicleId` plus latest-correction reason, UID, and server timestamp.
+The structures above are the implemented baseline. For CR-001, the planned event status domain is `draft | confirmed | in_progress | completed | cancelled`; `events` adds nullable `startedAt`; and participant collections add nullable `departureVehicleId`, `returnVehicleId`, and latest-correction metadata. `in_progress` and `startedAt` are not currently deployed.
 
 The planned `eventVehicleTrips/{eventId__vehicleId}` aggregate replaces `eventDrivers`. It stores `eventId`, `vehicleId`, `assignmentStatus`, the five-stage lifecycle, independent departure and return driver staff IDs, the four lifecycle timestamps, creation/update metadata, and latest-correction metadata. This makes the vehicle trip—not a driver assignment—the lifecycle owner while preserving one driver per vehicle per leg.
 
-`settings/transportation` stores `defaultReturnDestination`, initially `Mill Village`, plus update metadata. WhatsApp messages and delivery state are not stored. Counts, occupancy, capacity, warnings, and message content remain derived.
+Before departure, return assignments mirror departure without independent editing. Depart atomically snapshots return assignments for that vehicle's occupants. Subsequent return changes do not mutate departure history or get silently overwritten by departure corrections. Latest correction fields overwrite on a later correction and are not full history.
+
+`settings/transportation` stores `defaultReturnDestination`, initially `Mill Village`, plus update metadata and is surfaced in Admin Configuration > Vehicles. WhatsApp messages, edits, handoffs, and delivery state are not stored. Counts, occupancy, capacity, warnings, and message content remain derived. Capacity means total seats including the driver.
 
 Migration and atomic-write boundaries are defined in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md). They are planned and have not been applied to Firestore.
 

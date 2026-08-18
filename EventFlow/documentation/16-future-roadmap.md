@@ -65,10 +65,17 @@ Potential actions:
 Scheduling-conflict detection and vehicle-capacity warnings are already in the implemented MVP baseline. CR-001 expands their application independently to each transportation leg.
 
 ## Future Integrations
+- Optional automated confirmation email (not part of MVP; requires a separate approved change)
 - AI / Gemini or other LLM service
 - Advanced email/messaging platforms
 - Analytics/reporting integrations
 - Offline synchronization services if required
+
+## Deferred Vehicle-Free Automation
+
+- Automatically complete eligible vehicle-free events at `returnDateTime` using a scheduled backend process.
+
+This is deferred to avoid scheduled infrastructure and potential billing solely for convenience. Browser-open or read-time mutations are not reliable automatic completion substitutes.
 
 ## AI
 AI is intentionally excluded from MVP. Specific AI features should be evaluated only after the core event workflow is stable and useful.

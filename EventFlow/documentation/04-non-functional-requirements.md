@@ -40,9 +40,9 @@
 
 - NFR-025: Lifecycle transitions, coupled event-status changes, driver participation, and participant assignment cleanup must be atomic.
 - NFR-026: Operational and correction timestamps must be server-authored.
-- NFR-027: Firestore Rules must enforce Admin-only planning/correction and permit Staff only the valid forward operational transitions.
-- NFR-028: Capacity calculations must be deterministic and deduplicate a driver who is already a staff participant.
-- NFR-029: Transportation correction metadata may record the latest correction on the affected record; this change does not require a general activity log.
-- NFR-030: WhatsApp content must be generated locally, manually handed off, and must not persist delivery state, group identifiers, phone numbers, credentials, or message templates.
+- NFR-027: Rules enforce Admin-only departure/driver/vehicle/settings/correction changes, valid forward actions for Staff/Admin, and bounded Staff return-passenger editing only after Depart and before Start Return.
+- NFR-028: Capacity means total available seats including the driver's seat; calculations are deterministic per leg and deduplicate a participating driver.
+- NFR-029: Only latest correction metadata is required; later corrections overwrite it. This is not full audit history, and WhatsApp edits/handoffs are not corrections.
+- NFR-030: WhatsApp content is generated locally and manually handed off. Open is best-effort and must never imply detected launch or delivery; no delivery/sent/share-attempt state, groups, phone numbers, credentials, or templates are stored.
 - NFR-031: Confirmation messages must not disclose participant names, dietary details, or contact information.
 - NFR-032: Transportation controls and reviews must remain usable on supported mobile layouts and clearly distinguish warnings from hard validation failures.

@@ -13,12 +13,13 @@ Event planning currently depends on WhatsApp, phone notes, email, Google Calenda
 Authorized users can:
 1. Find or create an event.
 2. Add students and staff participants.
-3. Assign one or more eligible staff members as drivers.
-4. Assign vehicles to driver assignments.
+3. Plan departure vehicles for participants and independent drivers for each leg.
+4. Review vehicle capacity/unassigned participants and operate each vehicle through its trip stages.
 5. Review meals missed and dietary-restriction indicators.
 6. Confirm the event.
 7. Rely on EventFlow to synchronize with Google Calendar.
 8. Search later for current, upcoming, or past events.
+9. Prepare an editable WhatsApp message for manual handoff while treating EventFlow as the source of truth.
 
 ## Primary Goals
 - Reduce manual coordination.
@@ -35,8 +36,10 @@ Authorized users can:
 - Admin and Staff roles
 - Event CRUD and statuses
 - Student and staff participants
-- Multiple driver assignments
-- Vehicle assignments
+- Participant departure/return vehicle assignments
+- Independent per-leg drivers and per-vehicle operational stages
+- Capacity and unassigned-participant review
+- Automatic vehicle-based status changes and manual vehicle-free lifecycle
 - Student, staff, vehicle, activity, event-type master data
 - Active/inactive handling
 - Upcoming/current/past event views
@@ -46,7 +49,7 @@ Authorized users can:
 - Dietary-restriction indicator
 - Google Calendar synchronization
 - Calendar sync status/error tracking
-- Plain-text event-confirmation email
+- User-initiated WhatsApp message preparation and handoff
 - Mobile-first interface
 
 ## Out of Scope
@@ -62,10 +65,12 @@ Authorized users can:
 - Automatic retention deletion
 
 ## Success Indicators
-- Staff can create events without relying on WhatsApp or phone notes.
+- Staff can use EventFlow—not WhatsApp or phone notes—as the operational source of truth while using WhatsApp for intentional communication handoff.
 - Staff can find current participant lists from one location.
 - Event lists answer common operational questions without opening every record.
 - Confirmed events synchronize reliably to Calendar.
 - Kitchen staff can identify meals missed and dietary-restriction presence.
 - Teachers can access student participants sorted by grade.
 - Core flows work well on mobile.
+
+The transportation and WhatsApp capabilities above are approved target-MVP scope in CR-001 and are not yet implemented.

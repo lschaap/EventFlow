@@ -128,36 +128,18 @@ Dietary restrictions present: Yes/No
 ### Idempotency
 Synchronization must use stored `calendarEventId` to prevent duplicate events.
 
-## 4. Email Notification
+## 4. Confirmation Email
 
-Implementation status: pending. Application confirmation currently sends no email.
-
-### MVP Requirement
-Send a plain-text email when an event is confirmed.
-
-### Delivery
-Email should be initiated server-side. The specific provider/mechanism may be selected during implementation.
-
-### Recommended Content
-- Event name
-- Status
-- Location
-- Departure
-- Return
-- Participant count
-- Drivers
-- Vehicles
-- Meals missed
-- Link to EventFlow event
+Confirmation email is not part of the MVP. Optional automated email is deferred to the Future Roadmap and would require a separate approved change.
 
 ## 5. Future Integrations
 Future integrations are documented in `16-future-roadmap.md` and are not part of MVP.
 
 ## 6. WhatsApp User Handoff - Approved and Planned (CR-001)
 
-This is a client-side convenience, not automated integration. EventFlow creates editable text on Event Details and attempts to open WhatsApp so the user can choose an existing staff-only group and send manually. Failed opening copies the message and explains the fallback.
+This is a client-side convenience, not automated integration. EventFlow creates editable text on Event Details. Copy explicitly copies it. Open WhatsApp makes a best-effort handoff; the message stays visible and the UI instructs the user to use Copy if WhatsApp does not open. The user chooses an existing staff-only group and sends manually.
 
-EventFlow will not call the WhatsApp Business API, discover or store groups, store phone numbers or credentials, persist templates, send automatically, or record sent/share timestamps.
+Browsers cannot reliably determine whether WhatsApp opened. EventFlow never claims opened, sent, delivered, or received. It does not use the Business API, discover/store groups, store phone numbers/credentials/templates, send automatically, or record sent/share-attempt state.
 
 - After confirmation: event name, planned times, location, counts, drivers, vehicles, meals, dietary Yes/No, and EventFlow link; no participant names, restriction details, or contacts.
 - After a vehicle arrives: `departedAt`, departure occupant names, driver, vehicle, event location, and expected return.

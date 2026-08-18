@@ -7,6 +7,13 @@
 - Added planned data, architecture, workflow, UI, security, integration, migration, and UAT impacts while preserving the implemented baseline.
 - No application code, Firestore Rules, indexes, test data, dependencies, deployments, or generated files changed.
 
+### Authoritative CR-001 correction
+
+- Removed confirmation email from target MVP and made user-initiated WhatsApp preparation the notification approach, with explicit Copy and technically honest best-effort Open behavior.
+- Defined departure-time return snapshots and allowed validated Staff/Admin return-passenger editing only after Depart and before Start Return; drivers remain Admin-only.
+- Defined applicable vehicles, correction-driven status recalculation, manual vehicle-free Start/Complete, and deferred scheduled completion.
+- Defined capacity as total seats including the driver's seat, placed settings in Admin Configuration > Vehicles, documented latest-only correction history, and strengthened migration/rollback requirements.
+
 ## v0.5 - Admin Configuration Consistency
 - Aligned Activity and Event Type configuration with Student, Staff, and Vehicle management patterns.
 - Added hidden creation forms, separate record sections, consistent actions, and alphabetical display without visible sort-order values.
@@ -15,7 +22,7 @@
 - Added the Firestore-backed `draft` to `confirmed` transition for approved Admin and Staff users.
 - Added persisted-event readiness validation and a confirmation prompt on Event Details.
 - Protected event status transitions and creation audit fields in Firestore rules.
-- Kept Calendar synchronization and confirmation email explicitly pending.
+- Kept Calendar synchronization pending; the later authoritative CR-001 correction removed confirmation email from MVP.
 
 ## v0.3 - Vehicle and Driver Operations
 - Added Admin vehicle master-data management.
@@ -45,7 +52,7 @@
 - Added mobile-first requirements.
 - Added dashboard and expanded search/filtering.
 - Removed driver-change email.
-- Retained plain-text confirmation email.
+- Historically retained plain-text confirmation email; the later authoritative CR-001 correction supersedes this decision and moves it to the Future Roadmap.
 - Deferred offline, AI, full activity log, and retention deletion.
 
 ## v0.1 - Initial MVP

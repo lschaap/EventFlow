@@ -99,10 +99,10 @@ Student, Staff, Vehicle, Event Type, and Activity tabs use an Add button to reve
 
 ## Event Details Transportation - Approved and Planned (CR-001)
 
-The planned Event Details page adds transportation grouped by vehicle and **Unassigned**, with separate departure and return views. It shows drivers, participant names, counts, capacity, warnings, stage, and recorded lifecycle times. A vehicle's return plan becomes visible when it departs.
+The planned Event Details page adds transportation grouped by vehicle and **Unassigned**, with separate departure/return views. It shows drivers, participant names, counts, total-seat capacity including driver, warnings, stage, and lifecycle times. Before Depart return mirrors departure and is hidden as an independent list; Depart snapshots and reveals that vehicle's return list.
 
-Admins see vehicle, occupant, driver, default destination, and explicit correction controls. Staff see the plan but cannot edit it. Both roles see only the next valid forward action. Vehicle-based events hide ordinary Start Event/Complete Event controls; vehicle-free events retain them.
+Admins edit departure passengers, both drivers, vehicles, corrections, and the default destination inside Admin Configuration > Vehicles. Staff/Admin may edit return passengers for eligible departed vehicles until Start Return; Staff cannot edit drivers or departure. Both roles see the next valid forward action. Vehicle-based events hide manual Start/Complete; vehicle-free events retain them with planned status/timestamps.
 
 Depart and Start Return open an explicit review of vehicle, driver, occupants, count/capacity, overcapacity, and all event participants unassigned for that leg. Warnings do not disable confirmation. Corrections use a separate warning and required-reason confirmation.
 
-WhatsApp controls appear only on Event Details: confirmation after event confirmation, per-vehicle outbound after arrival, and per-vehicle return after return starts. Each provides editable Preview, Copy, and Open WhatsApp actions plus a clear clipboard fallback.
+WhatsApp controls appear only on Event Details: confirmation after confirmation, outbound after arrival, return after return starts. Preview edits do not change EventFlow. Copy explicitly copies. Open WhatsApp is best-effort; preview remains visible with instructions to use Copy if it does not open. The UI never reports opened/sent/delivered/received.

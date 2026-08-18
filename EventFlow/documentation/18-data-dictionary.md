@@ -45,7 +45,7 @@
 |---|---|---|
 | vehicleId | string | Unique vehicle key |
 | name | string | Vehicle name |
-| capacity | number | Passenger capacity |
+| capacity | number | Total available seats, including the driver's seat |
 | active | boolean | Available for assignment |
 | createdAt | timestamp | Creation |
 | updatedAt | timestamp | Last update |
@@ -154,6 +154,8 @@ These definitions are approved but are not present in the current deployed schem
 | transportCorrectedByUserId | string/null | Admin UID for latest assignment correction |
 | transportCorrectionReason | string/null | Required latest correction reason |
 
+Before departure, `returnVehicleId` mirrors `departureVehicleId`. Depart creates the independent return snapshot. Subsequent permitted return edits do not change departure. Latest correction fields are overwritten by subsequent corrections and do not constitute full audit history.
+
 ### eventVehicleTrips
 
 | Field | Type | Description |
@@ -182,3 +184,14 @@ These definitions are approved but are not present in the current deployed schem
 | defaultReturnDestination | string | Default destination, initially `Mill Village` |
 | updatedAt | timestamp | Server update time |
 | updatedByUserId | string | Admin UID that updated the setting |
+
+The setting is administered in Admin Configuration > Vehicles and readable by Staff where operationally required.
+
+### events additions and planned status
+
+| Field | Type | Description |
+|---|---|---|
+| status | enum | Planned domain: draft/confirmed/in_progress/completed/cancelled; implemented baseline does not yet include in_progress |
+| startedAt | timestamp/null | Server time the event effectively entered in_progress |
+
+Vehicle `capacity` means total available seats including the driver's seat.

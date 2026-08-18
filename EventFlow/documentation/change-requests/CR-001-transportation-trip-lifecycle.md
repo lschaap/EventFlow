@@ -6,193 +6,159 @@
 |---|---|
 | State | Approved for implementation |
 | Decision date | 2026-08-18 |
-| Scope | Transportation planning, vehicle trip execution, participant assignments, capacity review, and user-initiated WhatsApp handoff |
-| Current implementation | Event-level vehicle/driver assignment and capacity warnings exist; the per-leg model and trip lifecycle described here do not |
-
-## Problem
-
-EventFlow currently associates a staff driver and an optional vehicle with an event, but it does not represent who rides in each vehicle on each leg or the operational progress of each vehicle. The target must support distinct departure and return plans, safe operational actions, accurate capacity review, narrowly controlled corrections, and staff-ready message preparation without adding automated messaging.
+| Scope | Per-leg transportation planning, trip execution, capacity review, status automation, manual vehicle-free lifecycle, and user-initiated WhatsApp handoff |
+| Current implementation | Event-level driver/vehicle assignment, overlap checks, and capacity warnings exist; the per-leg model, `in_progress`, trip lifecycle, return snapshot, and WhatsApp handoff do not |
 
 ## Scope
 
-- A five-stage lifecycle for every active event vehicle trip.
-- Separate departure and return vehicle assignments for active student and staff participants.
-- Separate departure and return drivers, with one active driver per vehicle per leg.
-- Admin-only transportation planning and correction.
-- Staff-visible transportation plans and staff-accessible normal lifecycle actions.
-- Capacity and unassigned-participant review per leg.
-- Event status automation for vehicle-based events.
-- Configurable default return destination, initially displayed as `Mill Village`.
-- User-initiated WhatsApp message preview, copy, and handoff.
-- Vehicle deactivation cleanup for eligible future, not-started events.
+- Five stages per active vehicle trip; per-leg participant and driver assignments.
+- A departure-time return snapshot and bounded Staff/Admin return-passenger editing window.
+- Per-leg overlap, capacity, and unassigned review.
+- Automatic vehicle-based status changes and manual vehicle-free controls.
+- Admin corrections with latest-only correction metadata.
+- Default return destination in Admin Configuration > Vehicles, initially `Mill Village`.
+- User-initiated WhatsApp preview, editing, copy, and best-effort handoff.
+- Eligible future cleanup during vehicle deactivation.
 
-## Exclusions
+## Exclusions and deferrals
 
-- Automated WhatsApp sending, WhatsApp Business API integration, delivery tracking, group discovery, phone-number storage, credentials, or message-template storage.
-- Route calculation, travel-time overlap calculation, or event-specific return destinations.
-- A general-purpose activity log.
-- Hard blocking for unassigned participants or overcapacity.
-- Retrospective mutation of completed, cancelled, historical, or already-started trips during vehicle deactivation.
+- Confirmation email is removed from MVP and is an optional future enhancement.
+- No automated WhatsApp sending, Business API, delivery/app-open verification, group discovery, phone numbers, credentials, stored templates, sent state, or share-attempt timestamps.
+- No automatic scheduled completion for vehicle-free events or browser/read-time substitute.
+- No route calculation, event-specific return destination, hard capacity/unassigned block, general activity log, or full correction history.
 
 ## Authoritative decisions
 
-This section supersedes conflicting transportation lifecycle, permission, and WhatsApp statements elsewhere.
+These decisions supersede conflicting statements and are approved and planned, not implemented.
 
-### Vehicle trip lifecycle
+### Status and lifecycle
 
-The only ordinary stage sequence is:
+The target event statuses are `draft`, `confirmed`, `in_progress`, `completed`, and `cancelled`. The ordinary vehicle sequence is:
 
 `planned -> departed -> arrived_at_event -> return_started -> returned`
 
-The corresponding actions are **Depart**, **Arrive at Event**, **Start Return**, and **Returned**. Each successful transition records a server timestamp in `departedAt`, `arrivedAtEventAt`, `returnStartedAt`, or `returnedAt`. Ordinary stage skipping and backward transitions are not allowed.
+Depart, Arrive at Event, Start Return, and Returned record server `departedAt`, `arrivedAtEventAt`, `returnStartedAt`, and `returnedAt`. Ordinary skipping and reversal are prohibited.
 
-For an event with active vehicles:
+For vehicle-based events, first departure changes `confirmed` to `in_progress`. An **applicable vehicle** is an active trip that actually reached `departed`; planned unused and removed trips do not count. The event cannot complete before a departure and completes when every applicable trip is `returned`. Manual Start/Complete controls are unavailable.
 
-- the first successful **Depart** changes `confirmed` to `in_progress`;
-- **Arrive at Event** and **Start Return** do not change event status;
-- the last applicable vehicle marked **Returned** changes `in_progress` to `completed`;
-- ordinary manual **Start Event** and **Complete Event** actions are unavailable.
+For vehicle-free events, active approved Staff and Admin users may use Start Event (`confirmed -> in_progress`, server `startedAt`) and Complete Event (`confirmed|in_progress -> completed`, server `completedAt`). Cancelled events cannot be started/completed normally, and completed events cannot restart normally. There is no automatic scheduled completion in MVP.
 
-Events without vehicles retain manual **Start Event** and **Complete Event** actions. The target event lifecycle is `draft -> confirmed -> in_progress -> completed`, with cancellation governed by existing event rules.
+### Departure plan and return snapshot
 
-### Participant assignments
+Before departure, each active participant's return assignment mirrors `departureVehicleId` and is not independently editable. Departure assignments and both leg drivers are Admin-only.
 
-Each active student and staff participant has an optional `departureVehicleId` and `returnVehicleId`. Return assignments initially copy the departure plan and may be changed by an Admin after departure. Participants can remain unassigned; EventFlow provides a strong warning and explicit review rather than a hard block.
+When a vehicle reaches `departed`, the same transaction snapshots `returnVehicleId` for every active occupant departing in it, records the transition/timestamp, and reveals that vehicle's return list. Later return edits never alter departure history, and later departure corrections never silently rewrite the snapshot.
 
-The interface supports bulk assignment, individual movement, and grouping by vehicle plus **Unassigned**. Removing a participant atomically clears both vehicle fields. Existing participant documents remain the relationship records; no additional participant relationship collection is introduced.
+Only departed vehicles may receive independent return edits. After departure and before the target vehicle reaches `return_started`, active approved Staff and Admin users may move active student/staff participants between eligible departed return vehicles, assign an unassigned participant, clear an assignment, and bulk reassign. Valid Staff changes save immediately without Admin approval.
 
-Return assignments for a vehicle become visible immediately after that vehicle reaches `departed`.
+Staff cannot edit departure assignments, either leg's driver, event vehicles, invalid stages, corrections, or return passengers after Start Return. Return-driver and trip planning remain Admin-only. After Start Return, only Admin correction can change return assignments.
 
-### Permissions
+### Validation, drivers, and capacity
 
-Only an active approved Admin may create or edit participant departure/return vehicle assignments, departure/return driver assignments, and associated vehicle assignments. Staff can view transportation plans. Active approved Staff and Admin users may perform valid forward operational lifecycle actions.
+Return edits verify active event participation, an active trip for the event, a target trip from `departed` through before `return_started`, no duplicate occupancy, participant overlap, and recalculated capacity. Participants and drivers count exactly once.
 
-Only an Admin can correct an accidentally recorded stage or an assignment after the affected leg has begun. A correction requires a warning, explicit confirmation, a reason, correcting user UID, and server timestamp. It is an explicit workflow, not unrestricted field editing. Staff cannot undo stages. Completed and cancelled events expose no normal transportation actions; an eligible correction remains separately controlled.
+Vehicle capacity means **total available seats in the vehicle, including the driver's seat**. The driver and every assigned occupant each consume one seat; a driver who is also a staff participant is deduplicated. Capacity is independent per leg. Overcapacity warns but does not block. A driver-only vehicle may depart.
 
-### Drivers and occupancy
+Each vehicle has one active eligible driver per leg. Assigning a driver atomically ensures staff participation and leg occupancy. Removing only a driver retains participation. Removing a participant-driver warns before atomically removing applicable driver references and both participant vehicle fields. Existing event-interval overlap checks apply independently to leg participants, drivers, and vehicles.
 
-Departure and return drivers are independent; the return driver initially copies the departure driver. Each vehicle has at most one active driver per leg, and the driver must be active staff with `canDrive = true`.
+### Reviews and operations
 
-Assigning a driver atomically ensures that person is an active staff participant and assigns them to that vehicle for the applicable leg. A driver is an occupant and consumes exactly one seat, without double counting. A vehicle carrying only its driver may depart.
+Depart and Start Return reviews list vehicle, applicable driver, occupants, count/capacity, overcapacity, and every active participant unassigned for that leg. Cancelling either review writes nothing. Warnings require confirmation but do not block; a missing driver blocks.
 
-Removing only a driver retains staff participation. Removing a staff participant who is a driver warns the Admin and, on confirmation, removes the applicable driver assignment as part of the same atomic operation.
+- Depart validates/reviews, snapshots return occupants, records `departedAt`, advances the trip, reveals return, and applies first-departure status atomically. It does not enable outbound messaging.
+- Arrive records `arrivedAtEventAt`, advances the trip, and enables outbound messaging.
+- Start Return validates/reviews, records `returnStartedAt`, locks ordinary return editing, advances the trip, and enables return messaging.
+- Returned records `returnedAt`, advances the trip, and completes only when every applicable trip is returned.
 
-### Validation and review
+### Correction and status recalculation
 
-Overlap validation remains an MVP rule and applies independently to departure participants, return participants, departure drivers, return drivers, and vehicles. It uses the event interval; no route calculation is introduced.
+Staff cannot undo stages. Admin correction requires warning, confirmation, reason, UID, and server timestamp. One transaction updates stage and consistent trip timestamps, overwrites latest correction metadata, recalculates event status, and updates event timestamps:
 
-Capacity is calculated independently for each leg from all assigned people, including the driver exactly once. Overcapacity and unassigned participants produce strong warnings, not hard blocks.
+- cancelled remains `cancelled`;
+- no active trip reached departed: `confirmed`;
+- at least one applicable trip and not all returned: `in_progress`;
+- all applicable trips returned: `completed` with server `completedAt`;
+- moving away from completion clears `completedAt`; completing again writes a new server value;
+- `startedAt` records effective start and clears only when correction returns the event to confirmed.
 
-Before **Depart**, the review shows the vehicle, departure driver, departure occupants, count, capacity, overcapacity state, and every event participant not assigned for departure. Before **Start Return**, it shows the equivalent return information. Each action requires explicit review confirmation.
+A completed event can return to `in_progress` after an authorized backward correction and complete again after correction forward. Planned unused/removed trips do not count. Completed/cancelled events have no normal transportation actions.
 
-### Lifecycle effects
+Only the latest correction reason, UID, and timestamp are stored and later corrections overwrite them. This is not full audit history; `activityLog` remains future. WhatsApp edits/handoffs are never corrections.
 
-- **Depart** validates the departure driver, presents review and warnings, records `departedAt`, moves the trip to `departed`, reveals its return plan, and may move the event to `in_progress`. It does not enable the outbound message.
-- **Arrive at Event** records `arrivedAtEventAt`, moves the trip to `arrived_at_event`, and enables that vehicle's outbound message.
-- **Start Return** validates the return driver, presents review and warnings, records `returnStartedAt`, moves the trip to `return_started`, and enables that vehicle's return message.
-- **Returned** records `returnedAt`, moves the trip to `returned`, and may complete the event. It enables no message.
+### Deactivation and settings
 
-### Vehicle deactivation
+Vehicle deactivation lists affected event names and, after confirmation, clears participant leg assignments and applicable drivers only for not-started events with future departure. Historical, started, in-progress, completed, and cancelled records remain.
 
-Deactivation requires confirmation and lists affected event names. For an affected event, departure and return participant assignments and applicable driver assignments are cleared only when the event has not started and `departureDateTime` is later than the current time. Historical, in-progress, completed, and cancelled transportation records are retained.
+`defaultReturnDestination` is configured in Admin Configuration > Vehicles and initially displays `Mill Village`. Only Admin updates it; Staff may read it for operations/messages. No separate settings navigation is added.
 
-### WhatsApp handoff
+### WhatsApp replaces confirmation email
 
-Messaging is available only on Event Details and is always initiated by the user. EventFlow prepares editable local text, supports copy, and opens WhatsApp for the user to select an existing staff-only group and send manually. If handoff cannot be opened, the UI copies the message and explains the fallback. EventFlow stores no sent/share timestamp.
+EventFlow remains the source of truth while WhatsApp is an intentional handoff. Event Details generates editable text without changing data. Copy explicitly copies. Open WhatsApp attempts a best-effort handoff; the preview remains visible and instructs the user to use Copy if WhatsApp does not open. The user selects an existing staff-only group and presses Send. EventFlow never claims opened, sent, delivered, or received.
 
-- The confirmation message is available after event confirmation and contains event name, planned times, location, student/staff counts, drivers, vehicles, meals, dietary-restrictions Yes/No, and an EventFlow link. It excludes participant names, restriction details, and contact information.
-- A vehicle's outbound message becomes available only after **Arrive at Event**. It contains `departedAt`, participant display names, departure driver, vehicle, event location, and expected return.
-- A vehicle's return message becomes available only after **Start Return**. It contains `returnStartedAt`, return occupants, return driver, vehicle, planned arrival, and the configured default destination.
+- Confirmation preview after confirmation: name, planned times, location, counts, drivers, vehicles, meals, dietary Yes/No, and EventFlow link; no participant names, restriction details, or contacts.
+- Outbound preview only after Arrive: `departedAt`, departure occupants, driver, vehicle, event location, expected return.
+- Return preview only after Start Return: `returnStartedAt`, return occupants, driver, vehicle, planned arrival, default destination.
+
+No confirmation email is part of target MVP.
 
 ## Planned data design
 
-### Existing participant collections
+Extend both participant collections with nullable `departureVehicleId`, `returnVehicleId`, and latest correction reason/UID/server timestamp. Before departure return mirrors departure; Depart creates the independent snapshot.
 
-Extend `eventParticipants` and `eventStaffParticipants` with:
+Replace `eventDrivers` with deterministic `eventVehicleTrips/{eventId__vehicleId}` containing identity, `assignmentStatus`, stage, independent drivers, lifecycle timestamps, created/updated metadata, and latest correction metadata. Add `events.startedAt` and planned `in_progress`; maintain `completedAt` per the lifecycle/correction rules.
 
-| Field | Type | Notes |
-|---|---|---|
-| `departureVehicleId` | string or null | Active vehicle used for the outbound leg. |
-| `returnVehicleId` | string or null | Active vehicle used for the return leg. |
-| `transportCorrectedAt` | timestamp or null | Server timestamp of the latest assignment correction. |
-| `transportCorrectedByUserId` | string or null | UID that made the latest correction. |
-| `transportCorrectionReason` | string or null | Required reason for the latest correction. |
-
-### `eventVehicleTrips/{eventId__vehicleId}`
-
-This collection replaces `eventDrivers` for the planned target and makes the vehicle the trip aggregate.
-
-| Field | Type | Notes |
-|---|---|---|
-| `eventId`, `vehicleId` | string | Deterministic relationship identity. |
-| `assignmentStatus` | `active` or `removed` | Preserves readable history without treating a removed vehicle as applicable. |
-| `stage` | lifecycle enum | One of the five authoritative stages. |
-| `departureDriverStaffId` | string or null | One eligible driver for departure. |
-| `returnDriverStaffId` | string or null | One eligible driver for return. |
-| `departedAt`, `arrivedAtEventAt`, `returnStartedAt`, `returnedAt` | timestamp or null | Server-authored operational timestamps. |
-| `createdAt`, `updatedAt` | timestamp | Audit metadata. |
-| `correctedAt` | timestamp or null | Server timestamp of latest trip correction. |
-| `correctedByUserId` | string or null | UID that made the latest trip correction. |
-| `correctionReason` | string or null | Required reason for latest trip correction. |
-
-### `settings/transportation`
-
-| Field | Type | Notes |
-|---|---|---|
-| `defaultReturnDestination` | string | Initially `Mill Village`; no full address required. |
-| `updatedAt` | timestamp | Server timestamp. |
-| `updatedByUserId` | string | Admin UID. |
-
-`events.status` gains `in_progress`. Message content and availability are derived and are not persisted as message or delivery records.
+Store `defaultReturnDestination` and update metadata in `settings/transportation`, surfaced inside Admin Configuration > Vehicles. Do not persist messages or handoff state.
 
 ## Atomic boundaries
 
-Transactions or equivalent atomic writes are required for:
+Atomic writes cover driver/participant/occupancy synchronization; Depart plus return snapshot/visibility/event start; participant removal; validated return moves; Start Return plus edit locking; Returned plus applicable-trip completion; correction plus trip timestamps/audit/event status/`startedAt`/`completedAt`; and eligible vehicle-deactivation cleanup.
 
-- assigning a driver, ensuring staff participation, and assigning that driver to the leg's vehicle;
-- initializing return participant and driver assignments from departure;
-- removing a participant and clearing both leg assignments and applicable driver references;
-- changing a stage and applying the first-departure or last-return event status effect;
-- recording every correction with reason, UID, and server timestamp;
-- deactivating a vehicle and clearing only eligible future references.
+## Target rules and queries
 
-## Query and index impact
+Rules enforce Admin-only departure, driver, vehicle, settings, and correction writes. Active approved Staff/Admin may update only return-passenger fields for eligible departed trips before Start Return and may perform valid forward actions. Rules validate identities/stages rather than relying on UI. Implementation finalizes indexes for active participants by event/status/leg vehicle, active event trips, and vehicle overlap.
 
-Implementation should validate composite indexes for active participants by `eventId`, status, and each leg's vehicle field; active trips by event; and active vehicle trips by vehicle for overlap checks. Exact index definitions must follow the final query implementation and be committed with it.
+## Migration and rollback
 
-## Migration and compatibility
+1. Export/backup test data and document rollback before writes.
+2. Map each unique active event/vehicle to `eventVehicleTrips/{eventId__vehicleId}`.
+3. Copy an eligible current driver into both driver fields.
+4. Resolve multiple legacy drivers on one vehicle because target permits one per leg.
+5. Use legacy primary/secondary role only as migration input: prefer one eligible primary; otherwise flag for Admin choice. Do not persist legacy roles.
+6. Initialize `planned` and null lifecycle timestamps.
+7. Initialize participant vehicle fields null because legacy data does not prove occupancy.
+8. Flag vehicle-less/ineligible drivers for Admin resolution.
+9. Verify capacities mean total seats including driver and explicitly correct test data if needed.
+10. Validate records and source/target totals before removing legacy test records.
+11. Never silently delete legacy records or rewrite completed/cancelled history.
+12. Record final migration, validation, retention/removal, and rollback during implementation.
 
-This project currently uses test data. The implementation plan should:
+## Risks
 
-1. Create one planned trip record for each unique active event/vehicle relationship in `eventDrivers`.
-2. Copy the existing driver into both departure and return driver fields when eligible.
-3. Initialize all trip stages to `planned` with null lifecycle timestamps.
-4. Initialize participant vehicle fields to null because the current model does not establish vehicle occupancy.
-5. Flag existing drivers without vehicles for Admin resolution.
-6. Keep legacy `eventDrivers` readable during validation, then remove or archive test records only after the new model passes migration checks.
-7. Avoid retroactively changing completed or cancelled event history.
+- Cross-document authorization and concurrent return edits/stage transitions require careful transactions and Rules.
+- Ambiguous legacy drivers/capacities require explicit review.
+- Browser WhatsApp handoff cannot prove launch or delivery.
+- Latest-only correction metadata cannot reconstruct history.
 
 ## Acceptance criteria
 
-- Only valid forward stages can be performed, and each writes the correct server timestamp.
-- The first departure and last return apply the required event status transitions.
-- Vehicle-free events retain manual start/complete behavior.
-- Admin-only planning permissions and Staff operational permissions are enforced in both UI and Firestore Rules.
-- Departure and return occupants, drivers, capacity, warnings, and overlaps are evaluated independently.
-- Driver participation and seat counting remain synchronized without duplicates.
-- Unassigned and overcapacity states warn but do not prevent confirmed operational actions.
-- Corrections require confirmation, reason, UID, and server timestamp.
-- Deactivation preserves history and only clears eligible future, not-started assignments.
-- WhatsApp content, timing, privacy limits, manual handoff, and fallback match this record.
-- Existing application confirmation, dietary, participant, vehicle, and event behaviors remain intact unless explicitly superseded here.
+- Statuses, stages, applicable completion, timestamps, and vehicle-free controls match this record.
+- Depart creates the independent return snapshot; before it, return mirrors departure and is not editable.
+- Staff return edits work only for departed eligible trips before Start Return with full validation.
+- Departure, all drivers, vehicles, settings, and corrections remain Admin-only.
+- Capacity includes the driver, is leg-specific/deduplicated, and warns without blocking.
+- Corrections atomically recalculate status/timestamps backward and forward.
+- Planned unused/removed trips do not block completion; no completion precedes a departure.
+- WhatsApp timing, privacy, explicit Copy, best-effort Open, and no-storage rules apply; MVP has no confirmation email.
+- Migration is backed up, validated, reversible, and does not silently delete legacy records.
 
 ## Implementation checklist
 
-- [ ] Update application types, services, transactions, and UI.
-- [ ] Update Firestore Rules and emulator coverage.
-- [ ] Add required indexes after finalizing queries.
-- [ ] Write and verify the test-data migration.
-- [ ] Add automated tests for lifecycle, permissions, capacity, overlap, corrections, and deactivation.
-- [ ] Execute the UAT scenarios in `13-uat-test-plan.md`.
+- [ ] Update types, services, transactions, UI, and vehicle-free controls.
+- [ ] Update Rules/emulator tests for Admin planning and bounded Staff return editing.
+- [ ] Add finalized indexes.
+- [ ] Back up, migrate, validate, and document rollback for test data.
+- [ ] Verify capacity values include the driver.
+- [ ] Test lifecycle, snapshot, permissions, concurrency, capacity, overlap, corrections, settings, and deactivation.
+- [ ] Execute `13-uat-test-cases.md`.
 - [ ] Record build, rule-test, migration, and UAT evidence.
-- [ ] Update this record through Ready for UAT, Accepted, and Released as appropriate.
+- [ ] Advance state only when Ready for UAT, Accepted, or Released is genuinely reached.

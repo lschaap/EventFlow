@@ -7,7 +7,7 @@ EventFlow
 School Event Operations Platform
 
 ## Purpose
-Create a single source of truth for school events so authorized users can create, manage, confirm, and review events without relying on fragmented information in WhatsApp, phone notes, email, memory, and separate calendar entries.
+Create a single source of truth for school events so authorized users can create, manage, confirm, and review events without relying on fragmented information in phone notes, email, memory, separate calendar entries, or WhatsApp as the system of record. WhatsApp remains an intentional user-initiated communication handoff.
 
 ## Business Problem
 The current process creates friction because participant lists change frequently, driver and vehicle assignments are difficult to track, meal planning requires manual coordination, teachers need visibility into absences, and Google Calendar entries are maintained manually.
@@ -16,11 +16,12 @@ The current process creates friction because participant lists change frequently
 Deliver a mobile-first MVP that allows authorized users to:
 - Manage events in one system.
 - Maintain current student and staff participant lists.
-- Assign multiple drivers and vehicles.
+- Plan participant departure/return vehicles and independent per-leg drivers.
+- Track per-vehicle operational stages, capacity, and unassigned participants.
 - Track meals missed and dietary-restriction indicators.
 - Search and review current, upcoming, and past events.
 - Synchronize confirmed events with the school Google Calendar.
-- Send plain-text event-confirmation emails.
+- Prepare editable WhatsApp messages for manual staff-group handoff.
 
 ## Primary Users
 - Admin
@@ -43,6 +44,8 @@ Deliver a mobile-first MVP that allows authorized users to:
 - Cancelling a confirmed event removes the linked Calendar event.
 - Inactive master-data records cannot be newly selected.
 - Historical references remain intact when records are deactivated.
+
+The transportation lifecycle, per-leg assignments, vehicle-based status automation, manual vehicle-free lifecycle, and WhatsApp handoff are approved target-MVP scope under CR-001 and are not yet implemented.
 
 ## Out of Scope
 - Offline support

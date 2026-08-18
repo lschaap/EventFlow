@@ -23,7 +23,7 @@
 - REQ-016: Return date/time cannot occur before departure date/time.
 - REQ-017: Required operational information must be present before an event is Confirmed.
 - REQ-017A: Application confirmation permits only `draft` to `confirmed`, updates the existing event, and does not require participants, drivers, vehicles, sufficient vehicle capacity, meals, equipment, purpose, or notes.
-- REQ-017B: Calendar synchronization and confirmation email are separate pending integration steps and are not performed by the application-only confirmation workflow.
+- REQ-017B: Calendar synchronization remains a separate pending integration step and is not performed by the application-only confirmation workflow.
 - REQ-018: Events store location, departure/return date-times, purpose, meals missed, equipment needed, and notes.
 - REQ-019: Events record creator user ID and display name.
 - REQ-020: Events record created date/time.
@@ -135,27 +135,29 @@ The following integration requirements remain pending and are not implemented by
 - REQ-093: The system records the most recent successful Calendar sync time.
 
 ## Notifications
-The following notification requirement remains pending and is not implemented by the current application-only confirmation workflow.
 
-- REQ-094: The system sends a plain-text email notification when an event is confirmed.
+- REQ-094: Confirmation email is not part of the MVP. Optional automated confirmation email is deferred to the Future Roadmap.
 
 ## Transportation Trip Lifecycle - Approved and Planned (CR-001)
 
 - REQ-095: Each active event vehicle follows `planned -> departed -> arrived_at_event -> return_started -> returned` without ordinary skipping or reversal.
 - REQ-096: Depart, Arrive at Event, Start Return, and Returned record their corresponding server timestamps.
-- REQ-097: The first vehicle departure moves a confirmed vehicle-based event to `in_progress`, and the last applicable return moves it to `completed`.
-- REQ-098: Vehicle-based events do not expose ordinary manual Start Event or Complete Event actions; events without vehicles retain them.
-- REQ-099: Active student and staff participants may have independent departure and return vehicle assignments, with return initially copied from departure.
-- REQ-100: Only active approved Admins may edit transportation plans; active approved Staff may view plans and perform valid forward lifecycle actions.
+- REQ-097: The first vehicle departure moves a confirmed vehicle-based event to `in_progress`; the event completes only after at least one departure and every applicable vehicle—an active trip that actually departed—has returned. Planned unused and removed trips do not count.
+- REQ-098: Vehicle-based events hide ordinary manual Start/Complete controls. For vehicle-free events, Staff/Admin may Start (`confirmed -> in_progress`, server `startedAt`) and Complete (`confirmed|in_progress -> completed`, server `completedAt`); cancelled/completed invalid transitions are prohibited and no scheduled completion occurs.
+- REQ-099: Before Depart, return vehicle assignments mirror departure and are not independently editable. Depart atomically creates and reveals an independent return snapshot for that vehicle's occupants.
+- REQ-100: Only Admin may edit departure assignments, either leg's drivers, vehicles, settings, or corrections. Staff/Admin may perform valid forward actions and may edit return passengers for departed eligible vehicles until Start Return.
 - REQ-101: Each vehicle has at most one eligible active staff driver per leg, and assigning that driver also ensures staff participation and vehicle occupancy for that leg.
-- REQ-102: Drivers consume one seat exactly once. Capacity, unassigned warnings, and overlap validation are evaluated independently for each leg.
+- REQ-102: Vehicle capacity is total available seats including the driver's seat. Drivers and occupants consume one seat each, are deduplicated, and capacity/overlap/unassigned review is independent per leg.
 - REQ-103: Overcapacity and unassigned participants require a strong warning and explicit review but do not hard-block Depart or Start Return.
 - REQ-104: Removing a participant atomically clears both vehicle fields; removing a staff participant also removes applicable driver assignments after warning and confirmation.
-- REQ-105: After a leg begins, only an Admin may use an explicit correction workflow requiring confirmation, reason, correcting UID, and server timestamp.
+- REQ-105: After Start Return, return assignments are locked except for Admin correction. Corrections require warning, confirmation, reason, UID, server timestamp, and atomic event-status/timestamp recalculation.
 - REQ-106: Vehicle deactivation lists affected future events and clears eligible participant and driver assignments only for not-started events whose departure is in the future.
-- REQ-107: The default return destination is configurable and initially displays as `Mill Village`.
-- REQ-108: Event Details provides user-initiated, editable WhatsApp message preparation with copy/open handoff and a clipboard fallback; it does not send or track messages.
+- REQ-107: Admin configures the default return destination, initially `Mill Village`, inside Admin Configuration > Vehicles; Staff may read it operationally.
+- REQ-108: Event Details provides editable WhatsApp preparation. Copy explicitly copies; Open WhatsApp is best-effort, leaves the preview visible, and instructs use of Copy if it does not open. EventFlow never claims or records opening, sending, delivery, or receipt.
 - REQ-109: Confirmation messages become available after confirmation, outbound vehicle messages after Arrive at Event, and return vehicle messages after Start Return.
 - REQ-110: Confirmation messages exclude participant names and restriction details; vehicle messages contain only the leg-specific operational content approved in CR-001.
+- REQ-111: Staff/Admin return edits validate active participation, an active eligible departed target trip before return start, uniqueness, overlap, and recalculated capacity; warnings do not hard-block.
+- REQ-112: Cancelling Depart or Start Return review performs no writes and unassigned warnings list every applicable active participant.
+- REQ-113: Correction recalculation preserves cancelled, returns to confirmed when no active trip departed, uses in_progress while applicable trips remain out, and completes when all applicable trips returned; `startedAt`/`completedAt` remain consistent.
 
 The complete authoritative behavior and acceptance criteria are in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md).

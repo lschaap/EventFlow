@@ -144,14 +144,14 @@ These cases remain pending the Calendar integration milestone.
 | UAT-076 | Cancel confirmed event | Calendar event deleted |
 | UAT-077 | Calendar delete fails | Event remains cancelled; failure recorded |
 
-## Email
+## Notification Scope
 
-These cases remain pending the confirmation-email milestone.
+Automated confirmation email is outside MVP and therefore has no MVP acceptance test.
 
 | ID | Scenario | Expected Result |
 |---|---|---|
-| UAT-078 | Confirm event | Plain-text confirmation email sent |
-| UAT-079 | Confirmation email | Core operational details and EventFlow link present |
+| UAT-078 | Confirm event | No automated email is sent; planned WhatsApp preview is governed by CR-001 |
+| UAT-079 | Notification persistence | Confirmation does not create email, WhatsApp delivery, or share-attempt state |
 
 ## Mobile and Regression
 
@@ -172,23 +172,46 @@ These cases define future acceptance; they are not evidence that CR-001 is imple
 | ID | Scenario | Expected Result |
 |---|---|---|
 | UAT-087 | Assign departure driver | Eligible driver becomes active staff participant and one departure occupant atomically |
-| UAT-088 | Copy/edit return plan | Return initially matches departure and Admin can change it independently |
-| UAT-089 | Staff attempts plan edit | UI withholds controls and Firestore Rules reject direct write |
-| UAT-090 | Depart with warnings | Full review appears; confirmation proceeds and records server time |
+| UAT-088 | Return before Depart | Return mirrors departure, independent list is hidden, and no role can edit it independently |
+| UAT-089 | Depart snapshot | Depart atomically creates/reveals an independent return snapshot; later edits do not alter departure |
+| UAT-090 | Depart with warnings | Review lists every unassigned active participant; confirmation proceeds and records server time/snapshot |
 | UAT-091 | Depart without driver | Action is blocked with a clear driver requirement |
-| UAT-092 | First vehicle departs | Trip becomes departed and confirmed event becomes in_progress atomically |
+| UAT-092 | First vehicle departs | Trip/snapshot become departed and confirmed event becomes in_progress with startedAt atomically |
 | UAT-093 | Skip or Staff undo | Action is unavailable and direct write is rejected |
 | UAT-094 | Arrive at event | Arrival time records and outbound message becomes available only then |
 | UAT-095 | Start return | Independent review runs, time records, and return message becomes available |
 | UAT-096 | Last vehicle returns | Trip becomes returned and event becomes completed atomically |
 | UAT-097 | Vehicle-free event | Manual Start Event and Complete Event remain available |
-| UAT-098 | Driver seat count | Driver consumes exactly one seat, including when already a participant |
+| UAT-098 | Capacity definition | Stored capacity is total seats including driver; driver consumes exactly one seat even as participant |
 | UAT-099 | Driver-only vehicle | Vehicle can depart with count one |
 | UAT-100 | Remove participant-driver | Warning appears; confirmation clears participation, vehicle fields, and driver references atomically |
 | UAT-101 | Per-leg overlap | Conflicts are independently detected for people, drivers, and vehicles |
-| UAT-102 | Admin correction | Warning, confirmation, reason, UID, and server timestamp are required |
+| UAT-102 | Admin correction | Stage/timestamps/latest audit and recalculated event status/timestamps update atomically |
 | UAT-103 | Deactivate vehicle | Eligible future references clear; historical/started records remain |
 | UAT-104 | Confirmation message privacy | Approved summary appears without participant names, restriction details, or contacts |
 | UAT-105 | Vehicle messages | Outbound/return previews appear only at authoritative stages with correct leg data |
-| UAT-106 | WhatsApp failure | Message copies with guidance and no send record is written |
+| UAT-106 | WhatsApp best-effort Open | Preview remains visible with Copy guidance and no opened/sent/delivery/attempt state is written |
 | UAT-107 | Completed/cancelled event | Normal transportation actions are unavailable; only authorized explicit correction remains |
+| UAT-108 | Bulk departure assignment | Admin assigns multiple active participants; Staff is denied |
+| UAT-109 | Staff return edit window | After Depart, Staff can move, assign, clear, and bulk-reassign return passengers among departed eligible vehicles |
+| UAT-110 | Staff prohibited edits | Staff cannot edit departure, either driver, vehicles, corrections, or return passengers after Start Return |
+| UAT-111 | Admin return driver | Admin can change eligible return driver; Staff cannot |
+| UAT-112 | Return validation | Active participation/trip/stage, overlap, uniqueness, counts, driver dedupe, and capacity validation apply |
+| UAT-113 | Cancel Depart review | No trip, participant, timestamp, snapshot, or event-status write occurs |
+| UAT-114 | Cancel Start Return review | No trip, participant, timestamp, lock, or event-status write occurs |
+| UAT-115 | Multiple vehicles different order | First departure starts event; intermediate returns do not complete; last applicable return completes |
+| UAT-116 | Planned unused vehicle | A planned trip that never departed does not block completion and cannot cause premature completion |
+| UAT-117 | Removed trip | Removed trip does not block or trigger completion |
+| UAT-118 | Backward/forward correction | Returned trip corrected backward makes completed event in_progress and clears completedAt; forward correction completes with new completedAt |
+| UAT-119 | Cancelled correction | Cancelled event remains cancelled through otherwise authorized correction |
+| UAT-120 | Remove participant | Removal atomically clears departure/return assignments and applicable driver references |
+| UAT-121 | Vehicle deactivation | Only not-started future assignments/drivers clear; started/history/cancelled/completed remain |
+| UAT-122 | WhatsApp edit | Editing preview changes no EventFlow record and is not correction history |
+| UAT-123 | WhatsApp Copy | Copy works independently of Open WhatsApp |
+| UAT-124 | No message state | No opened, sent, delivered, received, or share-attempt state is stored |
+| UAT-125 | Vehicle-free Start | Staff/Admin changes confirmed to in_progress and records server startedAt |
+| UAT-126 | Vehicle-free Complete | Staff/Admin changes confirmed/in_progress to completed and records completedAt |
+| UAT-127 | No scheduled completion | Passing returnDateTime alone does not change status; no browser/read-time substitute occurs |
+| UAT-128 | Transportation setting permissions | Admin updates default destination in Vehicles tab; Staff direct write is rejected |
+| UAT-129 | Staff reads destination | Staff can use configured destination in operational display and return preview |
+| UAT-130 | Capacity migration review | Existing test values are verified/corrected as total seats including driver before migration acceptance |

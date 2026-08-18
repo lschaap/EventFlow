@@ -57,4 +57,4 @@ Approval to define a change does not authorize code changes, data migration, dep
 
 ## CR-001 approval record
 
-The product decisions for CR-001 were confirmed on 2026-08-18. This documentation milestone defines the approved target only. No application code, Firestore Rules, indexes, test data, or deployed configuration were changed as part of the milestone.
+The product decisions for CR-001, including its authoritative corrections, were confirmed on 2026-08-18. This documentation milestone defines the approved target only. No application code, Firestore Rules, indexes, test data, or deployed configuration were changed as part of the milestone.
