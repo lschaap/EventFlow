@@ -101,6 +101,8 @@
 | UAT-052 | Admin creates event type | Available when active |
 | UAT-053 | Admin deactivates event type | Removed from future selectors |
 | UAT-054 | Staff attempts configuration update | Denied |
+| UAT-054A | Open Activities or Event Types configuration | Add form is initially hidden and records appear alphabetically in a separate section |
+| UAT-054B | Add, edit, deactivate, or reactivate an Activity or Event Type | Controls and inline editing match the other Admin Configuration tabs; sort order is not displayed |
 
 ## Event Views and Search
 

@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.5 - Admin Configuration Consistency
+- Aligned Activity and Event Type configuration with Student, Staff, and Vehicle management patterns.
+- Added hidden creation forms, separate record sections, consistent actions, and alphabetical display without visible sort-order values.
+
 ## v0.4 - Application Event Confirmation
 - Added the Firestore-backed `draft` to `confirmed` transition for approved Admin and Staff users.
 - Added persisted-event readiness validation and a confirmation prompt on Event Details.

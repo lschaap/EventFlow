@@ -3,14 +3,12 @@ import {
   createActivity,
   listActivities,
   listActiveActivities,
-  seedInitialActivities,
   updateActivity,
 } from '../services/activities'
 import {
   createEventType,
   listEventTypes,
   listActiveEventTypes,
-  seedInitialEventTypes,
   updateEventType,
 } from '../services/eventTypes'
 import type { ActivityRecord, EventTypeRecord } from '../types/models'
@@ -44,6 +42,8 @@ export default function AdminConfigurationPage() {
   const [editingStudentActive, setEditingStudentActive] = useState(true)
   const [newActivityName, setNewActivityName] = useState('')
   const [newEventTypeName, setNewEventTypeName] = useState('')
+  const [showActivityCreate, setShowActivityCreate] = useState(false)
+  const [showEventTypeCreate, setShowEventTypeCreate] = useState(false)
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null)
   const [editingActivityName, setEditingActivityName] = useState('')
   const [editingEventTypeId, setEditingEventTypeId] = useState<string | null>(null)
@@ -55,8 +55,8 @@ export default function AdminConfigurationPage() {
   async function loadData() {
     setLoading(true)
     const [activityRecords, eventTypeRecords] = await Promise.all([listActivities(), listEventTypes()])
-    setActivities(activityRecords)
-    setEventTypes(eventTypeRecords)
+    setActivities([...activityRecords].sort((a, b) => a.name.localeCompare(b.name)))
+    setEventTypes([...eventTypeRecords].sort((a, b) => a.name.localeCompare(b.name)))
     const studentRecords = await listStudents()
     setStudents(studentRecords)
     setLoading(false)
@@ -75,6 +75,7 @@ export default function AdminConfigurationPage() {
     try {
       await createActivity(newActivityName.trim())
       setNewActivityName('')
+      setShowActivityCreate(false)
       await loadData()
       setMessage('Activity created.')
     } catch (err) {
@@ -93,6 +94,7 @@ export default function AdminConfigurationPage() {
     try {
       await createEventType(newEventTypeName.trim())
       setNewEventTypeName('')
+      setShowEventTypeCreate(false)
       await loadData()
       setMessage('Event type created.')
     } catch (err) {
@@ -117,6 +119,7 @@ export default function AdminConfigurationPage() {
   }
 
   const handleStartEditingActivity = (activity: ActivityRecord) => {
+    setShowActivityCreate(false)
     setEditingActivityId(activity.activityId)
     setEditingActivityName(activity.name)
   }
@@ -160,6 +163,7 @@ export default function AdminConfigurationPage() {
   }
 
   const handleStartEditingEventType = (eventType: EventTypeRecord) => {
+    setShowEventTypeCreate(false)
     setEditingEventTypeId(eventType.eventTypeId)
     setEditingEventTypeName(eventType.name)
   }
@@ -186,21 +190,6 @@ export default function AdminConfigurationPage() {
   const handleCancelEventTypeEdit = () => {
     setEditingEventTypeId(null)
     setEditingEventTypeName('')
-  }
-
-  const handleSeed = async () => {
-    setSaving(true)
-    setMessage(null)
-    try {
-      await seedInitialActivities()
-      await seedInitialEventTypes()
-      await loadData()
-      setMessage('Seeded initial activities and event types.')
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Seeding failed.')
-    } finally {
-      setSaving(false)
-    }
   }
 
   const handleCreateStudent = async () => {
@@ -312,14 +301,6 @@ export default function AdminConfigurationPage() {
             <h1 className="text-2xl font-semibold">Admin Configuration</h1>
             <p className="mt-1 text-sm text-slate-600">Manage EventFlow master data.</p>
           </div>
-          {(activeTab === 'activities' || activeTab === 'eventTypes') ? <button
-            type="button"
-            onClick={handleSeed}
-            disabled={saving}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
-          >
-            Seed initial values
-          </button> : null}
         </div>
         {message ? <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{message}</div> : null}
         <div role="tablist" aria-label="Admin configuration sections" className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -331,12 +312,14 @@ export default function AdminConfigurationPage() {
 
       <div className={activeTab === 'activities' || activeTab === 'eventTypes' ? 'grid gap-6' : 'hidden'}>
         <section className={`${activeTab === 'activities' ? '' : 'hidden'} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm`}>
-          <h2 className="text-xl font-semibold">Activities</h2>
-          <p className="mt-2 text-sm text-slate-600">Activities represent the high-level event category.</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div><h2 className="text-xl font-semibold">Activities</h2><p className="mt-2 text-sm text-slate-600">Manage the event categories available to users.</p></div>
+            <button type="button" onClick={() => { handleCancelActivityEdit(); setShowActivityCreate(true) }} disabled={saving || showActivityCreate} className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">Add Activity</button>
+          </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end">
+          {showActivityCreate ? <div className="mt-5 rounded-2xl border border-slate-200 p-4">
+            <h3 className="font-semibold">New activity</h3>
             <label className="flex-1 text-sm font-medium text-slate-800">
-              New activity
               <input
                 type="text"
                 value={newActivityName}
@@ -351,11 +334,16 @@ export default function AdminConfigurationPage() {
               disabled={saving || !newActivityName.trim()}
               className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
             >
-              Add Activity
+              Save
             </button>
-          </div>
+            <button type="button" onClick={() => { setNewActivityName(''); setShowActivityCreate(false) }} disabled={saving} className="ml-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold">Cancel</button>
+          </div> : null}
+        </section>
 
-          <div className="mt-6 space-y-3">
+        <section className={`${activeTab === 'activities' ? '' : 'hidden'} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm`}>
+          <h3 className="font-semibold">Activity records</h3>
+
+          <div className="mt-4 space-y-3">
             {loading ? (
               <p className="text-sm text-slate-600">Loading activities…</p>
             ) : (
@@ -392,18 +380,11 @@ export default function AdminConfigurationPage() {
                     ) : (
                       <>
                         <p className="font-medium">{activity.name}</p>
-                        <p className="mt-1 text-sm text-slate-600">Sort order: {activity.sortOrder}</p>
+                        <p className="mt-1 text-xs text-slate-500">{activity.active ? 'Active' : 'Inactive'}</p>
                       </>
                     )}
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2 sm:mt-0">
-                    <button
-                      type="button"
-                      onClick={() => void handleToggleActivity(activity)}
-                      className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${activity.active ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
-                    >
-                      {activity.active ? 'Deactivate' : 'Activate'}
-                    </button>
                     {editingActivityId !== activity.activityId ? (
                       <button
                         type="button"
@@ -413,6 +394,14 @@ export default function AdminConfigurationPage() {
                         Edit
                       </button>
                     ) : null}
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => void handleToggleActivity(activity)}
+                      className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                      {activity.active ? 'Deactivate' : 'Reactivate'}
+                    </button>
                   </div>
                 </div>
               ))
@@ -421,12 +410,14 @@ export default function AdminConfigurationPage() {
         </section>
 
         <section className={`${activeTab === 'eventTypes' ? '' : 'hidden'} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm`}>
-          <h2 className="text-xl font-semibold">Event Types</h2>
-          <p className="mt-2 text-sm text-slate-600">Only active event types are available when creating events.</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div><h2 className="text-xl font-semibold">Event Types</h2><p className="mt-2 text-sm text-slate-600">Manage the event types available to users.</p></div>
+            <button type="button" onClick={() => { handleCancelEventTypeEdit(); setShowEventTypeCreate(true) }} disabled={saving || showEventTypeCreate} className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">Add Event Type</button>
+          </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end">
+          {showEventTypeCreate ? <div className="mt-5 rounded-2xl border border-slate-200 p-4">
+            <h3 className="font-semibold">New event type</h3>
             <label className="flex-1 text-sm font-medium text-slate-800">
-              New event type
               <input
                 type="text"
                 value={newEventTypeName}
@@ -441,11 +432,16 @@ export default function AdminConfigurationPage() {
               disabled={saving || !newEventTypeName.trim()}
               className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
             >
-              Add Event Type
+              Save
             </button>
-          </div>
+            <button type="button" onClick={() => { setNewEventTypeName(''); setShowEventTypeCreate(false) }} disabled={saving} className="ml-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold">Cancel</button>
+          </div> : null}
+        </section>
 
-          <div className="mt-6 space-y-3">
+        <section className={`${activeTab === 'eventTypes' ? '' : 'hidden'} rounded-3xl border border-slate-200 bg-white p-6 shadow-sm`}>
+          <h3 className="font-semibold">Event type records</h3>
+
+          <div className="mt-4 space-y-3">
             {loading ? (
               <p className="text-sm text-slate-600">Loading event types…</p>
             ) : (
@@ -482,18 +478,11 @@ export default function AdminConfigurationPage() {
                     ) : (
                       <>
                         <p className="font-medium">{eventType.name}</p>
-                        <p className="mt-1 text-sm text-slate-600">Sort order: {eventType.sortOrder}</p>
+                        <p className="mt-1 text-xs text-slate-500">{eventType.active ? 'Active' : 'Inactive'}</p>
                       </>
                     )}
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2 sm:mt-0">
-                    <button
-                      type="button"
-                      onClick={() => void handleToggleEventType(eventType)}
-                      className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${eventType.active ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
-                    >
-                      {eventType.active ? 'Deactivate' : 'Activate'}
-                    </button>
                     {editingEventTypeId !== eventType.eventTypeId ? (
                       <button
                         type="button"
@@ -503,6 +492,14 @@ export default function AdminConfigurationPage() {
                         Edit
                       </button>
                     ) : null}
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => void handleToggleEventType(eventType)}
+                      className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                      {eventType.active ? 'Deactivate' : 'Reactivate'}
+                    </button>
                   </div>
                 </div>
               ))

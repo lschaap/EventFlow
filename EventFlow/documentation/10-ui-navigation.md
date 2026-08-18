@@ -95,4 +95,4 @@ Admin Configuration uses separate mobile-friendly tabs:
 
 Users/roles remain a future Admin Configuration addition.
 
-Student and Staff tabs use an Add button to reveal the creation form. Editing expands the selected record in place.
+Student, Staff, Vehicle, Event Type, and Activity tabs use an Add button to reveal a creation form in a section above the separate records section. Editing expands the selected record in place, with Edit shown before Deactivate/Reactivate. Activity and Event Type records are displayed alphabetically; internal sort-order values are not shown.
