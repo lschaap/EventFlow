@@ -4,6 +4,11 @@ import { listEvents } from '../services/events'
 import { listActivities } from '../services/activities'
 import { listEventTypes } from '../services/eventTypes'
 import type { EventRecord } from '../types/models'
+import { listEventDrivers } from '../services/eventDrivers'
+import type { EventDriverRecord } from '../types/models'
+import { listStaff } from '../services/staff'
+import { listVehicles } from '../services/vehicles'
+import type { StaffRecord, VehicleRecord } from '../types/models'
 
 function formatDate(value: Date) {
   return value.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
@@ -26,15 +31,19 @@ export default function EventsPage() {
   const [eventTypesMap, setEventTypesMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [drivers, setDrivers] = useState<EventDriverRecord[]>([])
+  const [staff, setStaff] = useState<StaffRecord[]>([]); const [vehicles, setVehicles] = useState<VehicleRecord[]>([])
 
   useEffect(() => {
     async function load() {
       try {
-        const [loaded, activities, eventTypes] = await Promise.all([listEvents(), listActivities(), listEventTypes()])
+        const [loaded, activities, eventTypes, driverRecords, staffRecords, vehicleRecords] = await Promise.all([listEvents(), listActivities(), listEventTypes(), listEventDrivers(), listStaff(), listVehicles()])
           
         setEvents(loaded)
         setActivitiesMap(Object.fromEntries(activities.map((a) => [a.activityId, a.name])))
         setEventTypesMap(Object.fromEntries(eventTypes.map((t) => [t.eventTypeId, t.name])))
+        setDrivers(driverRecords.filter((driver) => driver.status === 'assigned'))
+        setStaff(staffRecords); setVehicles(vehicleRecords)
       } catch {
         setError('Failed to load events.')
       } finally {
@@ -80,7 +89,11 @@ export default function EventsPage() {
                 <p className="mt-4 text-sm text-slate-600">No {group} events.</p>
               ) : (
                 <div className="mt-4 space-y-4">
-                  {items.map((event) => (
+                  {items.map((event) => {
+                    const eventDrivers = drivers.filter((driver) => driver.eventId === event.eventId)
+                    const assignedVehicles = [...new Set(eventDrivers.map((driver) => driver.vehicleId).filter(Boolean))].map((id) => vehicles.find((vehicle) => vehicle.vehicleId === id)).filter((vehicle): vehicle is VehicleRecord => Boolean(vehicle))
+                    const capacity = assignedVehicles.reduce((total, vehicle) => total + vehicle.capacity, 0); const needsTransportation = event.departureDateTime > new Date() && capacity < event.participantCount
+                    return (
                     <Link
                       key={event.eventId}
                       to={`/events/${event.eventId}`}
@@ -116,8 +129,9 @@ export default function EventsPage() {
                         </div>
                       </div>
                       {event.hasDietaryRestrictions ? <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">Dietary restrictions</div> : null}
+                      <div className="mt-3 rounded-2xl bg-slate-50 p-3 text-sm text-slate-700"><p><span className="font-medium">Drivers:</span> {eventDrivers.map((driver) => staff.find((person) => person.staffId === driver.staffId)?.displayName ?? driver.staffId).join(', ') || 'None'}</p><p><span className="font-medium">Vehicles:</span> {assignedVehicles.map((vehicle) => vehicle.name).join(', ') || 'None'} · Capacity {capacity}</p></div>{needsTransportation ? <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">Transportation capacity is below the participant count.</div> : null}
                     </Link>
-                  ))}
+                    )})}
                 </div>
               )}
             </section>

@@ -9,7 +9,6 @@ Login
   ↓
 Dashboard
   ├── Events
-  ├── Vehicles
   └── Admin Configuration
 ```
 
@@ -88,9 +87,10 @@ The dietary-restriction indicator is hidden on event cards and the event overvie
 Admin Configuration uses separate mobile-friendly tabs:
 - Students: list/create/edit/activate
 - Staff: list/create/edit/activate/change driver eligibility/manage dietary restrictions
+- Vehicles: list/create/edit/activate
 - Event Types: list/create/edit/activate
 - Activities: list/create/edit/activate
 
-Vehicles and users/roles remain future Admin Configuration additions.
+Users/roles remain a future Admin Configuration addition.
 
 Student and Staff tabs use an Add button to reveal the creation form. Editing expands the selected record in place.

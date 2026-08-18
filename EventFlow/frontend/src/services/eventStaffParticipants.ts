@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, where } from 'firebase/firestore'
 import { ensureDb } from '../lib/firestore'
 import type { EventStaffParticipantRecord } from '../types/models'
+import { assertNoParticipationOverlap } from './participationConflicts'
 
 export function getDeterministicStaffParticipantId(eventId: string, staffId: string): string {
   return `${eventId}__${staffId}`
@@ -27,6 +28,7 @@ async function evaluateDietaryFlag(eventId: string, staffIds: string[]): Promise
 
 export async function addStaffParticipant(eventId: string, staffId: string, userId: string): Promise<string> {
   if (!userId) throw new Error('You must be signed in to add staff.')
+  await assertNoParticipationOverlap(eventId, staffId, 'eventStaffParticipants', 'staffId')
   const db = ensureDb()
   const participantId = getDeterministicStaffParticipantId(eventId, staffId)
   const participantRef = doc(db, 'eventStaffParticipants', participantId)
@@ -64,18 +66,20 @@ export async function removeStaffParticipant(eventId: string, staffId: string, u
   const db = ensureDb()
   const participantId = getDeterministicStaffParticipantId(eventId, staffId)
   const participantRef = doc(db, 'eventStaffParticipants', participantId)
+  const driverRef = doc(db, 'eventDrivers', `${eventId}__${staffId}`)
   const eventRef = doc(db, 'events', eventId)
   const activeStaffSnapshot = await getDocs(query(collection(db, 'eventStaffParticipants'), where('eventId', '==', eventId)))
   const remainingStaffIds = activeStaffSnapshot.docs.filter((item) => item.data().status === 'active').map((item) => String(item.data().staffId)).filter((id) => id && id !== staffId)
   const nextHasDietaryRestrictions = await evaluateDietaryFlag(eventId, remainingStaffIds)
   await runTransaction(db, async (transaction) => {
-    const [eventSnapshot, participantSnapshot] = await Promise.all([transaction.get(eventRef), transaction.get(participantRef)])
+    const [eventSnapshot, participantSnapshot, driverSnapshot] = await Promise.all([transaction.get(eventRef), transaction.get(participantRef), transaction.get(driverRef)])
     if (!eventSnapshot.exists()) throw new Error('Event does not exist.')
     if (!participantSnapshot.exists() || participantSnapshot.data().status !== 'active') throw new Error('Staff member is not active for this event.')
     const eventData = eventSnapshot.data()
     const studentCount = Math.max(0, Number(eventData.studentParticipantCount ?? 0))
     const staffCount = Math.max(0, Number(eventData.staffParticipantCount ?? 0) - 1)
     transaction.update(participantRef, { status: 'removed', removedByUserId: userId, removedAt: serverTimestamp() })
+    if (driverSnapshot.exists() && driverSnapshot.data().status === 'assigned') transaction.update(driverRef, { status: 'removed', removedByUserId: userId, removedAt: serverTimestamp() })
     transaction.update(eventRef, { staffParticipantCount: staffCount, studentParticipantCount: studentCount, participantCount: studentCount + staffCount, hasDietaryRestrictions: nextHasDietaryRestrictions, updatedAt: serverTimestamp() })
   })
 }

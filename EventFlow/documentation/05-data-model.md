@@ -140,13 +140,14 @@ Driver/vehicle relationship; all drivers are staff:
 - eventId (FK)
 - staffId (FK)
 - vehicleId (nullable FK)
-- role: `primary | secondary | null`
 - status: `assigned | removed`
 - assignedByUserId (FK)
 - assignedAt
 - removedByUserId (nullable FK)
 - removedAt
 - notes
+
+Use one deterministic document per event/staff combination: `eventId__staffId`.
 
 ## Derived Event Fields
 Stored on events for efficient rendering:

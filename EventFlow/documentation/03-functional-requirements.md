@@ -40,6 +40,7 @@
 - REQ-031: Duplicate active staff-participant assignments are prevented.
 - REQ-032: The system records who adds/removes a staff participant and when.
 - REQ-033: Only active staff are selectable as participants.
+- REQ-033A: A student or staff member cannot participate in events with overlapping departure-to-return windows.
 
 ## Drivers and Vehicles
 - REQ-034: Authorized users can assign multiple drivers to an event.
@@ -48,9 +49,11 @@
 - REQ-037: Authorized users can remove driver assignments.
 - REQ-038: Authorized users can remove vehicle assignments.
 - REQ-039: Duplicate active driver assignments are prevented.
-- REQ-040: Duplicate active vehicle assignments to the same event are prevented.
+- REQ-040: A vehicle cannot be assigned twice to the same event or to events whose departure-to-return windows overlap.
 - REQ-041: Only active vehicles are selectable.
 - REQ-042: The system records who assigns/removes a driver and when.
+- REQ-042A: Authorized users can update an active driver's optional vehicle without recreating the assignment.
+- REQ-042B: Assigning a driver atomically adds that staff member as an event participant when they are not already participating.
 
 ## Participant Counts and Meals
 - REQ-043: The system displays active student participant count.
@@ -66,11 +69,11 @@
 - REQ-050: Users can view upcoming events.
 - REQ-051: Users can view current events.
 - REQ-052: Users can view past events.
-- REQ-053: Event-list views display name, status, departure/return, location, student/staff/total counts, meals missed, dietary indicator, driver count, and vehicle-assignment status.
+- REQ-053: Event-list views display name, status, departure/return, location, student/staff/total counts, meals missed, dietary indicator, assigned driver names, and unique assigned vehicle names.
 - REQ-054: Dashboard displays Today's Events.
 - REQ-055: Dashboard displays Upcoming Events.
 - REQ-056: Dashboard displays events needing confirmation.
-- REQ-057: Dashboard displays driver issues including no-driver and applicable missing-vehicle cases.
+- REQ-057: Upcoming events display a transportation warning only when combined capacity of uniquely assigned vehicles is less than the participant count.
 - REQ-058: Dashboard displays recent operational changes derivable from existing records.
 - REQ-059: Users can search/filter by event name, date/date range, status, activity, event type, location, student, staff participant, or driver.
 
@@ -92,6 +95,8 @@
 - REQ-069: Admin can create vehicles.
 - REQ-070: Admin can update vehicles.
 - REQ-071: Admin can activate/deactivate vehicles.
+- REQ-071A: Before deactivating a vehicle assigned to future events, Admin sees the affected event names and confirms; deactivation clears only `vehicleId` for events whose departure is later than the current time.
+- REQ-071B: Removing a staff participant automatically removes that person's driver assignment for the same event without an additional warning.
 - REQ-072: Vehicle records contain name, capacity, and active status.
 
 ## Activities - Admin Only

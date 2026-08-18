@@ -49,6 +49,7 @@ Use top-level collections to support cross-event queries and avoid deeply nested
 ## `vehicles/{vehicleId}`
 ```json
 {
+  "vehicleId": "vehicle_123",
   "name": "School Van 1",
   "capacity": 8,
   "active": true,
@@ -67,6 +68,8 @@ Use top-level collections to support cross-event queries and avoid deeply nested
   "updatedAt": "Timestamp"
 }
 ```
+
+Use the deterministic document ID `eventId__staffId`. Active vehicle uniqueness within an event is checked by the client service; Firestore rules validate referenced records and transitions but do not query the collection to guarantee uniqueness.
 
 ## `eventTypes/{eventTypeId}`
 ```json
@@ -143,10 +146,10 @@ Recommended duplicate-control strategy: deterministic ID such as `eventId_studen
 ## `eventDrivers/{eventDriverId}`
 ```json
 {
+  "eventDriverId": "event_123__staff_driver",
   "eventId": "event_123",
   "staffId": "staff_driver",
   "vehicleId": "vehicle_123",
-  "role": "primary",
   "status": "assigned",
   "assignedByUserId": "firebase_uid",
   "assignedAt": "Timestamp",

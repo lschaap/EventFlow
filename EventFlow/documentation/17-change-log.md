@@ -1,5 +1,17 @@
 # Change Log
 
+## v0.3 - Vehicle and Driver Operations
+- Added Admin vehicle master-data management.
+- Added deterministic event driver assignments with optional vehicles.
+- Added driver and unique-vehicle names plus capacity-based transportation warnings to event cards.
+- Added overlap validation so a vehicle cannot be assigned to simultaneous events.
+- Added confirmed vehicle deactivation that clears vehicle links only from future events.
+- Added automatic driver removal when the matching staff participant is removed.
+- Added atomic staff participation when assigning a new driver.
+- Added overlap validation for student and staff participation.
+- Corrected legacy driver-record compatibility during vehicle and participant removal.
+- Aligned Student configuration creation and record sections with Staff configuration.
+
 ## v0.2 - Requirements Baseline
 - Established Admin and Staff roles.
 - Added admin-only master-data permissions.

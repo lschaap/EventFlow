@@ -133,7 +133,6 @@
 | eventId | string | Event FK |
 | staffId | string | Staff driver FK |
 | vehicleId | string/null | Optional vehicle FK |
-| role | enum/null | primary/secondary/null |
 | status | enum | assigned/removed |
 | assignedByUserId | string | User who assigned |
 | assignedAt | timestamp | Assignment time |

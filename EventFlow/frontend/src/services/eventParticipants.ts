@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore'
 import { ensureDb } from '../lib/firestore'
 import type { EventParticipantRecord } from '../types/models'
+import { assertNoParticipationOverlap } from './participationConflicts'
 
 export function getDeterministicParticipantId(eventId: string, studentId: string): string {
   return `${eventId}__${studentId}`
@@ -43,6 +44,7 @@ async function evaluateDietaryFlag(eventId: string, studentIds: string[]): Promi
 }
 
 export async function addStudentParticipant(eventId: string, studentId: string, addedByUserId: string): Promise<string> {
+  await assertNoParticipationOverlap(eventId, studentId, 'eventParticipants', 'studentId')
   const db = ensureDb()
   const participantId = getDeterministicParticipantId(eventId, studentId)
   const participantRef = doc(db, 'eventParticipants', participantId)

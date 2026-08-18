@@ -101,6 +101,28 @@ export interface StaffRecord {
   updatedAt?: Timestamp
 }
 
+export interface VehicleRecord {
+  vehicleId: string
+  name: string
+  capacity: number
+  active: boolean
+  createdAt?: Timestamp
+  updatedAt?: Timestamp
+}
+
+export interface EventDriverRecord {
+  eventDriverId: string
+  eventId: string
+  staffId: string
+  vehicleId: string | null
+  status: 'assigned' | 'removed'
+  assignedByUserId: string
+  assignedAt: Timestamp | any
+  removedByUserId?: string | null
+  removedAt?: Timestamp | any | null
+  notes?: string | null
+}
+
 export interface EventParticipantRecord {
   eventParticipantId: string
   eventId: string

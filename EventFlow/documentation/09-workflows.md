@@ -33,13 +33,13 @@ Select active staff → prevent duplicate → create/restore active relationship
 Set relationship to removed → record remover/time → recalculate counts and dietary indicator.
 
 ## 11 - Assign Driver
-Select active staff where `canDrive = true` → prevent duplicate → optionally select active vehicle → create assignment.
+Select active staff where `canDrive = true` → reject overlapping participation → prevent duplicate → optionally select active vehicle → atomically add the staff participant when needed and create the driver assignment.
 
 ## 12 - Remove Driver
 Set assignment removed → record remover/time.
 
 ## 13 - Assign / Change Vehicle
-Select active vehicle → prevent duplicate active vehicle on same event → update driver assignment.
+Select active vehicle → reject assignment when that vehicle is already used by the same event or by an event with an overlapping departure-to-return window → update driver assignment.
 
 ## 14 - Remove Vehicle
 Set `vehicleId = null` on driver assignment.
@@ -92,7 +92,7 @@ Create name, capacity, active status.
 Update name/capacity/status.
 
 ## A10 - Activate / Deactivate Vehicle
-Inactive vehicles disappear from future selectors while history remains.
+Before deactivation, list future events whose departure is later than the current time and request confirmation. On confirmation, clear only `vehicleId` from those assignments; drivers remain assigned and past/current assignments remain unchanged. Inactive vehicles disappear from future selectors.
 
 ## A11 - Create Activity
 Create configurable activity.

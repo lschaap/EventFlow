@@ -32,6 +32,10 @@ service cloud.firestore {
         after.updatedAt is timestamp;
     }
 
+    function validDriverVehicle(vehicleId) {
+      return vehicleId == null || (vehicleId is string && exists(/databases/$(database)/documents/vehicles/$(vehicleId)) && get(/databases/$(database)/documents/vehicles/$(vehicleId)).data.active == true);
+    }
+
     // Users collection
     match /users/{userId} {
       allow get, list: if isAuth() && (request.auth.uid == userId || isAdmin(request.auth.uid));
@@ -117,6 +121,13 @@ service cloud.firestore {
         request.resource.data.active is bool && request.resource.data.canDrive is bool &&
         request.resource.data.updatedAt is timestamp;
 
+      allow delete: if false;
+    }
+
+    match /vehicles/{vehicleId} {
+      allow read: if isAuth() && isApproved(request.auth.uid);
+      allow create: if isAuth() && isAdmin(request.auth.uid) && request.resource.data.keys().hasOnly(['vehicleId','name','capacity','active','createdAt','updatedAt']) && request.resource.data.keys().hasAll(['vehicleId','name','capacity','active','createdAt','updatedAt']) && request.resource.data.vehicleId == vehicleId && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.capacity is int && request.resource.data.capacity > 0 && request.resource.data.active is bool && request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp;
+      allow update: if isAuth() && isAdmin(request.auth.uid) && request.resource.data.vehicleId == resource.data.vehicleId && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','capacity','active','updatedAt']) && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.capacity is int && request.resource.data.capacity > 0 && request.resource.data.active is bool && request.resource.data.updatedAt is timestamp;
       allow delete: if false;
     }
 
@@ -206,6 +217,17 @@ service cloud.firestore {
             staffCountTransitionIsValid(request.resource.data.eventId, 1))
         );
 
+      allow delete: if false;
+    }
+
+    match /eventDrivers/{driverId} {
+      allow read: if isAuth() && isApproved(request.auth.uid);
+      allow create: if isAuth() && isApproved(request.auth.uid) && request.resource.data.keys().hasOnly(['eventDriverId','eventId','staffId','vehicleId','status','assignedByUserId','assignedAt','removedByUserId','removedAt','notes']) && request.resource.data.keys().hasAll(['eventDriverId','eventId','staffId','vehicleId','status','assignedByUserId','assignedAt','removedByUserId','removedAt','notes']) && request.resource.data.eventDriverId == driverId && driverId == request.resource.data.eventId + '__' + request.resource.data.staffId && request.resource.data.status == 'assigned' && request.resource.data.assignedByUserId == request.auth.uid && request.resource.data.assignedAt is timestamp && request.resource.data.removedByUserId == null && request.resource.data.removedAt == null && (request.resource.data.notes == null || request.resource.data.notes is string) && exists(/databases/$(database)/documents/events/$(request.resource.data.eventId)) && exists(/databases/$(database)/documents/staff/$(request.resource.data.staffId)) && get(/databases/$(database)/documents/staff/$(request.resource.data.staffId)).data.active == true && get(/databases/$(database)/documents/staff/$(request.resource.data.staffId)).data.canDrive == true && validDriverVehicle(request.resource.data.vehicleId);
+      allow update: if isAuth() && isApproved(request.auth.uid) && request.resource.data.eventDriverId == resource.data.eventDriverId && request.resource.data.eventId == resource.data.eventId && request.resource.data.staffId == resource.data.staffId && driverId == request.resource.data.eventId + '__' + request.resource.data.staffId && request.resource.data.status in ['assigned','removed'] && exists(/databases/$(database)/documents/events/$(request.resource.data.eventId)) && (
+        (resource.data.status == 'assigned' && request.resource.data.status == 'assigned' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vehicleId','role']) && request.resource.data.assignedByUserId == resource.data.assignedByUserId && request.resource.data.assignedAt == resource.data.assignedAt && request.resource.data.removedByUserId == null && request.resource.data.removedAt == null && validDriverVehicle(request.resource.data.vehicleId)) ||
+        (resource.data.status == 'assigned' && request.resource.data.status == 'removed' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','removedByUserId','removedAt','role']) && request.resource.data.assignedByUserId == resource.data.assignedByUserId && request.resource.data.assignedAt == resource.data.assignedAt && request.resource.data.vehicleId == resource.data.vehicleId && request.resource.data.removedByUserId == request.auth.uid && request.resource.data.removedAt is timestamp) ||
+        (resource.data.status == 'removed' && request.resource.data.status == 'assigned' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','vehicleId','role','assignedByUserId','assignedAt','removedByUserId','removedAt']) && exists(/databases/$(database)/documents/staff/$(request.resource.data.staffId)) && get(/databases/$(database)/documents/staff/$(request.resource.data.staffId)).data.active == true && get(/databases/$(database)/documents/staff/$(request.resource.data.staffId)).data.canDrive == true && request.resource.data.assignedByUserId == request.auth.uid && request.resource.data.assignedAt is timestamp && request.resource.data.removedByUserId == null && request.resource.data.removedAt == null && validDriverVehicle(request.resource.data.vehicleId))
+      );
       allow delete: if false;
     }
 

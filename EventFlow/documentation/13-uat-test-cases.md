@@ -72,10 +72,18 @@
 | UAT-042 | Assign staff with canDrive false | Unavailable/rejected |
 | UAT-043 | Assign inactive staff as driver | Unavailable/rejected |
 | UAT-044 | Assign active vehicle | Displays with driver |
-| UAT-045 | Assign same active vehicle twice | Duplicate prevented |
+| UAT-045 | Assign a vehicle to the same event twice or to overlapping events | Assignment is prevented |
 | UAT-046 | Assign inactive vehicle | Unavailable/rejected |
 | UAT-047 | Remove driver | Marked removed |
 | UAT-048 | Remove vehicle | Driver remains; vehicle cleared |
+| UAT-048A | Change or clear a driver's vehicle | Same active assignment updates |
+| UAT-048B | Remove and re-add driver | Same deterministic document is reused |
+| UAT-048C | Event-list transportation summary | Driver and unique vehicle names display; warning appears only when upcoming-event capacity is below participant count |
+| UAT-048D | Deactivate a vehicle used by future events | Confirmation lists event names; confirming clears only the future `vehicleId` values |
+| UAT-048E | Remove a staff participant who is also a driver | Driver assignment is removed automatically without another warning |
+| UAT-048F | Assign a driver who is not yet participating | Driver and staff-participant records are created together; counts and dietary flag update |
+| UAT-048G | Add a student, staff participant, or driver to an overlapping event | Operation is rejected and identifies the conflicting event |
+| UAT-048H | Remove only a driver | Driver is removed while the staff participant remains |
 
 ## Activities and Event Types
 
