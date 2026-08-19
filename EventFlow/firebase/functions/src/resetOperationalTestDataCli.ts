@@ -1,6 +1,6 @@
 import { applicationDefault, initializeApp } from 'firebase-admin/app'
 import { FieldPath, getFirestore } from 'firebase-admin/firestore'
-import { parseResetOptions, RESET_BATCH_SIZE, RESET_COLLECTIONS, RESET_DRY_RUN_ID_LIMIT, validateResetOptions } from './resetOperationalTestData'
+import { classifyDependentEventIds, parseResetOptions, PRESERVED_COLLECTIONS, RESET_BATCH_SIZE, RESET_COLLECTIONS, RESET_DEPENDENT_COLLECTIONS, RESET_DRY_RUN_ID_LIMIT, validateResetOptions } from './resetOperationalTestData'
 
 const options = parseResetOptions(process.argv.slice(2))
 validateResetOptions(options)
@@ -9,7 +9,7 @@ const db = getFirestore()
 
 async function inspectCollection(name: string) {
   const snapshot = await db.collection(name).orderBy(FieldPath.documentId()).get()
-  return { name, count: snapshot.size, ids: snapshot.docs.slice(0, RESET_DRY_RUN_ID_LIMIT).map((item) => item.id), omittedIdCount: Math.max(0, snapshot.size - RESET_DRY_RUN_ID_LIMIT) }
+  return { name, count: snapshot.size, ids: snapshot.docs.slice(0, RESET_DRY_RUN_ID_LIMIT).map((item) => item.id), omittedIdCount: Math.max(0, snapshot.size - RESET_DRY_RUN_ID_LIMIT), snapshot }
 }
 
 async function deleteCollection(name: string) {
@@ -26,8 +26,18 @@ async function deleteCollection(name: string) {
 }
 
 async function main() {
-  const report = await Promise.all(RESET_COLLECTIONS.map(inspectCollection))
-  console.log(JSON.stringify({ mode: options.apply ? 'apply' : 'dry-run', projectId: options.projectId, irreversibleWithoutBackup: true, preservedCollections: ['users', 'students', 'staff', 'vehicles', 'activities', 'eventTypes', 'settings'], collections: report }, null, 2))
+  const [inspectedReset, inspectedPreserved] = await Promise.all([
+    Promise.all(RESET_COLLECTIONS.map(inspectCollection)),
+    Promise.all(PRESERVED_COLLECTIONS.map(inspectCollection)),
+  ])
+  const eventIds = new Set(inspectedReset.find((item) => item.name === 'events')?.snapshot.docs.map((item) => item.id) ?? [])
+  const anomalies = RESET_DEPENDENT_COLLECTIONS.map((name) => {
+    const collection = inspectedReset.find((item) => item.name === name)
+    return { collection: name, ...classifyDependentEventIds(eventIds, collection?.snapshot.docs.map((item) => item.data().eventId) ?? []) }
+  })
+  const collections = inspectedReset.map(({ snapshot: _snapshot, ...item }) => item)
+  const preservedCollections = inspectedPreserved.map(({ snapshot: _snapshot, ids: _ids, omittedIdCount: _omittedIdCount, ...item }) => item)
+  console.log(JSON.stringify({ mode: options.apply ? 'apply' : 'dry-run', projectId: options.projectId, irreversibleWithoutBackup: true, preservedCollections, collections, anomalies }, null, 2))
   if (!options.apply) {
     console.log('Dry run only. No documents were deleted. Obtain Product Owner approval before apply.')
     return

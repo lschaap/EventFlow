@@ -168,7 +168,7 @@ The UAT-fix iteration merges participant management into the departure groups, r
 
 Implemented in this cutover milestone: Events-list target summaries, target-model eligible vehicle deactivation, student/staff removal transportation cleanup, production `eventDrivers` isolation, focused safeguards/tests, and a non-executed operational reset procedure.
 
-The narrow participant-removal Rules correction compiles successfully but is not deployed. Existing indexes are unchanged and sufficient for the implemented queries.
+The narrow participant-removal Rules correction was deployed to `eventflow-612ed` on 2026-08-19 as ruleset `741d4181-b59e-4cd7-b7d8-a21297702303`. Existing indexes are unchanged and sufficient for the implemented queries; all four required `eventVehicleTrips` indexes report `READY`.
 
 Still planned: lifecycle actions and timestamps, return snapshots, post-Depart independent return editing, corrections, WhatsApp, live migration/reset execution, frontend deployment, and UAT.
 
