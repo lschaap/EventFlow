@@ -19,6 +19,14 @@
 - UAT-152: As both Admin and Staff, assign the final Unassigned occupant individually to a planned vehicle and confirm the person moves, the Unassigned count reaches zero, and success is shown. Simulate a rejected write and confirm a visible error replaces silent failure.
 - UAT-153: With return transportation matching departure, confirm no Return driver selector is displayed. Mark return occupants as different and confirm the selector appears; restore matching and confirm it hides again and mirrors the departure driver.
 - UAT-154: Confirm the future design specifies a separate Edit return vehicle assignments button per departed vehicle card, but no lifecycle or return-edit control is currently active.
+- UAT-155: Create active and removed target trips plus conflicting legacy `eventDrivers`; confirm Events list displays only active target vehicles/drivers and shows a different return driver only where applicable.
+- UAT-156: Confirm Events list departure assigned/total count, total capacity, Unassigned warning, per-vehicle overcapacity warning, explicit no-plan state, and malformed stored-count warning; no participant roster appears.
+- UAT-157: As Admin, cancel eligible vehicle deactivation and confirm no writes. Confirm it and verify the planned trip is soft-removed, both drivers and matching participant leg fields clear, counts/dietary/unrelated assignments remain, and the vehicle becomes inactive.
+- UAT-158: Verify vehicle deactivation preserves past, started, completed, cancelled, removed, non-planned, and unrelated trips. As Staff, confirm master vehicle deactivation is unavailable/denied.
+- UAT-159: Remove an assigned student and verify status/audit/count/dietary updates plus both vehicle fields clear without driver changes.
+- UAT-160: Remove staff who drives departure only, return only, both legs on one vehicle, and different vehicles by leg; verify warning cancellation writes nothing and confirmation clears participation, both leg fields, and only applicable target driver references.
+- UAT-161: Clear/replace each target driver and verify former passenger assignment remains, replacement becomes one participant/occupant, mirroring stays consistent, and no `eventDrivers` record is created or changed.
+- UAT-162: Run the reset command without apply and verify exact project, preserved collections, counts/IDs, and zero writes. Do not run apply during UAT without separate Product Owner approval.
 
 ## Authentication and Access
 

@@ -8,3 +8,4 @@ firebase-debug.log
 *.log
 tsconfig.tsbuildinfo
 **/tsconfig.tsbuildinfo
+firebase/functions/lib/

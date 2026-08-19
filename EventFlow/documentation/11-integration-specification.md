@@ -30,7 +30,8 @@ Primary EventFlow system of record.
 - events
 - eventParticipants
 - eventStaffParticipants
-- eventDrivers
+- eventVehicleTrips
+- eventDrivers (legacy migration/reset compatibility only; not a production UI source)
 
 ### Access
 Normal CRUD may occur through the authenticated frontend subject to Firestore Security Rules and role permissions.

@@ -131,6 +131,7 @@
 | returnVehicleId | string/null | Active planned return vehicle; pre-Depart mirror except for an independent return driver; missing field parses as null |
 
 ## eventDrivers
+Legacy compatibility data only. Production application code no longer reads or writes these records; fields remain documented for migration inspection and the approved reset procedure.
 | Field | Type | Description |
 |---|---|---|
 | eventDriverId | string | Driver-event relationship key |

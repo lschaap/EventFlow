@@ -99,7 +99,7 @@
 - REQ-069: Admin can create vehicles.
 - REQ-070: Admin can update vehicles.
 - REQ-071: Admin can activate/deactivate vehicles.
-- REQ-071A: Before deactivating a vehicle assigned to future events, Admin sees the affected event names and confirms; deactivation clears only `vehicleId` for events whose departure is later than the current time.
+- REQ-071A: Before deactivating a vehicle assigned to eligible future planned trips, Admin sees affected event names and confirms; target-model cleanup follows REQ-106 and preserves historical/started records.
 - REQ-071B: Removing a staff participant who is also an active driver requires explicit confirmation and then atomically removes both assignments; cancelling makes no changes.
 - REQ-072: Vehicle records contain name, capacity, and active status.
 
@@ -168,5 +168,7 @@ The following integration requirements remain pending and are not implemented by
 - REQ-120: Event Details combines participant management and departure transportation into one grouped section with Add Student, Add Staff, and Add Vehicle controls at the top; participant additions/removals refresh the groups immediately.
 - REQ-121: Bulk departure assignment supports up to 100 mixed participants through one Firestore client transaction protected by field-bounded Rules. Any failure leaves all assignments unchanged and displays `Bulk assignment failed. Please try again or try individual assignment.`
 - REQ-122: Return occupants are hidden before departure. A future lifecycle milestone exposes a separate Edit return vehicle assignments action on each departed vehicle card.
+- REQ-123: Event-list transportation summaries derive only from active `eventVehicleTrips` and active participant vehicle fields, showing vehicles, per-leg driver differences, departure occupancy/capacity, incomplete/overcapacity warnings, and an explicit no-plan state without participant rosters.
+- REQ-124: Production application behavior does not read or write legacy `eventDrivers`; that collection remains only for migration tooling and temporary Rules compatibility until the approved reset decision is executed.
 
 The complete authoritative behavior and acceptance criteria are in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md).

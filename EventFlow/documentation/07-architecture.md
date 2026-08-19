@@ -57,7 +57,7 @@ Firestore sync-status update
 
 ### Firestore
 System of record for:
-users, staff, students, vehicles, activities, eventTypes, events, eventParticipants, eventStaffParticipants, eventDrivers.
+users, staff, students, vehicles, activities, eventTypes, events, eventParticipants, eventStaffParticipants, and eventVehicleTrips. `eventDrivers` is legacy migration/reset input only and is isolated from production application behavior.
 
 ### Cloud Functions
 - Calendar create/update/delete
@@ -73,6 +73,8 @@ External synchronized representation of confirmed events.
 Active approved Admin and Staff users manage planned transportation for every event through focused Firestore services. Participant relationships carry nullable per-leg vehicle IDs. Mixed student/staff bulk movement is capped at 100 relationships, validates every target, and commits in one transaction. Vehicle groups, Unassigned groups, occupancy, and capacity warnings are derived rather than stored. Master-data and settings services remain Admin-only; lifecycle transitions are not activated in this milestone.
 
 Individual and bulk movement use field-bounded Firestore client transactions protected by Rules. Bulk movement validates up to 100 active relationships and the planned destination, preserves independent-return-driver assignments, and commits all participant changes atomically. The dedicated transportation-only Staff rule avoids distinct staff-master reads so mixed bulk writes remain within Rules access limits and do not require the Blaze plan or Cloud Functions.
+
+The Events list uses a bounded eight-query page load: events, activities, event types, active target trips, active student relationships, active staff relationships, staff masters, and vehicle masters. Query count is constant rather than per event. The MVP loads the complete event list; pagination and event-ID chunking are the future optimization path when event volume warrants them.
 - Firestore is source of truth.
 - Browser holds no privileged Google credentials.
 - Calendar operations are idempotent.

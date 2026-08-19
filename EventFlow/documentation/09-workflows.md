@@ -68,7 +68,7 @@ Do not roll back EventFlow record → set failed status → store concise error 
 Search/filter by name, date, status, activity, event type, location, student, staff participant, or driver.
 
 ## 20 - View Event Summary
-Display date/times, participant counts, meals, dietary indicator, drivers, vehicle status, and event status.
+Display date/times, participant counts, meals, dietary indicator, and target-model transportation derived only from active trips/participants: vehicles, departure drivers, differing return drivers, departure occupancy/capacity, no-plan state, and incomplete/overcapacity warnings.
 
 # Admin-Only Workflows
 
@@ -100,7 +100,7 @@ Create name, capacity, active status.
 Update name/capacity/status.
 
 ## A10 - Activate / Deactivate Vehicle
-Before deactivation, list future events whose departure is later than the current time and request confirmation. On confirmation, clear only `vehicleId` from those assignments; drivers remain assigned and past/current assignments remain unchanged. Inactive vehicles disappear from future selectors.
+Before deactivation, list eligible draft/confirmed future events with active planned target trips and request confirmation. Cancel writes nothing. Confirmation cleans each affected event atomically by soft-removing its trip, clearing both trip drivers and participant leg references, then deactivates the master vehicle after every event succeeds. Each event supports up to 100 affected participants. A cross-event failure reports completed progress and leaves the vehicle active for safe retry; past, started, completed, cancelled, and unrelated data remain unchanged.
 
 ## A11 - Create Activity
 Create configurable activity.

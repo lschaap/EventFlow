@@ -44,7 +44,7 @@ export default function VehicleManagementPage() {
     try {
       if (item.active) {
         const affected = await listFutureVehicleAssignments(item.vehicleId)
-        if (affected.length && !window.confirm(`Deactivating ${item.name} will unassign it from:\n\n${affected.map((event) => `• ${event.eventName}`).join('\n')}\n\nContinue?`)) return
+        if (affected.length && !window.confirm(`Deactivating ${item.name} will affect these future events:\n\n${affected.map((event) => `• ${event.eventName}`).join('\n')}\n\nContinuing will remove the planned vehicle trip, clear both driver assignments, and unassign its departure and return occupants. Participant relationships and counts will remain unchanged. Continue?`)) return
         await deactivateVehicleAndClearFutureAssignments(item.vehicleId)
         setMessage('Vehicle deactivated and cleared from future events.')
       } else {

@@ -17,7 +17,12 @@ for (const name of ['eventParticipants/{participantId}', 'eventStaffParticipants
   const section = rules.slice(start, rules.indexOf('allow delete: if false;', start))
   assert.match(section, /affectedKeys\(\)\.hasOnly\(\['departureVehicleId','returnVehicleId'\]\)/, `${name} transportation writes are field-bounded`)
   assert.match(section, /validParticipantVehicle/, `${name} vehicle references are validated`)
+  assert.match(section, /request\.resource\.data\.departureVehicleId == null/, `${name} removal clears departure vehicle`)
+  assert.match(section, /request\.resource\.data\.returnVehicleId == null/, `${name} removal clears return vehicle`)
 }
+
+const legacyDrivers = block('eventDrivers/{driverId}', 'eventVehicleTrips/{tripId}')
+assert.match(legacyDrivers, /allow delete: if false;/, 'legacy drivers cannot be hard deleted through the application')
 
 for (const name of ['students/{studentId}', 'staff/{staffId}', 'vehicles/{vehicleId}', 'settings/transportation']) {
   const start = rules.indexOf(marker(name))

@@ -227,9 +227,12 @@ service cloud.firestore {
           (
             resource.data.status == 'active' &&
             request.resource.data.status == 'removed' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','removedByUserId','removedAt','departureVehicleId','returnVehicleId']) &&
             request.resource.data.removedByUserId == request.auth.uid &&
             request.resource.data.removedAt is timestamp &&
-            request.resource.data.removedAt != null
+            request.resource.data.removedAt != null &&
+            request.resource.data.departureVehicleId == null &&
+            request.resource.data.returnVehicleId == null
           ) || (
             resource.data.status == 'removed' &&
             request.resource.data.status == 'active' &&
@@ -287,9 +290,10 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/staff/$(request.resource.data.staffId)) &&
         (
           (resource.data.status == 'active' && request.resource.data.status == 'removed' &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','removedByUserId','removedAt']) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','removedByUserId','removedAt','departureVehicleId','returnVehicleId']) &&
             request.resource.data.addedByUserId == resource.data.addedByUserId && request.resource.data.addedAt == resource.data.addedAt &&
             request.resource.data.removedByUserId == request.auth.uid && request.resource.data.removedAt is timestamp &&
+            request.resource.data.departureVehicleId == null && request.resource.data.returnVehicleId == null &&
             staffCountTransitionIsValid(request.resource.data.eventId, -1)) ||
           (resource.data.status == 'removed' && request.resource.data.status == 'active' &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','addedByUserId','addedAt','removedByUserId','removedAt','departureVehicleId','returnVehicleId']) &&

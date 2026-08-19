@@ -137,7 +137,7 @@ Staff-event participant relationship:
 - notes
 
 ## eventDrivers
-Driver/vehicle relationship; all drivers are staff:
+Legacy driver/vehicle relationship retained only for migration inspection and reset compatibility. Production UI and services no longer read or write this collection:
 - eventDriverId (PK)
 - eventId (FK)
 - staffId (FK)
@@ -172,7 +172,7 @@ Before departure, return assignments mirror departure without independent editin
 
 `settings/transportation` stores `defaultReturnDestination`, initially `Mill Village`, plus update metadata and is surfaced in Admin Configuration > Vehicles. WhatsApp messages, edits, handoffs, and delivery state are not stored. Counts, occupancy, capacity, warnings, and message content remain derived. Capacity means total seats including the driver.
 
-Migration and atomic-write boundaries are defined in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md). They are planned and have not been applied to Firestore.
+Migration and atomic-write boundaries are defined in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md). No live migration or reset has been applied.
 
 ## Relationships
 

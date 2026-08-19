@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This tool converts eligible legacy `eventDrivers` test records into parallel `eventVehicleTrips` foundation records. It never deletes legacy records, infers participant occupancy, changes event status, or cuts the UI over.
+This tool converts eligible legacy `eventDrivers` test records into parallel `eventVehicleTrips` foundation records. Production UI is already isolated from legacy records. The tool never deletes legacy records, infers participant occupancy, or changes event status.
 
 ## Prerequisites
 
@@ -40,6 +40,6 @@ Apply uses deterministic `eventId__vehicleId` IDs and create-only writes. Existi
 
 ## Rollback before cutover
 
-No production UI depends on the target collection yet. Using the apply report and backup, an authorized operator may remove only target documents created by that run, then rerun dry-run. Legacy `eventDrivers` must remain until a later cutover is accepted. Record the final backup, report, verification, created IDs, rollback approach, and later retention/removal decision during the implementation milestone.
+Production UI depends only on the target collection. Using the apply report and backup, an authorized operator may remove only target documents created by that run, then rerun dry-run. Legacy `eventDrivers` remain isolated until the approved operational reset is explicitly executed. Record the final backup, report, verification, created IDs, rollback approach, and retention/removal decision.
 
 The foundation Rules were deployed on 2026-08-18. This repository milestone does not execute the migration or deploy indexes.

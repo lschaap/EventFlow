@@ -7,16 +7,16 @@
 | State | In implementation |
 | Decision date | 2026-08-18 |
 | Scope | Per-leg transportation planning, trip execution, capacity review, status automation, manual vehicle-free lifecycle, and user-initiated WhatsApp handoff |
-| Current implementation | Event-level driver/vehicle assignment, overlap checks, and capacity warnings exist; the per-leg model, `in_progress`, trip lifecycle, return snapshot, and WhatsApp handoff do not |
-| Current milestone | Vehicle-trip data foundation and legacy driver migration |
+| Current implementation | Target-model planning, grouped participants, Events-list summaries, eligible deactivation cleanup, participant cleanup, and legacy production isolation are implemented; trip lifecycle, return snapshot, and WhatsApp handoff are not |
+| Current milestone | Transportation-planning cutover and legacy isolation |
 
 ## Implementation progress
 
 Implemented in the foundation milestone: shared `in_progress` and nullable `startedAt` compatibility; `eventVehicleTrips` types/foundation services; transportation-settings model/service and Admin Vehicles-tab control; restrictive Rules; two foundation indexes; and dry-run-first migration tooling with fictional-fixture tests. The foundation Firestore Rules were deployed to the configured Firebase project on 2026-08-18; indexes were not deployed.
 
-The current milestone implements Admin Event Details vehicle-trip and driver planning plus required `returnDriverMirrorsDeparture`. New/migrated trips default true; explicit return selection/clear sets false; Same as departure restores true and copies atomically. Missing legacy target fields safely parse false. Passenger fields, lifecycle actions, event-list cutover, and target deactivation remain planned. Updated Rules/indexes are not deployed by this milestone.
+The current milestone completes target-model production cutover for Event Details, Events list, eligible vehicle deactivation, and participant removal. Events-list data loading is constant-query and derives summaries without denormalized documents. New/migrated trips default mirroring true; explicit return selection/clear sets false; restoring matching copies the departure driver atomically.
 
-The current driver/vehicle UI continues to read/write only `eventDrivers`; no dual writes or live migration occurred. Participant vehicle fields, snapshots, stage actions, Staff return editing, corrections, automatic status transitions, vehicle-free controls, WhatsApp, Calendar/email, and UI cutover remain unimplemented. CR-001 is not Ready for UAT, Accepted, or Released.
+Production UI/services no longer read or write `eventDrivers`; it remains only in migration/reset tooling, historical documentation, and restrictive Rules compatibility. No live migration or reset occurred. Snapshots, stage actions, post-Depart return editing, corrections, automatic status transitions, vehicle-free controls, WhatsApp, Calendar/email, and frontend deployment remain unimplemented. CR-001 is not Ready for UAT, Accepted, or Released.
 
 ## Scope
 
@@ -166,7 +166,11 @@ Implemented in the grouped-planning milestone: active approved Admin/Staff plann
 
 The UAT-fix iteration merges participant management into the departure groups, refreshes additions/removals immediately, keeps atomic groups up to 100 in one field-bounded Firestore client transaction, hides pre-Depart return occupants, and reserves a separate future return-edit action for each departed vehicle card. No Cloud Function or Blaze plan is required.
 
-Still planned: lifecycle actions and timestamps, return snapshots, post-Depart independent return editing, corrections, event-list cutover, participant-removal and vehicle-deactivation target cleanup, WhatsApp, and live migration/reset.
+Implemented in this cutover milestone: Events-list target summaries, target-model eligible vehicle deactivation, student/staff removal transportation cleanup, production `eventDrivers` isolation, focused safeguards/tests, and a non-executed operational reset procedure.
+
+The narrow participant-removal Rules correction compiles successfully but is not deployed. Existing indexes are unchanged and sufficient for the implemented queries.
+
+Still planned: lifecycle actions and timestamps, return snapshots, post-Depart independent return editing, corrections, WhatsApp, live migration/reset execution, frontend deployment, and UAT.
 
 ## Implementation checklist
 

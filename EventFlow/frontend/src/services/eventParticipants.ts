@@ -23,6 +23,11 @@ export async function listParticipantsForEvent(eventId: string): Promise<EventPa
   return snap.docs.map((d) => ({ eventParticipantId: d.id, ...(d.data() as Omit<EventParticipantRecord, 'eventParticipantId'>), departureVehicleId: d.data().departureVehicleId ?? null, returnVehicleId: d.data().returnVehicleId ?? null }))
 }
 
+export async function listAllActiveStudentParticipants(): Promise<EventParticipantRecord[]> {
+  const snapshot = await getDocs(query(collection(ensureDb(), 'eventParticipants'), where('status', '==', 'active')))
+  return snapshot.docs.map((item) => ({ eventParticipantId: item.id, ...(item.data() as Omit<EventParticipantRecord, 'eventParticipantId'>), departureVehicleId: item.data().departureVehicleId ?? null, returnVehicleId: item.data().returnVehicleId ?? null }))
+}
+
 async function evaluateDietaryFlag(eventId: string, studentIds: string[]): Promise<boolean> {
   const db = ensureDb()
   for (const studentId of studentIds) {
@@ -164,6 +169,8 @@ export async function removeStudentParticipant(eventId: string, studentId: strin
       removedByUserId,
       removedAt: serverTimestamp(),
       notes: (currentParticipantSnap.data() as any)?.notes ?? null,
+      departureVehicleId: null,
+      returnVehicleId: null,
     })
 
     transaction.update(eventRef, {

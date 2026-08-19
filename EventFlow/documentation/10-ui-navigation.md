@@ -109,7 +109,7 @@ The planned Event Details page adds transportation grouped by vehicle and **Unas
 
 Admin and Staff edit planned departure passengers, both drivers, and event vehicles for every event. Staff/Admin may edit return passengers for eligible departed vehicles until Start Return when that lifecycle milestone is implemented. Corrections and the default destination inside Admin Configuration > Vehicles remain Admin-only. Both roles see the next valid forward action. Vehicle-based events hide manual Start/Complete; vehicle-free events retain them with planned status/timestamps.
 
-The grouped-planning milestone replaces Event Details legacy controls with Admin/Staff vehicle-trip cards containing drivers, mirroring, grouped participants, bulk movement, Unassigned, and capacity warnings. Event-list summaries temporarily remain legacy `eventDrivers` reads without dual writes until their later cutover.
+The grouped-planning milestone replaces Event Details legacy controls with Admin/Staff vehicle-trip cards containing drivers, mirroring, grouped participants, bulk movement, Unassigned, and capacity warnings. Event-list cards now use only active `eventVehicleTrips` and active participant vehicle assignments. They show vehicle/driver summaries, differing return drivers, departure assigned/total counts, total capacity, no-plan state, and incomplete/overcapacity warnings without participant rosters.
 
 Depart and Start Return open an explicit review of vehicle, driver, occupants, count/capacity, overcapacity, and all event participants unassigned for that leg. Warnings do not disable confirmation. Corrections use a separate warning and required-reason confirmation.
 

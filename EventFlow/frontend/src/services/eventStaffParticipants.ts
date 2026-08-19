@@ -13,6 +13,11 @@ export async function listStaffParticipantsForEvent(eventId: string): Promise<Ev
   return snapshot.docs.map((item) => ({ eventStaffParticipantId: item.id, ...(item.data() as Omit<EventStaffParticipantRecord, 'eventStaffParticipantId'>), departureVehicleId: item.data().departureVehicleId ?? null, returnVehicleId: item.data().returnVehicleId ?? null }))
 }
 
+export async function listAllActiveStaffParticipants(): Promise<EventStaffParticipantRecord[]> {
+  const snapshot = await getDocs(query(collection(ensureDb(), 'eventStaffParticipants'), where('status', '==', 'active')))
+  return snapshot.docs.map((item) => ({ eventStaffParticipantId: item.id, ...(item.data() as Omit<EventStaffParticipantRecord, 'eventStaffParticipantId'>), departureVehicleId: item.data().departureVehicleId ?? null, returnVehicleId: item.data().returnVehicleId ?? null }))
+}
+
 async function evaluateDietaryFlag(eventId: string, staffIds: string[]): Promise<boolean> {
   const db = ensureDb()
   const students = await getDocs(query(collection(db, 'eventParticipants'), where('eventId', '==', eventId)))
@@ -68,7 +73,6 @@ export async function removeStaffParticipant(eventId: string, staffId: string, u
   const db = ensureDb()
   const participantId = getDeterministicStaffParticipantId(eventId, staffId)
   const participantRef = doc(db, 'eventStaffParticipants', participantId)
-  const driverRef = doc(db, 'eventDrivers', `${eventId}__${staffId}`)
   const eventRef = doc(db, 'events', eventId)
   const [activeStaffSnapshot, tripSnapshot] = await Promise.all([
     getDocs(query(collection(db, 'eventStaffParticipants'), where('eventId', '==', eventId))),
@@ -78,8 +82,8 @@ export async function removeStaffParticipant(eventId: string, staffId: string, u
   const remainingStaffIds = activeStaffSnapshot.docs.filter((item) => item.data().status === 'active').map((item) => String(item.data().staffId)).filter((id) => id && id !== staffId)
   const nextHasDietaryRestrictions = await evaluateDietaryFlag(eventId, remainingStaffIds)
   await runTransaction(db, async (transaction) => {
-    const [eventSnapshot, participantSnapshot, driverSnapshot, currentTrips] = await Promise.all([
-      transaction.get(eventRef), transaction.get(participantRef), transaction.get(driverRef),
+    const [eventSnapshot, participantSnapshot, currentTrips] = await Promise.all([
+      transaction.get(eventRef), transaction.get(participantRef),
       Promise.all(drivenTrips.map((item) => transaction.get(item.ref))),
     ])
     if (!eventSnapshot.exists()) throw new Error('Event does not exist.')
@@ -87,8 +91,7 @@ export async function removeStaffParticipant(eventId: string, staffId: string, u
     const eventData = eventSnapshot.data()
     const studentCount = Math.max(0, Number(eventData.studentParticipantCount ?? 0))
     const staffCount = Math.max(0, Number(eventData.staffParticipantCount ?? 0) - 1)
-    transaction.update(participantRef, { status: 'removed', removedByUserId: userId, removedAt: serverTimestamp() })
-    if (driverSnapshot.exists() && driverSnapshot.data().status === 'assigned') transaction.update(driverRef, { status: 'removed', removedByUserId: userId, removedAt: serverTimestamp() })
+    transaction.update(participantRef, { status: 'removed', removedByUserId: userId, removedAt: serverTimestamp(), departureVehicleId: null, returnVehicleId: null })
     currentTrips.forEach((trip, index) => {
       if (!trip.exists() || trip.data().assignmentStatus !== 'active') throw new Error('The transportation plan changed. Reload and try again.')
       const changes: Record<string, unknown> = { ...removedStaffDriverFields({

@@ -146,6 +146,7 @@ Recommended duplicate-control strategy: deterministic ID such as `eventId_studen
 ```
 
 ## `eventDrivers/{eventDriverId}`
+Legacy compatibility collection. Production UI/services do not query or write it; only migration/reset tooling and temporary restrictive Rules compatibility remain.
 ```json
 {
   "eventDriverId": "event_123__staff_driver",
@@ -179,9 +180,9 @@ New events are created in one write with `eventId` equal to the Firestore docume
 ## Historical Integrity
 Do not delete master-data records merely because they become inactive. Use `active = false` so historical relationships remain resolvable.
 
-## CR-001 Transportation Collections (Foundation In Implementation)
+## CR-001 Transportation Collections (In Implementation)
 
-The schemas above describe the current Firestore baseline. CR-001 plans—but does not yet deploy—the following changes:
+The schemas above include the implemented planning target. CR-001 still plans the following lifecycle/correction extensions and operational rollout work:
 
 - extend both participant collections with nullable `departureVehicleId`, `returnVehicleId`, and latest transport-correction metadata;
 - use planned event status domain `draft | confirmed | in_progress | completed | cancelled` and add nullable `startedAt` (not currently deployed);
@@ -190,4 +191,4 @@ The schemas above describe the current Firestore baseline. CR-001 plans—but do
 - add `settings/transportation` with `defaultReturnDestination` (initially `Mill Village`) and update metadata, managed in Admin Configuration > Vehicles;
 - derive occupancy, capacity, warnings, and WhatsApp content without storing messages or delivery state.
 
-Before Depart, ordinary return fields mirror departure and cannot be independently edited; the independent return-driver exception is enforced by the service. Rules allow approved Admin/Staff planned trip and field-bounded participant transportation writes while settings remain Admin-only. Lifecycle and correction writes remain disabled. The previous Rules were deployed on 2026-08-18, the new Spark-compatible transportation-only rule adjustment is not deployed, the four existing trip indexes are READY, no Cloud Function is required, and no migration occurred. See [legacy migration procedure](migrations/CR-001-legacy-event-drivers.md).
+Before Depart, ordinary return fields mirror departure and cannot be independently edited; the independent return-driver exception is enforced by the service. Rules allow approved Admin/Staff planned trip and field-bounded participant transportation writes while settings remain Admin-only. Participant removal clears both leg fields, and eligible Admin vehicle deactivation soft-removes target trips while clearing affected leg assignments. Lifecycle and correction writes remain disabled. The earlier Spark-compatible Rules adjustment is deployed; this milestone's narrow participant-removal cleanup correction is compile-verified but not deployed. The four existing trip indexes are READY, no new index is required for the list cutover, no Cloud Function is required, and no migration/reset occurred. See [legacy migration procedure](migrations/CR-001-legacy-event-drivers.md) and [test-data reset procedure](migrations/CR-001-test-data-reset.md).

@@ -7,6 +7,8 @@ try {
   const compiler = spawnSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p', 'tsconfig.transportation-test.json'], { cwd: new URL('..', import.meta.url), stdio: 'inherit' })
   if (compiler.status !== 0) process.exit(compiler.status ?? 1)
   const { driverOccupantFields, groupTransportationOccupants, mirroredReturnVehicle, projectedOccupancy, removedStaffDriverFields, returnDriverIsVisible } = await import('../.transportation-test/services/transportationPlanning.js')
+  const { buildEventTransportationSummary } = await import('../.transportation-test/services/eventTransportationSummary.js')
+  const { clearedVehicleAssignmentFields, isEligibleFutureTripForDeactivation } = await import('../.transportation-test/services/vehicleDeactivation.js')
   const trips = [{ vehicleId: 'van-a' }, { vehicleId: 'van-b' }]
   const vehicles = [{ vehicleId: 'van-a', capacity: 1 }, { vehicleId: 'van-b', capacity: 3 }]
   const occupants = [
@@ -32,6 +34,28 @@ try {
   assert.equal(returnDriverIsVisible(false), true, 'independent return confirmation reveals return driver')
   assert.deepEqual(removedStaffDriverFields({ departureDriverStaffId: 'driver', returnDriverStaffId: 'driver' }, 'driver'), { departureDriverStaffId: null, returnDriverStaffId: null, returnDriverMirrorsDeparture: true }, 'removing a participant clears both mirrored driver legs')
   assert.deepEqual(removedStaffDriverFields({ departureDriverStaffId: 'other', returnDriverStaffId: 'driver' }, 'driver'), { returnDriverStaffId: null, returnDriverMirrorsDeparture: false }, 'removing an independent return driver preserves the departure driver')
+  const event = { eventId: 'event', participantCount: 3 }
+  const summaryTrips = [
+    { eventId: 'event', vehicleId: 'van-a', assignmentStatus: 'active', departureDriverStaffId: 'driver', returnDriverStaffId: 'return-driver' },
+    { eventId: 'event', vehicleId: 'van-b', assignmentStatus: 'removed', departureDriverStaffId: 'legacy', returnDriverStaffId: 'legacy' },
+  ]
+  const studentParts = [{ eventId: 'event', studentId: 'student', status: 'active', departureVehicleId: 'van-a' }, { eventId: 'event', studentId: 'unassigned', status: 'active', departureVehicleId: null }]
+  const staffParts = [{ eventId: 'event', staffId: 'driver', status: 'active', departureVehicleId: 'van-a' }, { eventId: 'event', staffId: 'driver', status: 'active', departureVehicleId: 'van-a' }]
+  const summary = buildEventTransportationSummary(event, summaryTrips, studentParts, staffParts, [{ vehicleId: 'van-a', name: 'Van A', capacity: 1 }], [{ staffId: 'driver', displayName: 'Driver' }, { staffId: 'return-driver', displayName: 'Return Driver' }])
+  assert.deepEqual(summary.vehicleNames, ['Van A'], 'removed trips and legacy records do not influence list summaries')
+  assert.deepEqual(summary.departureDriverNames, ['Driver'], 'departure driver names resolve from target trips')
+  assert.deepEqual(summary.returnDriverDifferences, ['Van A: Return Driver'], 'different return drivers are identified')
+  assert.equal(summary.assignedDepartureOccupantCount, 2, 'driver participant is deduplicated and counted once')
+  assert.equal(summary.unassignedDepartureCount, 1, 'unassigned departure participants are counted')
+  assert.equal(summary.totalDepartureCapacity, 1, 'capacity derives only from active trip vehicles')
+  assert.equal(summary.hasOverCapacity, true, 'per-vehicle or plan overcapacity is reported')
+  assert.equal(buildEventTransportationSummary(event, [], studentParts, staffParts, [], []).hasPlan, false, 'no-plan state is explicit')
+  const future = { status: 'confirmed', departureDateTime: new Date('2030-01-02T00:00:00Z'), startedAt: null }
+  const planned = { assignmentStatus: 'active', stage: 'planned' }
+  assert.equal(isEligibleFutureTripForDeactivation(future, planned, new Date('2030-01-01T00:00:00Z')), true, 'future confirmed planned trip is eligible')
+  assert.equal(isEligibleFutureTripForDeactivation({ ...future, status: 'completed' }, planned, new Date('2030-01-01T00:00:00Z')), false, 'completed event is preserved')
+  assert.equal(isEligibleFutureTripForDeactivation({ ...future, startedAt: new Date() }, planned, new Date('2030-01-01T00:00:00Z')), false, 'started event is preserved')
+  assert.deepEqual(clearedVehicleAssignmentFields({ departureVehicleId: 'van-a', returnVehicleId: 'van-b' }, 'van-a'), { departureVehicleId: null }, 'unrelated leg assignment is preserved')
   console.log('transportation planning tests passed')
 } finally {
   rmSync(output, { recursive: true, force: true })
