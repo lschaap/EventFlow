@@ -165,6 +165,20 @@ export default function EventDetailsPage() {
     void loadEvent();
   }, [eventId]);
 
+  const refreshParticipantSummary = async () => {
+    if (!eventId) return;
+    const [studentParts, staffParts, refreshedEvent, refreshedDrivers] = await Promise.all([
+      listParticipantsForEvent(eventId),
+      listStaffParticipantsForEvent(eventId),
+      getEventById(eventId),
+      listEventDrivers(eventId),
+    ]);
+    setParticipants(studentParts.filter((item) => item.status === "active"));
+    setStaffParticipants(staffParts.filter((item) => item.status === "active"));
+    setEvent(refreshedEvent);
+    setDrivers(refreshedDrivers.filter((item) => item.status === "assigned"));
+  };
+
   const handleAction = async (action: "confirm" | "complete" | "cancel") => {
     if (!eventId || !event) return;
     if (action === "confirm") {
@@ -312,6 +326,8 @@ export default function EventDetailsPage() {
               </div>
             ) : null}
           </div>
+          <VehicleTripPlanning eventId={event.eventId} vehicles={vehicles} staff={allStaff} onParticipantsChanged={refreshParticipantSummary} />
+          {false && (<>
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold">Student participants</h3>
             <p className="mt-2 text-sm text-slate-600">
@@ -595,6 +611,8 @@ export default function EventDetailsPage() {
             </div>
           </div>
 
+          </>)}
+
           {event.hasDietaryRestrictions &&
           peopleWithDietaryRestrictions.length > 0 ? (
             <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
@@ -616,7 +634,6 @@ export default function EventDetailsPage() {
             </section>
           ) : null}
 
-          <VehicleTripPlanning eventId={event.eventId} vehicles={vehicles} staff={allStaff} />
           {false && (
           <section className="hidden">
             <h3 className="text-lg font-semibold">Drivers and Vehicles</h3>

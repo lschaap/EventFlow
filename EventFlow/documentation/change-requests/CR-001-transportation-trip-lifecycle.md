@@ -54,13 +54,13 @@ For vehicle-free events, active approved Staff and Admin users may use Start Eve
 
 ### Departure plan and return snapshot
 
-Before departure, each active participant's return assignment mirrors `departureVehicleId` and is not independently editable. Departure assignments and both leg drivers are Admin-only.
+Before departure, each active participant's return assignment mirrors `departureVehicleId` and is not independently editable except for the independent return-driver occupant requirement. Active approved Admin and Staff users manage departure assignments and both leg drivers for all events.
 
 When a vehicle reaches `departed`, the same transaction snapshots `returnVehicleId` for every active occupant departing in it, records the transition/timestamp, and reveals that vehicle's return list. Later return edits never alter departure history, and later departure corrections never silently rewrite the snapshot.
 
 Only departed vehicles may receive independent return edits. After departure and before the target vehicle reaches `return_started`, active approved Staff and Admin users may move active student/staff participants between eligible departed return vehicles, assign an unassigned participant, clear an assignment, and bulk reassign. Valid Staff changes save immediately without Admin approval.
 
-Staff cannot edit departure assignments, either leg's driver, event vehicles, invalid stages, corrections, or return passengers after Start Return. Return-driver and trip planning remain Admin-only. After Start Return, only Admin correction can change return assignments.
+Admin and Staff cannot edit invalid stages or return passengers after Start Return. Both roles share ordinary vehicle, driver, departure, and eligible return planning permissions; after Start Return, only Admin correction can change return assignments.
 
 ### Validation, drivers, and capacity
 
@@ -124,7 +124,7 @@ Atomic writes cover driver/participant/occupancy synchronization; Depart plus re
 
 ## Target rules and queries
 
-Rules enforce Admin-only departure, driver, vehicle, settings, and correction writes. Active approved Staff/Admin may update only return-passenger fields for eligible departed trips before Start Return and may perform valid forward actions. Rules validate identities/stages rather than relying on UI. Implementation finalizes indexes for active participants by event/status/leg vehicle, active event trips, and vehicle overlap.
+Rules allow active approved Staff/Admin planned vehicle, driver, and participant transportation writes for all events while enforcing Admin-only settings and corrections. Rules validate identities and stages rather than relying on UI. Implementation finalizes only indexes required by actual queries.
 
 ## Migration and rollback
 
@@ -153,12 +153,20 @@ Rules enforce Admin-only departure, driver, vehicle, settings, and correction wr
 - Statuses, stages, applicable completion, timestamps, and vehicle-free controls match this record.
 - Depart creates the independent return snapshot; before it, return mirrors departure and is not editable.
 - Staff return edits work only for departed eligible trips before Start Return with full validation.
-- Departure, all drivers, vehicles, settings, and corrections remain Admin-only.
+- Planned transportation and future valid forward actions are available to Admin and Staff; settings, master data, users, and corrections remain Admin-only.
 - Capacity includes the driver, is leg-specific/deduplicated, and warns without blocking.
 - Corrections atomically recalculate status/timestamps backward and forward.
 - Planned unused/removed trips do not block completion; no completion precedes a departure.
 - WhatsApp timing, privacy, explicit Copy, best-effort Open, and no-storage rules apply; MVP has no confirmation email.
 - Migration is backed up, validated, reversible, and does not silently delete legacy records.
+
+## Current implementation progress
+
+Implemented in the grouped-planning milestone: active approved Admin/Staff planning for all events; participant `departureVehicleId`/`returnVehicleId`; pre-departure mirroring with the independent-return-driver exception; grouped vehicle and Unassigned views; individual and atomic bulk movement up to 100 participants; driver/occupant synchronization; and per-leg occupancy/capacity warnings. The four trip indexes are READY and the latest Spark-compatible Rules adjustment is deployed; the grouped application is not deployed.
+
+The UAT-fix iteration merges participant management into the departure groups, refreshes additions/removals immediately, keeps atomic groups up to 100 in one field-bounded Firestore client transaction, hides pre-Depart return occupants, and reserves a separate future return-edit action for each departed vehicle card. No Cloud Function or Blaze plan is required.
+
+Still planned: lifecycle actions and timestamps, return snapshots, post-Depart independent return editing, corrections, event-list cutover, participant-removal and vehicle-deactivation target cleanup, WhatsApp, and live migration/reset.
 
 ## Implementation checklist
 

@@ -112,6 +112,8 @@
 | removedByUserId | string/null | User who removed |
 | removedAt | timestamp/null | Removal time |
 | notes | string/null | Optional notes |
+| departureVehicleId | string/null | Active planned outbound vehicle; missing field parses as null |
+| returnVehicleId | string/null | Active planned return vehicle; pre-Depart mirror except for an independent return driver; missing field parses as null |
 
 ## eventStaffParticipants
 | Field | Type | Description |
@@ -125,6 +127,8 @@
 | removedByUserId | string/null | User who removed |
 | removedAt | timestamp/null | Removal time |
 | notes | string/null | Optional notes |
+| departureVehicleId | string/null | Active planned outbound vehicle; missing field parses as null |
+| returnVehicleId | string/null | Active planned return vehicle; pre-Depart mirror except for an independent return driver; missing field parses as null |
 
 ## eventDrivers
 | Field | Type | Description |

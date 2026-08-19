@@ -46,15 +46,17 @@ canDrive = true
 
 ## Approved Planned Transportation Permissions (CR-001)
 
+The latest approved milestone supersedes rows below that describe Staff transportation planning as read-only or return-only: active approved Admin and Staff users may add/soft-remove planned vehicles, manage either leg's driver and mirroring, and move departure passengers for every EventFlow event. Both roles use identical planning validation. Master data, application users, transportation settings, and future corrections remain Admin-only.
+
 | Transportation capability | Staff | Admin |
 |---|---:|---:|
 | View transportation plan and trip progress | Yes | Yes |
-| Assign/change participant departure vehicle | No | Yes |
+| Assign/change participant departure vehicle | Yes | Yes |
 | Edit return passengers before Depart | No | No; return mirrors departure |
 | Edit return passengers after relevant vehicle Depart and before Start Return | Yes | Yes |
 | Edit return passengers after Start Return through ordinary controls | No | No |
-| Assign/change departure or return driver | No | Yes |
-| Add/remove an event vehicle | No | Yes |
+| Assign/change departure or return driver | Yes | Yes |
+| Add/remove an event vehicle | Yes | Yes |
 | Perform the next valid Depart/Arrive/Start Return/Returned action | Yes | Yes |
 | Skip or undo a stage through normal controls | No | No |
 | Use explicit correction workflow after a leg begins | No | Yes |

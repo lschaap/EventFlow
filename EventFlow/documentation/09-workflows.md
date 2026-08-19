@@ -1,5 +1,13 @@
 # Workflows
 
+## Implemented Pre-Departure Grouped Planning (CR-001)
+
+Active approved Admin and Staff users may manage planned vehicles, either leg's driver, mirroring, and departure passenger assignments for every event. An individual or bulk departure move atomically mirrors return for ordinary passengers. An independently selected return driver's `returnVehicleId` remains fixed to the vehicle they will drive, while their departure assignment remains their actual outbound plan. Clearing or replacing a driver changes only the role; the former driver remains a participant with their passenger fields. Capacity is recalculated per leg and warns without blocking. Mixed student/staff bulk requests are limited to 100 and either commit completely or make no changes.
+
+After the future Depart action, departure groups become historical/read-only and return groups will use the same multi-group selection and Move selected interaction until Start Return. That switching behavior, lifecycle actions, snapshots, and corrections remain planned rather than active.
+
+Participant management and departure planning use one list. Add Student, Add Staff, and Add Vehicle appear at the top; additions immediately enter Unassigned and removals immediately disappear from every departure group. Removing a staff occupant also clears every departure/return driver reference for that staff member in the event in the same transaction. Individual moves verify the committed assignment and display an error rather than silently accepting an unsaved move. Bulk Apply uses one secured Firestore client transaction and shows `Bulk assignment failed. Please try again or try individual assignment.` for every failure. Return occupants remain hidden before Depart, and the return-driver selector remains hidden while return transportation is confirmed to match departure. Later, each departed vehicle card receives its own Edit return vehicle assignments button; that control is not active yet.
+
 # Staff and Admin Workflows
 
 ## 01 - Authenticate User

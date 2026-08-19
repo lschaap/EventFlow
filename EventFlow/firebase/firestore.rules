@@ -47,6 +47,17 @@ service cloud.firestore {
       return staffId == null || (existsAfter(/databases/$(database)/documents/eventStaffParticipants/$(eventId + '__' + staffId)) && getAfter(/databases/$(database)/documents/eventStaffParticipants/$(eventId + '__' + staffId)).data.status == 'active');
     }
 
+    function validParticipantVehicle(eventId, vehicleId) {
+      return vehicleId == null || (vehicleId is string &&
+        existsAfter(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)) &&
+        getAfter(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)).data.eventId == eventId &&
+        getAfter(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)).data.vehicleId == vehicleId &&
+        getAfter(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)).data.assignmentStatus == 'active' &&
+        getAfter(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)).data.stage == 'planned' &&
+        exists(/databases/$(database)/documents/vehicles/$(vehicleId)) &&
+        get(/databases/$(database)/documents/vehicles/$(vehicleId)).data.active == true);
+    }
+
     function validEventStatus(status) {
       return status in ['draft', 'confirmed', 'in_progress', 'completed', 'cancelled'];
     }
@@ -180,14 +191,15 @@ service cloud.firestore {
       allow read: if isAuth() && isApproved(request.auth.uid);
 
       allow create: if isAuth() && isApproved(request.auth.uid) &&
-        request.resource.data.keys().hasAll(['eventId','studentId','status','addedByUserId','addedAt','removedByUserId','removedAt','notes']) &&
+        request.resource.data.keys().hasAll(['eventId','studentId','status','addedByUserId','addedAt','removedByUserId','removedAt','notes','departureVehicleId','returnVehicleId']) &&
         request.resource.data.eventId is string &&
         request.resource.data.studentId is string &&
         request.resource.data.addedByUserId == request.auth.uid &&
         request.resource.data.status == 'active' &&
         request.resource.data.removedByUserId == null &&
         request.resource.data.removedAt == null &&
-        request.resource.data.notes == null || request.resource.data.notes is string &&
+        request.resource.data.departureVehicleId == null && request.resource.data.returnVehicleId == null &&
+        (request.resource.data.notes == null || request.resource.data.notes is string) &&
         participantId == request.resource.data.eventId + '__' + request.resource.data.studentId &&
         exists(/databases/$(database)/documents/events/$(request.resource.data.eventId)) &&
         exists(/databases/$(database)/documents/students/$(request.resource.data.studentId)) &&
@@ -198,11 +210,20 @@ service cloud.firestore {
         request.resource.data.studentId == resource.data.studentId &&
         participantId == request.resource.data.eventId + '__' + request.resource.data.studentId &&
         request.resource.data.status in ['active', 'removed'] &&
-        request.resource.data.addedByUserId == request.auth.uid &&
+        (request.resource.data.addedByUserId == resource.data.addedByUserId || request.resource.data.addedByUserId == request.auth.uid) &&
         request.resource.data.addedAt is timestamp &&
-        request.resource.data.removedByUserId == null || request.resource.data.removedByUserId == request.auth.uid &&
-        request.resource.data.removedAt == null || request.resource.data.removedAt is timestamp &&
+        (request.resource.data.removedByUserId == null || request.resource.data.removedByUserId == request.auth.uid || request.resource.data.removedByUserId == resource.data.removedByUserId) &&
+        (request.resource.data.removedAt == null || request.resource.data.removedAt is timestamp) &&
         (
+          (resource.data.status == 'active' && request.resource.data.status == 'active' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['departureVehicleId','returnVehicleId']) &&
+            request.resource.data.addedByUserId == resource.data.addedByUserId &&
+            request.resource.data.addedAt == resource.data.addedAt &&
+            request.resource.data.removedByUserId == resource.data.removedByUserId &&
+            request.resource.data.removedAt == resource.data.removedAt &&
+            request.resource.data.notes == resource.data.notes &&
+            validParticipantVehicle(request.resource.data.eventId, request.resource.data.departureVehicleId) &&
+            validParticipantVehicle(request.resource.data.eventId, request.resource.data.returnVehicleId)) ||
           (
             resource.data.status == 'active' &&
             request.resource.data.status == 'removed' &&
@@ -225,14 +246,31 @@ service cloud.firestore {
     match /eventStaffParticipants/{participantId} {
       allow read: if isAuth() && isApproved(request.auth.uid);
 
+      // Transportation-only writes intentionally rely on the already-established
+      // active relationship instead of reading each staff master record. This keeps
+      // a single atomic mixed-participant move within Firestore Rules access limits.
+      allow update: if isAuth() && isApproved(request.auth.uid) &&
+        resource.data.status == 'active' && request.resource.data.status == 'active' &&
+        request.resource.data.eventStaffParticipantId == resource.data.eventStaffParticipantId &&
+        request.resource.data.eventId == resource.data.eventId && request.resource.data.staffId == resource.data.staffId &&
+        participantId == request.resource.data.eventId + '__' + request.resource.data.staffId &&
+        request.resource.data.addedByUserId == resource.data.addedByUserId && request.resource.data.addedAt == resource.data.addedAt &&
+        request.resource.data.removedByUserId == resource.data.removedByUserId && request.resource.data.removedAt == resource.data.removedAt &&
+        request.resource.data.notes == resource.data.notes &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['departureVehicleId','returnVehicleId']) &&
+        validParticipantVehicle(request.resource.data.eventId, request.resource.data.departureVehicleId) &&
+        validParticipantVehicle(request.resource.data.eventId, request.resource.data.returnVehicleId);
+
       allow create: if isAuth() && isApproved(request.auth.uid) &&
-        request.resource.data.keys().hasAll(['eventStaffParticipantId','eventId','staffId','status','addedByUserId','addedAt','removedByUserId','removedAt','notes']) &&
-        request.resource.data.keys().hasOnly(['eventStaffParticipantId','eventId','staffId','status','addedByUserId','addedAt','removedByUserId','removedAt','notes']) &&
+        request.resource.data.keys().hasAll(['eventStaffParticipantId','eventId','staffId','status','addedByUserId','addedAt','removedByUserId','removedAt','notes','departureVehicleId','returnVehicleId']) &&
+        request.resource.data.keys().hasOnly(['eventStaffParticipantId','eventId','staffId','status','addedByUserId','addedAt','removedByUserId','removedAt','notes','departureVehicleId','returnVehicleId']) &&
         request.resource.data.eventStaffParticipantId == participantId &&
         participantId == request.resource.data.eventId + '__' + request.resource.data.staffId &&
         request.resource.data.status == 'active' &&
         request.resource.data.addedByUserId == request.auth.uid && request.resource.data.addedAt is timestamp &&
         request.resource.data.removedByUserId == null && request.resource.data.removedAt == null &&
+        validParticipantVehicle(request.resource.data.eventId, request.resource.data.departureVehicleId) &&
+        validParticipantVehicle(request.resource.data.eventId, request.resource.data.returnVehicleId) &&
         (request.resource.data.notes == null || request.resource.data.notes is string) &&
         exists(/databases/$(database)/documents/events/$(request.resource.data.eventId)) &&
         exists(/databases/$(database)/documents/staff/$(request.resource.data.staffId)) &&
@@ -254,10 +292,12 @@ service cloud.firestore {
             request.resource.data.removedByUserId == request.auth.uid && request.resource.data.removedAt is timestamp &&
             staffCountTransitionIsValid(request.resource.data.eventId, -1)) ||
           (resource.data.status == 'removed' && request.resource.data.status == 'active' &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','addedByUserId','addedAt','removedByUserId','removedAt']) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','addedByUserId','addedAt','removedByUserId','removedAt','departureVehicleId','returnVehicleId']) &&
             get(/databases/$(database)/documents/staff/$(request.resource.data.staffId)).data.active == true &&
             request.resource.data.addedByUserId == request.auth.uid && request.resource.data.addedAt is timestamp &&
             request.resource.data.removedByUserId == null && request.resource.data.removedAt == null &&
+            validParticipantVehicle(request.resource.data.eventId, request.resource.data.departureVehicleId) &&
+            validParticipantVehicle(request.resource.data.eventId, request.resource.data.returnVehicleId) &&
             staffCountTransitionIsValid(request.resource.data.eventId, 1))
         );
 
@@ -278,7 +318,7 @@ service cloud.firestore {
     match /eventVehicleTrips/{tripId} {
       allow read: if isAuth() && isApproved(request.auth.uid);
 
-      allow create: if isAuth() && isAdmin(request.auth.uid) &&
+      allow create: if isAuth() && isApproved(request.auth.uid) &&
         request.resource.data.keys().hasAll(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
         request.resource.data.keys().hasOnly(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
         request.resource.data.eventVehicleTripId == tripId &&
@@ -298,7 +338,7 @@ service cloud.firestore {
         request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp &&
         request.resource.data.correctedAt == null && request.resource.data.correctedByUserId == null && request.resource.data.correctionReason == null;
 
-      allow update: if isAuth() && isAdmin(request.auth.uid) &&
+      allow update: if isAuth() && isApproved(request.auth.uid) &&
         request.resource.data.eventVehicleTripId == resource.data.eventVehicleTripId &&
         request.resource.data.eventId == resource.data.eventId &&
         request.resource.data.vehicleId == resource.data.vehicleId &&

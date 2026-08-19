@@ -1,5 +1,25 @@
 # UAT Test Cases
 
+## CR-001 Grouped Participant Planning
+
+- UAT-138: Admin and Staff can add/remove planned vehicles and manage both drivers for any event; inactive/unapproved users are denied and Staff cannot edit master data or transportation settings.
+- UAT-139: Assign, move, and clear a student and a staff participant; departure and ordinary pre-Depart return assignments update atomically, while missing legacy fields display as Unassigned.
+- UAT-140: Select mixed students/staff across groups, review destination/projected capacity, and apply one bulk move; selection clears on success and a failed validation makes no partial changes.
+- UAT-141: Assign different departure and return drivers; each becomes an occupant of the driven vehicle for that leg, counts once, and the independent return driver's assignment survives ordinary departure moves.
+- UAT-142: Replace or clear either driver; the former driver remains an event participant and retains their passenger vehicle fields.
+- UAT-143: Confirm vehicle cards and Unassigned show per-leg occupants, `used/capacity`, available seats or overcapacity, and a distinct Transportation Incomplete warning.
+- UAT-144: Confirm overcapacity warns but does not block individual or bulk saves, while inactive participants, removed/wrong-event trips, and overlapping vehicle/participant/driver use are rejected.
+- UAT-145: Confirm return occupants are hidden before departure and no Depart, snapshot, independent return-passenger, correction, or other lifecycle controls are present.
+- UAT-146: As Admin and Staff, bulk-move mixed occupants to a vehicle and Unassigned; confirm all selected records move together and selection clears.
+- UAT-147: Force a bulk transaction validation failure; confirm no participant moves and the UI displays exactly `Bulk assignment failed. Please try again or try individual assignment.`
+- UAT-148: Add a student and staff member from the combined section; confirm each immediately appears in Unassigned without refreshing the page and overview counts/dietary details refresh.
+- UAT-149: Remove a student and staff member from any departure group; confirm each immediately disappears from the grouped list and overview counts/dietary details refresh.
+- UAT-150: Confirm only one participant/transportation section is visible, its Add Student/Add Staff/Add Vehicle controls appear at the top, and return occupant lists or edit buttons are not shown before Depart.
+- UAT-151: Assign a staff occupant as the departure driver, return driver, or both; remove the staff occupant, accept the warning, and confirm the participant and every applicable event-trip driver reference are removed together. Cancel the warning and confirm nothing changes.
+- UAT-152: As both Admin and Staff, assign the final Unassigned occupant individually to a planned vehicle and confirm the person moves, the Unassigned count reaches zero, and success is shown. Simulate a rejected write and confirm a visible error replaces silent failure.
+- UAT-153: With return transportation matching departure, confirm no Return driver selector is displayed. Mark return occupants as different and confirm the selector appears; restore matching and confirm it hides again and mirrors the departure driver.
+- UAT-154: Confirm the future design specifies a separate Edit return vehicle assignments button per departed vehicle card, but no lifecycle or return-edit control is currently active.
+
 ## Authentication and Access
 
 | ID | Scenario | Expected Result |

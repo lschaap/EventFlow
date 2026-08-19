@@ -1,5 +1,7 @@
 # Firestore Collections
 
+> Current CR-001 grouped-planning rule target: active approved Admin and Staff users may update planned `eventVehicleTrips` and only `departureVehicleId`/`returnVehicleId` on active participant relationships for every event. Vehicle references must resolve to active planned trips for the same event. Admin-only master-data, user, and transportation-settings permissions are unchanged.
+
 ## Strategy
 Use top-level collections to support cross-event queries and avoid deeply nested data access.
 
@@ -188,4 +190,4 @@ The schemas above describe the current Firestore baseline. CR-001 plans—but do
 - add `settings/transportation` with `defaultReturnDestination` (initially `Mill Village`) and update metadata, managed in Admin Configuration > Vehicles;
 - derive occupancy, capacity, warnings, and WhatsApp content without storing messages or delivery state.
 
-Before Depart, return fields mirror departure and cannot be independently edited; later snapshot behavior remains planned. Foundation Rules allow approved reads, Admin-only planned creation/removal, and Admin-only settings writes. Lifecycle, correction, and participant-transport writes remain disabled. The Rules were deployed on 2026-08-18. Two indexes support the implemented active-trip queries but were not deployed, and no migration occurred. See [legacy migration procedure](migrations/CR-001-legacy-event-drivers.md).
+Before Depart, ordinary return fields mirror departure and cannot be independently edited; the independent return-driver exception is enforced by the service. Rules allow approved Admin/Staff planned trip and field-bounded participant transportation writes while settings remain Admin-only. Lifecycle and correction writes remain disabled. The previous Rules were deployed on 2026-08-18, the new Spark-compatible transportation-only rule adjustment is not deployed, the four existing trip indexes are READY, no Cloud Function is required, and no migration occurred. See [legacy migration procedure](migrations/CR-001-legacy-event-drivers.md).

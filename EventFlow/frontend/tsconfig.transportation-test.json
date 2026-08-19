@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "isolatedModules": false,
+    "outDir": ".transportation-test"
+  },
+  "include": ["src/services/transportationPlanning.ts", "src/types/models.ts"]
+}

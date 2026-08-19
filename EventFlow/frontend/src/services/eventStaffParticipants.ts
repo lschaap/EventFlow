@@ -2,6 +2,7 @@ import { collection, doc, getDoc, getDocs, query, runTransaction, serverTimestam
 import { ensureDb } from '../lib/firestore'
 import type { EventStaffParticipantRecord } from '../types/models'
 import { assertNoParticipationOverlap } from './participationConflicts'
+import { removedStaffDriverFields } from './transportationPlanning'
 
 export function getDeterministicStaffParticipantId(eventId: string, staffId: string): string {
   return `${eventId}__${staffId}`
@@ -9,7 +10,7 @@ export function getDeterministicStaffParticipantId(eventId: string, staffId: str
 
 export async function listStaffParticipantsForEvent(eventId: string): Promise<EventStaffParticipantRecord[]> {
   const snapshot = await getDocs(query(collection(ensureDb(), 'eventStaffParticipants'), where('eventId', '==', eventId)))
-  return snapshot.docs.map((item) => ({ eventStaffParticipantId: item.id, ...(item.data() as Omit<EventStaffParticipantRecord, 'eventStaffParticipantId'>) }))
+  return snapshot.docs.map((item) => ({ eventStaffParticipantId: item.id, ...(item.data() as Omit<EventStaffParticipantRecord, 'eventStaffParticipantId'>), departureVehicleId: item.data().departureVehicleId ?? null, returnVehicleId: item.data().returnVehicleId ?? null }))
 }
 
 async function evaluateDietaryFlag(eventId: string, staffIds: string[]): Promise<boolean> {
@@ -54,6 +55,7 @@ export async function addStaffParticipant(eventId: string, staffId: string, user
       eventStaffParticipantId: participantId, eventId, staffId, status: 'active',
       addedByUserId: userId, addedAt: serverTimestamp(), removedByUserId: null, removedAt: null,
       notes: participantSnapshot.exists() ? participantSnapshot.data().notes ?? null : null,
+      departureVehicleId: null, returnVehicleId: null,
     }
     participantSnapshot.exists() ? transaction.update(participantRef, payload) : transaction.set(participantRef, payload)
     transaction.update(eventRef, { staffParticipantCount: staffCount, studentParticipantCount: studentCount, participantCount: studentCount + staffCount, hasDietaryRestrictions: nextHasDietaryRestrictions, updatedAt: serverTimestamp() })
@@ -68,11 +70,18 @@ export async function removeStaffParticipant(eventId: string, staffId: string, u
   const participantRef = doc(db, 'eventStaffParticipants', participantId)
   const driverRef = doc(db, 'eventDrivers', `${eventId}__${staffId}`)
   const eventRef = doc(db, 'events', eventId)
-  const activeStaffSnapshot = await getDocs(query(collection(db, 'eventStaffParticipants'), where('eventId', '==', eventId)))
+  const [activeStaffSnapshot, tripSnapshot] = await Promise.all([
+    getDocs(query(collection(db, 'eventStaffParticipants'), where('eventId', '==', eventId))),
+    getDocs(query(collection(db, 'eventVehicleTrips'), where('eventId', '==', eventId), where('assignmentStatus', '==', 'active'))),
+  ])
+  const drivenTrips = tripSnapshot.docs.filter((item) => item.data().departureDriverStaffId === staffId || item.data().returnDriverStaffId === staffId)
   const remainingStaffIds = activeStaffSnapshot.docs.filter((item) => item.data().status === 'active').map((item) => String(item.data().staffId)).filter((id) => id && id !== staffId)
   const nextHasDietaryRestrictions = await evaluateDietaryFlag(eventId, remainingStaffIds)
   await runTransaction(db, async (transaction) => {
-    const [eventSnapshot, participantSnapshot, driverSnapshot] = await Promise.all([transaction.get(eventRef), transaction.get(participantRef), transaction.get(driverRef)])
+    const [eventSnapshot, participantSnapshot, driverSnapshot, currentTrips] = await Promise.all([
+      transaction.get(eventRef), transaction.get(participantRef), transaction.get(driverRef),
+      Promise.all(drivenTrips.map((item) => transaction.get(item.ref))),
+    ])
     if (!eventSnapshot.exists()) throw new Error('Event does not exist.')
     if (!participantSnapshot.exists() || participantSnapshot.data().status !== 'active') throw new Error('Staff member is not active for this event.')
     const eventData = eventSnapshot.data()
@@ -80,6 +89,14 @@ export async function removeStaffParticipant(eventId: string, staffId: string, u
     const staffCount = Math.max(0, Number(eventData.staffParticipantCount ?? 0) - 1)
     transaction.update(participantRef, { status: 'removed', removedByUserId: userId, removedAt: serverTimestamp() })
     if (driverSnapshot.exists() && driverSnapshot.data().status === 'assigned') transaction.update(driverRef, { status: 'removed', removedByUserId: userId, removedAt: serverTimestamp() })
+    currentTrips.forEach((trip, index) => {
+      if (!trip.exists() || trip.data().assignmentStatus !== 'active') throw new Error('The transportation plan changed. Reload and try again.')
+      const changes: Record<string, unknown> = { ...removedStaffDriverFields({
+        departureDriverStaffId: trip.data().departureDriverStaffId ?? null,
+        returnDriverStaffId: trip.data().returnDriverStaffId ?? null,
+      }, staffId), updatedAt: serverTimestamp() }
+      transaction.update(drivenTrips[index].ref, changes)
+    })
     transaction.update(eventRef, { staffParticipantCount: staffCount, studentParticipantCount: studentCount, participantCount: studentCount + staffCount, hasDietaryRestrictions: nextHasDietaryRestrictions, updatedAt: serverTimestamp() })
   })
 }

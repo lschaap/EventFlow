@@ -20,7 +20,7 @@ export async function listParticipantsForEvent(eventId: string): Promise<EventPa
   const db = ensureDb()
   const q = query(collection(db, 'eventParticipants'), where('eventId', '==', eventId))
   const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ eventParticipantId: d.id, ...(d.data() as Omit<EventParticipantRecord, 'eventParticipantId'>) }))
+  return snap.docs.map((d) => ({ eventParticipantId: d.id, ...(d.data() as Omit<EventParticipantRecord, 'eventParticipantId'>), departureVehicleId: d.data().departureVehicleId ?? null, returnVehicleId: d.data().returnVehicleId ?? null }))
 }
 
 async function evaluateDietaryFlag(eventId: string, studentIds: string[]): Promise<boolean> {
@@ -105,6 +105,8 @@ export async function addStudentParticipant(eventId: string, studentId: string, 
       removedByUserId: null,
       removedAt: null,
       notes: currentParticipantSnap.exists() ? (currentParticipantSnap.data() as any)?.notes ?? null : null,
+      departureVehicleId: null,
+      returnVehicleId: null,
     }
 
     if (currentParticipantSnap.exists()) {

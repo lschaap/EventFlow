@@ -1,5 +1,14 @@
 # Change Log
 
+## CR-001 Grouped Participant Planning - In Implementation
+
+- Expanded planned transportation authorization to active approved Admin and Staff users for all events while keeping master data, settings, users, and corrections Admin-only.
+- Added nullable per-leg participant vehicle assignments, pre-departure return mirroring with an independent-return-driver exception, grouped planning, atomic individual/bulk movement, Unassigned groups, and per-leg capacity warnings.
+- Kept lifecycle actions, snapshots, post-Depart return editing, corrections, event-list cutover, removal/deactivation cleanup, and WhatsApp planned.
+- Consolidated participant and transportation management into one live-refreshing grouped section, retained bulk assignment as a Spark-compatible atomic Firestore transaction, standardized its failure message, and hid return occupants until the future per-departed-vehicle edit action.
+- Fixed grouped-planning UAT findings: staff-occupant removal now clears current trip driver references atomically, individual assignments verify committed state and surface failures, and the return-driver selector stays hidden until return transportation is explicitly marked different.
+- The four trip indexes are READY and the Spark-compatible transportation Rules adjustment is deployed; the grouped application is not deployed, and no Cloud Function is required.
+
 ## CR-001 Trip and Driver Planning - In Implementation (Not Deployed)
 
 - Documented and implemented deterministic `returnDriverMirrorsDeparture` semantics.

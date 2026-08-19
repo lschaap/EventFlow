@@ -168,6 +168,8 @@ export interface EventParticipantRecord {
   removedByUserId?: string | null
   removedAt?: Timestamp | any | null
   notes?: string | null
+  departureVehicleId: string | null
+  returnVehicleId: string | null
 }
 
 export interface EventStaffParticipantRecord {
@@ -180,4 +182,6 @@ export interface EventStaffParticipantRecord {
   removedByUserId?: string | null
   removedAt?: Timestamp | any | null
   notes?: string | null
+  departureVehicleId: string | null
+  returnVehicleId: string | null
 }

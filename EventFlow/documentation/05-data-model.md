@@ -112,6 +112,7 @@ Allowed meals:
 
 ## eventParticipants
 Student-event relationship:
+- `departureVehicleId` and `returnVehicleId` are nullable active-planned-trip vehicle references; missing legacy fields parse as null.
 - eventParticipantId (PK)
 - eventId (FK)
 - studentId (FK)
@@ -124,6 +125,7 @@ Student-event relationship:
 
 ## eventStaffParticipants
 Staff-event participant relationship:
+- `departureVehicleId` and `returnVehicleId` are nullable active-planned-trip vehicle references; missing legacy fields parse as null.
 - eventStaffParticipantId (PK)
 - eventId (FK)
 - staffId (FK)

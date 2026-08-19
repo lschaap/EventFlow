@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc",
     "test:migration": "npm run build && node lib/migrations/legacyDriverMigration.test.js",
+    "test:rules-policy": "npm run build && node lib/firestoreRulesPolicy.test.js",
     "migrate:event-drivers": "npm run build && node lib/migrations/migrateLegacyDrivers.js",
     "serve": "npm run build && firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
