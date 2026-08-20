@@ -1,6 +1,8 @@
 import type { EventParticipantRecord, EventStaffParticipantRecord, EventVehicleTripRecord, VehicleRecord } from '../types/models'
 
 export type TransportationParticipantKey = { kind: 'student' | 'staff'; personId: string }
+export type TransportationLeg = 'departure' | 'return'
+export type AffectedDriverRole = { tripId: string; vehicleId: string; staffId: string; leg: TransportationLeg }
 export type TransportationOccupant = TransportationParticipantKey & { relationshipId: string; displayName: string; departureVehicleId: string | null; returnVehicleId: string | null }
 export type TransportationGroup = { vehicleId: string | null; occupants: TransportationOccupant[]; occupancy: number; capacity: number | null; overCapacityBy: number; availableSeats: number | null }
 
@@ -29,6 +31,36 @@ export function driverOccupantFields(leg: 'departure' | 'return', vehicleId: str
 
 export function returnDriverIsVisible(returnDriverMirrorsDeparture: boolean) {
   return !returnDriverMirrorsDeparture
+}
+
+export function affectedDriverRolesForMove(trips: EventVehicleTripRecord[], staffId: string, leg: TransportationLeg, destinationVehicleId: string | null): AffectedDriverRole[] {
+  const affected: AffectedDriverRole[] = []
+  for (const trip of trips.filter((item) => item.assignmentStatus === 'active')) {
+    if (leg === 'departure' && trip.departureDriverStaffId === staffId && destinationVehicleId !== trip.vehicleId) {
+      affected.push({ tripId: trip.eventVehicleTripId, vehicleId: trip.vehicleId, staffId, leg: 'departure' })
+      if (trip.returnDriverMirrorsDeparture && trip.returnDriverStaffId === staffId) affected.push({ tripId: trip.eventVehicleTripId, vehicleId: trip.vehicleId, staffId, leg: 'return' })
+    }
+    if (leg === 'return' && trip.returnDriverStaffId === staffId && destinationVehicleId !== trip.vehicleId) {
+      affected.push({ tripId: trip.eventVehicleTripId, vehicleId: trip.vehicleId, staffId, leg: 'return' })
+    }
+  }
+  return affected
+}
+
+export function clearedDriverFieldsForMove(trip: EventVehicleTripRecord, staffId: string, leg: TransportationLeg, destinationVehicleId: string | null) {
+  const changes: { departureDriverStaffId?: null; returnDriverStaffId?: null; returnDriverMirrorsDeparture?: boolean } = {}
+  if (leg === 'departure' && trip.departureDriverStaffId === staffId && destinationVehicleId !== trip.vehicleId) {
+    changes.departureDriverStaffId = null
+    if (trip.returnDriverMirrorsDeparture && trip.returnDriverStaffId === staffId) {
+      changes.returnDriverStaffId = null
+      changes.returnDriverMirrorsDeparture = true
+    }
+  }
+  if (leg === 'return' && trip.returnDriverStaffId === staffId && destinationVehicleId !== trip.vehicleId) {
+    changes.returnDriverStaffId = null
+    if (trip.returnDriverMirrorsDeparture) changes.returnDriverMirrorsDeparture = false
+  }
+  return changes
 }
 
 export function removedStaffDriverFields(trip: Pick<EventVehicleTripRecord, 'departureDriverStaffId' | 'returnDriverStaffId'>, staffId: string) {

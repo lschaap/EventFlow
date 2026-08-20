@@ -43,8 +43,8 @@
 - NFR-027: Rules enforce Admin-only departure/driver/vehicle/settings/correction changes, valid forward actions for Staff/Admin, and bounded Staff return-passenger editing only after Depart and before Start Return.
 - NFR-028: Capacity means total available seats including the driver's seat; calculations are deterministic per leg and deduplicate a participating driver.
 - NFR-029: Only latest correction metadata is required; later corrections overwrite it. This is not full audit history, and WhatsApp edits/handoffs are not corrections.
-- NFR-030: WhatsApp content is generated locally and manually handed off. Open is best-effort and must never imply detected launch or delivery; no delivery/sent/share-attempt state, groups, phone numbers, credentials, or templates are stored.
-- NFR-031: Confirmation messages must not disclose participant names, dietary details, or contact information.
+- NFR-030 (post-MVP): WhatsApp content is generated locally and manually handed off. Open is best-effort and must never imply detected launch or delivery; no delivery/sent/share-attempt state, groups, phone numbers, credentials, or templates are stored.
+- NFR-031 (post-MVP): Confirmation messages must not disclose participant names, dietary details, or contact information.
 - NFR-032: Transportation controls and reviews must remain usable on supported mobile layouts and clearly distinguish warnings from hard validation failures.
 - NFR-033: Rules allow active approved Admin and Staff users to plan transportation for every event while retaining Admin-only master-data, settings, user-management, and correction boundaries.
 - NFR-034: Individual and bulk transportation writes are atomic, preserve non-transportation participant fields, and reject invalid references without partial movement; the MVP bulk-selection limit is 100 participants.

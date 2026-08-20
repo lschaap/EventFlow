@@ -16,7 +16,7 @@ React + TypeScript + Vite
       Firebase Cloud Functions
           │             │
           ▼             ▼
-Google Calendar API   User-initiated WhatsApp handoff
+Google Calendar API   Post-MVP user-initiated WhatsApp handoff
 ```
 
 ## Data Flow
@@ -48,7 +48,7 @@ Firestore sync-status update
 - Search/filtering
 - Dashboard
 - Client-side validation
-- Editable WhatsApp preparation with explicit Copy and best-effort Open WhatsApp
+- Post-MVP editable WhatsApp preparation with explicit Copy and best-effort Open WhatsApp
 
 ### Firebase Authentication
 - Google sign-in
@@ -91,6 +91,6 @@ The implemented baseline uses `eventDrivers`. CR-001 replaces that relationship 
 
 Firestore remains authoritative. Transactions couple driver/participant occupancy, Depart return snapshots, participant removal, lifecycle/event-status changes, bounded return edits, corrections, and eligible future cleanup. Rules mirror Admin planning permissions, Staff/Admin forward actions, and Staff return-passenger edits only after Depart and before Start Return. Composite indexes are finalized with implementation queries.
 
-WhatsApp is a client-side, user-initiated handoff from Event Details and replaces confirmation email in target MVP. Copy explicitly copies; Open WhatsApp is best-effort, leaves the preview visible, and provides Copy guidance. There is no messaging backend, launch/delivery detection, credential, recipient directory, state record, or Business API integration.
+WhatsApp is deferred beyond MVP. The preserved future architecture is a client-side, user-initiated handoff from Event Details: Copy explicitly copies and Open WhatsApp is best-effort. There is no MVP messaging backend, API, paid integration, launch/delivery detection, credential, recipient directory, or state record. Transportation lifecycle behavior is independent of messaging.
 
 See [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md) for the authoritative boundaries and migration plan.

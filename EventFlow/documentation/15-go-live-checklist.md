@@ -41,7 +41,7 @@
 - [ ] Search/filtering tested
 - [ ] Dashboard tested
 - [ ] Calendar create/update/delete/failure tested
-- [ ] WhatsApp preview/edit/Copy/best-effort Open tested without launch or delivery claims (when CR-001 is released)
+- [ ] Post-MVP only: WhatsApp preview/edit/Copy/best-effort Open tested before any future messaging release; not an MVP go-live blocker
 - [ ] Mobile layout tested on real phone
 
 ## User Acceptance

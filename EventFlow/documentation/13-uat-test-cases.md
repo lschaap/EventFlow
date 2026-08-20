@@ -27,6 +27,10 @@
 - UAT-160: Remove staff who drives departure only, return only, both legs on one vehicle, and different vehicles by leg; verify warning cancellation writes nothing and confirmation clears participation, both leg fields, and only applicable target driver references.
 - UAT-161: Clear/replace each target driver and verify former passenger assignment remains, replacement becomes one participant/occupant, mirroring stays consistent, and no `eventDrivers` record is created or changed.
 - UAT-162: Run the reset command without apply and verify exact project, preserved collections, counts/IDs, and zero writes. Do not run apply during UAT without separate Product Owner approval.
+- UAT-163: Individually move a departure driver to another vehicle and then Unassigned; verify the warning names the driver, source vehicle, and departure role, Cancel writes nothing, and Confirm atomically moves the occupant and clears the role.
+- UAT-164: Bulk-move mixed students/staff containing multiple drivers; verify one warning lists every affected role, Confirm commits all participant and trip changes, and a forced failure commits none.
+- UAT-165: Move a mirrored departure driver and verify both departure/return roles are disclosed and cleared with mirroring still true. Move only a mirrored return driver through the leg-aware service and verify departure remains while return clears and mirroring becomes false.
+- UAT-166: Attempt a direct participant write that moves a driver without clearing the trip role, and a direct trip write that assigns a driver whose applicable participant field names another vehicle; verify Rules deny both.
 
 ## Authentication and Access
 
@@ -178,8 +182,8 @@ Automated confirmation email is outside MVP and therefore has no MVP acceptance 
 
 | ID | Scenario | Expected Result |
 |---|---|---|
-| UAT-078 | Confirm event | No automated email is sent; planned WhatsApp preview is governed by CR-001 |
-| UAT-079 | Notification persistence | Confirmation does not create email, WhatsApp delivery, or share-attempt state |
+| UAT-078 | Confirm event | No automated email or WhatsApp action is required for MVP |
+| UAT-079 | Notification persistence | Confirmation creates no notification or share-attempt state |
 
 ## Mobile and Regression
 
@@ -206,8 +210,8 @@ These cases define future acceptance; they are not evidence that CR-001 is imple
 | UAT-091 | Depart without driver | Action is blocked with a clear driver requirement |
 | UAT-092 | First vehicle departs | Trip/snapshot become departed and confirmed event becomes in_progress with startedAt atomically |
 | UAT-093 | Skip or Staff undo | Action is unavailable and direct write is rejected |
-| UAT-094 | Arrive at event | Arrival time records and outbound message becomes available only then |
-| UAT-095 | Start return | Independent review runs, time records, and return message becomes available |
+| UAT-094 | Arrive at event | Arrival time records; messaging is not an MVP dependency |
+| UAT-095 | Start return | Independent review runs and time records; messaging is not an MVP dependency |
 | UAT-096 | Last vehicle returns | Trip becomes returned and event becomes completed atomically |
 | UAT-097 | Vehicle-free event | Manual Start Event and Complete Event remain available |
 | UAT-098 | Capacity definition | Stored capacity is total seats including driver; driver consumes exactly one seat even as participant |
@@ -216,9 +220,7 @@ These cases define future acceptance; they are not evidence that CR-001 is imple
 | UAT-101 | Per-leg overlap | Conflicts are independently detected for people, drivers, and vehicles |
 | UAT-102 | Admin correction | Stage/timestamps/latest audit and recalculated event status/timestamps update atomically |
 | UAT-103 | Deactivate vehicle | Eligible future references clear; historical/started records remain |
-| UAT-104 | Confirmation message privacy | Approved summary appears without participant names, restriction details, or contacts |
 | UAT-105 | Vehicle messages | Outbound/return previews appear only at authoritative stages with correct leg data |
-| UAT-106 | WhatsApp best-effort Open | Preview remains visible with Copy guidance and no opened/sent/delivery/attempt state is written |
 | UAT-107 | Completed/cancelled event | Normal transportation actions are unavailable; only authorized explicit correction remains |
 | UAT-108 | Bulk departure assignment | Admin assigns multiple active participants; Staff is denied |
 | UAT-109 | Staff return edit window | After Depart, Staff can move, assign, clear, and bulk-reassign return passengers among departed eligible vehicles |
@@ -234,9 +236,6 @@ These cases define future acceptance; they are not evidence that CR-001 is imple
 | UAT-119 | Cancelled correction | Cancelled event remains cancelled through otherwise authorized correction |
 | UAT-120 | Remove participant | Removal atomically clears departure/return assignments and applicable driver references |
 | UAT-121 | Vehicle deactivation | Only not-started future assignments/drivers clear; started/history/cancelled/completed remain |
-| UAT-122 | WhatsApp edit | Editing preview changes no EventFlow record and is not correction history |
-| UAT-123 | WhatsApp Copy | Copy works independently of Open WhatsApp |
-| UAT-124 | No message state | No opened, sent, delivered, received, or share-attempt state is stored |
 | UAT-125 | Vehicle-free Start | Staff/Admin changes confirmed to in_progress and records server startedAt |
 | UAT-126 | Vehicle-free Complete | Staff/Admin changes confirmed/in_progress to completed and records completedAt |
 | UAT-127 | No scheduled completion | Passing returnDateTime alone does not change status; no browser/read-time substitute occurs |
@@ -250,3 +249,7 @@ These cases define future acceptance; they are not evidence that CR-001 is imple
 | UAT-135 | Driver synchronization | Different eligible drivers become active participants once; replacement/clear never removes participation |
 | UAT-136 | Driver/trip authorization | Ineligible/overlapping/duplicate plans fail and Staff writes are denied |
 | UAT-137 | Planned soft removal | Admin removal clears drivers, marks removed, and retains the document |
+
+## Post-MVP WhatsApp Acceptance Considerations
+
+The former UAT-104, UAT-106, UAT-122, UAT-123, and UAT-124 scenarios are deferred and are not MVP UAT or go-live blockers. A future user-initiated handoff must preserve confirmation-message privacy, editable preview without data writes, explicit Copy, best-effort Open behavior, existing staff-only group selection, no message state, and no launch/sent/delivery/attempt claims or persistence.

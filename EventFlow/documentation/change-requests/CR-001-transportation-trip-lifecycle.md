@@ -6,8 +6,8 @@
 |---|---|
 | State | In implementation |
 | Decision date | 2026-08-18 |
-| Scope | Per-leg transportation planning, trip execution, capacity review, status automation, manual vehicle-free lifecycle, and user-initiated WhatsApp handoff |
-| Current implementation | Target-model planning, grouped participants, Events-list summaries, eligible deactivation cleanup, participant cleanup, and legacy production isolation are implemented; trip lifecycle, return snapshot, and WhatsApp handoff are not |
+| Scope | Per-leg transportation planning, trip execution, capacity review, status automation, and manual vehicle-free lifecycle |
+| Current implementation | Target-model planning, grouped participants, driver/occupant synchronization, Events-list summaries, eligible deactivation cleanup, participant cleanup, and legacy production isolation are implemented; trip lifecycle and return snapshot are not |
 | Current milestone | Transportation-planning cutover and legacy isolation |
 
 ## Implementation progress
@@ -16,7 +16,7 @@ Implemented in the foundation milestone: shared `in_progress` and nullable `star
 
 The current milestone completes target-model production cutover for Event Details, Events list, eligible vehicle deactivation, and participant removal. Events-list data loading is constant-query and derives summaries without denormalized documents. New/migrated trips default mirroring true; explicit return selection/clear sets false; restoring matching copies the departure driver atomically.
 
-Production UI/services no longer read or write `eventDrivers`; it remains only in migration/reset tooling, historical documentation, and restrictive Rules compatibility. The approved operational test-data reset was completed and verified on 2026-08-19; no live migration was performed. Snapshots, stage actions, post-Depart return editing, corrections, automatic status transitions, vehicle-free controls, WhatsApp, Calendar/email, and frontend deployment remain unimplemented. CR-001 is not Ready for UAT, Accepted, or Released.
+Production UI/services no longer read or write `eventDrivers`; it remains only in migration/reset tooling, historical documentation, and restrictive Rules compatibility. The approved operational test-data reset was completed and verified on 2026-08-19; no live migration was performed. Snapshots, stage actions, post-Depart return editing, corrections, automatic status transitions, vehicle-free controls, Calendar/email, and frontend deployment remain unimplemented. WhatsApp is post-MVP and outside CR-001 acceptance. CR-001 is not Ready for UAT, Accepted, or Released.
 
 ## Scope
 
@@ -26,13 +26,12 @@ Production UI/services no longer read or write `eventDrivers`; it remains only i
 - Automatic vehicle-based status changes and manual vehicle-free controls.
 - Admin corrections with latest-only correction metadata.
 - Default return destination in Admin Configuration > Vehicles, initially `Mill Village`.
-- User-initiated WhatsApp preview, editing, copy, and best-effort handoff.
 - Eligible future cleanup during vehicle deactivation.
 
 ## Exclusions and deferrals
 
 - Confirmation email is removed from MVP and is an optional future enhancement.
-- No automated WhatsApp sending, Business API, delivery/app-open verification, group discovery, phone numbers, credentials, stored templates, sent state, or share-attempt timestamps.
+- All WhatsApp behavior is post-MVP. No messaging UI, automated sending, API/paid integration, delivery/app-open verification, group discovery, phone numbers, credentials, stored templates, sent state, or share-attempt timestamps are part of MVP.
 - No automatic scheduled completion for vehicle-free events or browser/read-time substitute.
 - No route calculation, event-specific return destination, hard capacity/unassigned block, general activity log, or full correction history.
 
@@ -70,6 +69,8 @@ Vehicle capacity means **total available seats in the vehicle, including the dri
 
 Each vehicle has one active eligible driver per leg. Assigning a driver atomically ensures staff participation and leg occupancy. Removing only a driver retains participation. Removing a participant-driver warns before atomically removing applicable driver references and both participant vehicle fields. Existing event-interval overlap checks apply independently to leg participants, drivers, and vehicles.
 
+Moving a driver occupant away from the vehicle they drive also requires a warning that names every affected role. Cancel writes nothing. Confirm revalidates and atomically clears the disclosed roles with the individual or bulk occupant move. Departure and return are independent. Moving a mirrored departure driver clears both disclosed roles and retains a consistent true mirror with null drivers; moving only the mirrored return occupant preserves departure and sets mirroring false.
+
 ### Reviews and operations
 
 Depart and Start Return reviews list vehicle, applicable driver, occupants, count/capacity, overcapacity, and every active participant unassigned for that leg. Cancelling either review writes nothing. Warnings require confirmation but do not block; a missing driver blocks.
@@ -100,9 +101,9 @@ Vehicle deactivation lists affected event names and, after confirmation, clears 
 
 `defaultReturnDestination` is configured in Admin Configuration > Vehicles and initially displays `Mill Village`. Only Admin updates it; Staff may read it for operations/messages. No separate settings navigation is added.
 
-### WhatsApp replaces confirmation email
+### Post-MVP WhatsApp handoff
 
-EventFlow remains the source of truth while WhatsApp is an intentional handoff. Event Details generates editable text without changing data. Copy explicitly copies. Open WhatsApp attempts a best-effort handoff; the preview remains visible and instructs the user to use Copy if WhatsApp does not open. The user selects an existing staff-only group and presses Send. EventFlow never claims opened, sent, delivered, or received.
+This section preserves future decisions but is not part of CR-001 MVP acceptance, UAT, deployment, or go-live. EventFlow remains the source of truth while a future WhatsApp feature may provide an intentional user-initiated handoff. Event Details generates editable text without changing data. Copy explicitly copies. Open WhatsApp attempts a best-effort handoff; the user selects an existing staff-only group and presses Send. EventFlow never claims opened, sent, delivered, or received. No paid/API integration is required, and lifecycle actions work independently.
 
 - Confirmation preview after confirmation: name, planned times, location, counts, drivers, vehicles, meals, dietary Yes/No, and EventFlow link; no participant names, restriction details, or contacts.
 - Outbound preview only after Arrive: `departedAt`, departure occupants, driver, vehicle, event location, expected return.
@@ -145,7 +146,7 @@ Rules allow active approved Staff/Admin planned vehicle, driver, and participant
 
 - Cross-document authorization and concurrent return edits/stage transitions require careful transactions and Rules.
 - Ambiguous legacy drivers/capacities require explicit review.
-- Browser WhatsApp handoff cannot prove launch or delivery.
+- Post-MVP browser WhatsApp handoff cannot prove launch or delivery.
 - Latest-only correction metadata cannot reconstruct history.
 
 ## Acceptance criteria
@@ -157,7 +158,7 @@ Rules allow active approved Staff/Admin planned vehicle, driver, and participant
 - Capacity includes the driver, is leg-specific/deduplicated, and warns without blocking.
 - Corrections atomically recalculate status/timestamps backward and forward.
 - Planned unused/removed trips do not block completion; no completion precedes a departure.
-- WhatsApp timing, privacy, explicit Copy, best-effort Open, and no-storage rules apply; MVP has no confirmation email.
+- MVP has no confirmation email and no WhatsApp acceptance dependency. The deferred timing, privacy, explicit Copy, best-effort Open, and no-storage decisions remain preserved for a future change.
 - Migration is backed up, validated, reversible, and does not silently delete legacy records.
 
 ## Current implementation progress
@@ -168,9 +169,13 @@ The UAT-fix iteration merges participant management into the departure groups, r
 
 Implemented in this cutover milestone: Events-list target summaries, target-model eligible vehicle deactivation, student/staff removal transportation cleanup, production `eventDrivers` isolation, focused safeguards/tests, and a non-executed operational reset procedure.
 
+Implemented in the stabilization milestone: individual and bulk driver-occupant moves disclose every affected role, Cancel writes nothing, Confirm clears roles and moves occupants atomically, departure/return consequences remain independent, and mirrored state remains consistent. No lifecycle action was added. All WhatsApp requirements moved to post-MVP.
+
 The narrow participant-removal Rules correction was deployed to `eventflow-612ed` on 2026-08-19 as ruleset `741d4181-b59e-4cd7-b7d8-a21297702303`. Existing indexes are unchanged and sufficient for the implemented queries; all four required `eventVehicleTrips` indexes report `READY`.
 
-Still planned: lifecycle actions and timestamps, return snapshots, post-Depart independent return editing, corrections, WhatsApp, frontend deployment, and post-reset UAT. No live legacy migration is required for the cleared operational test data.
+The driver/occupant invariant Rules were deployed to `eventflow-612ed` on 2026-08-19 as ruleset `df4e8c69-0ac9-435e-adab-1192ef38511c`. They require each non-null leg driver to occupy the driven vehicle and reject occupant moves that leave the applicable source-trip driver reference in place.
+
+Still planned: lifecycle actions and timestamps, return snapshots, post-Depart independent return editing, corrections, frontend deployment, and post-reset UAT. No live legacy migration is required for the cleared operational test data. WhatsApp is post-MVP.
 
 ## Implementation checklist
 

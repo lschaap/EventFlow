@@ -8,6 +8,8 @@ After the future Depart action, departure groups become historical/read-only and
 
 Participant management and departure planning use one list. Add Student, Add Staff, and Add Vehicle appear at the top; additions immediately enter Unassigned and removals immediately disappear from every departure group. Removing a staff occupant also clears every departure/return driver reference for that staff member in the event in the same transaction. Individual moves verify the committed assignment and display an error rather than silently accepting an unsaved move. Bulk Apply uses one secured Firestore client transaction and shows `Bulk assignment failed. Please try again or try individual assignment.` for every failure. Return occupants remain hidden before Depart, and the return-driver selector remains hidden while return transportation is confirmed to match departure. Later, each departed vehicle card receives its own Edit return vehicle assignments button; that control is not active yet.
 
+Before an individual or bulk occupant move, EventFlow detects every selected staff member who drives the source vehicle for that leg. One warning names each affected driver, vehicle, and leg. Cancel performs no write. Confirm revalidates the disclosed roles and atomically clears them with the occupant move. Moving a mirrored departure driver clears both disclosed roles and keeps both null with mirroring true; moving only the mirrored return occupant clears return, preserves departure, and makes return independent.
+
 # Staff and Admin Workflows
 
 ## 01 - Authenticate User
@@ -149,7 +151,7 @@ After a vehicle departs and before the target vehicle starts return, Staff/Admin
 
 ### T3 - Arrive at Event
 
-Staff or Admin confirms **Arrive at Event**. EventFlow records server `arrivedAtEventAt`, advances the trip, and enables that vehicle's outbound WhatsApp preview.
+Staff or Admin confirms **Arrive at Event**. EventFlow records server `arrivedAtEventAt` and advances the trip. Messaging is independent and post-MVP.
 
 ### T4 - Start Return
 
@@ -171,6 +173,6 @@ Admin uses an explicit correction action, reviews a warning, supplies a required
 
 EventFlow lists affected future event names. Confirmation clears departure/return participant assignments and applicable drivers only where the event has not started and departure is still in the future. Historical and started records remain readable.
 
-### T8 - Prepare a WhatsApp message
+### T8 - Prepare a WhatsApp message (Post-MVP)
 
-From Event Details, the user previews/edits eligible text without changing data. Copy explicitly copies. Open WhatsApp makes a best-effort attempt while the preview remains visible and instructs use of Copy if it does not open. The user selects a staff-only group and sends manually. EventFlow claims/stores no launch, send, delivery, receipt, or attempt state.
+This workflow is not part of CR-001 MVP acceptance, UAT, or go-live. A future Event Details implementation may let the user preview/edit eligible text without changing data, explicitly Copy it, and make a best-effort Open WhatsApp handoff to an existing staff-only group. EventFlow will claim/store no launch, send, delivery, receipt, or attempt state.

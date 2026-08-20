@@ -11,6 +11,8 @@ assert.match(trips, /allow create: if isAuth\(\) && isApproved\(request\.auth\.u
 assert.match(trips, /allow update: if isAuth\(\) && isApproved\(request\.auth\.uid\)/, 'Admin and Staff can update planned trips')
 assert.match(trips, /request\.resource\.data\.stage == 'planned'/, 'trip stage remains planned')
 assert.match(trips, /request\.resource\.data\.departedAt == null/, 'lifecycle timestamps remain unavailable')
+assert.match(trips, /validDepartureDriverParticipant\(request\.resource\.data\.eventId, request\.resource\.data\.vehicleId, request\.resource\.data\.departureDriverStaffId\)/, 'departure driver must occupy the driven vehicle')
+assert.match(trips, /validReturnDriverParticipant\(request\.resource\.data\.eventId, request\.resource\.data\.vehicleId, request\.resource\.data\.returnDriverStaffId\)/, 'return driver must occupy the driven vehicle')
 
 for (const name of ['eventParticipants/{participantId}', 'eventStaffParticipants/{participantId}']) {
   const start = rules.indexOf(marker(name))
@@ -20,6 +22,10 @@ for (const name of ['eventParticipants/{participantId}', 'eventStaffParticipants
   assert.match(section, /request\.resource\.data\.departureVehicleId == null/, `${name} removal clears departure vehicle`)
   assert.match(section, /request\.resource\.data\.returnVehicleId == null/, `${name} removal clears return vehicle`)
 }
+
+const staffTransportation = block('eventStaffParticipants/{participantId}', 'eventDrivers/{driverId}')
+assert.match(staffTransportation, /departureDriverMoveIsValid/, 'staff departure moves must clear a conflicting departure driver role atomically')
+assert.match(staffTransportation, /returnDriverMoveIsValid/, 'staff return moves must clear a conflicting return driver role atomically')
 
 const legacyDrivers = block('eventDrivers/{driverId}', 'eventVehicleTrips/{tripId}')
 assert.match(legacyDrivers, /allow delete: if false;/, 'legacy drivers cannot be hard deleted through the application')

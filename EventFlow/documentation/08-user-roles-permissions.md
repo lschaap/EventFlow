@@ -61,6 +61,8 @@ The latest approved milestone supersedes rows below that describe Staff transpor
 | Skip or undo a stage through normal controls | No | No |
 | Use explicit correction workflow after a leg begins | No | Yes |
 | Configure default return destination in Admin Configuration > Vehicles | No | Yes |
-| Preview/copy/open an available Event Details WhatsApp message | Yes | Yes |
+| Preview/copy/open an Event Details WhatsApp message | Post-MVP | Post-MVP |
 
 All users must still be authenticated, approved, and active. A driver must additionally be active staff with `canDrive = true`. Staff return edits save immediately after the same participant/trip/overlap/capacity validation used for Admin edits and target only departed vehicles before return start. Rules, not UI visibility alone, enforce these boundaries.
+
+For both Admin and Staff, moving a driver occupant away from the vehicle they drive requires a disclosed confirmation and atomically clears the applicable role. Cancelling writes nothing. WhatsApp permissions are not active MVP permissions.

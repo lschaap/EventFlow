@@ -19,7 +19,7 @@ Authorized users can:
 6. Confirm the event.
 7. Rely on EventFlow to synchronize with Google Calendar.
 8. Search later for current, upcoming, or past events.
-9. Prepare an editable WhatsApp message for manual handoff while treating EventFlow as the source of truth.
+9. After MVP, optionally prepare an editable WhatsApp message for manual handoff while treating EventFlow as the source of truth.
 
 ## Primary Goals
 - Reduce manual coordination.
@@ -49,7 +49,7 @@ Authorized users can:
 - Dietary-restriction indicator
 - Google Calendar synchronization
 - Calendar sync status/error tracking
-- User-initiated WhatsApp message preparation and handoff
+- Post-MVP user-initiated WhatsApp message preparation and handoff
 - Mobile-first interface
 
 ## Out of Scope
@@ -73,4 +73,4 @@ Authorized users can:
 - Teachers can access student participants sorted by grade.
 - Core flows work well on mobile.
 
-The transportation and WhatsApp capabilities above are approved target-MVP scope in CR-001 and are not yet implemented.
+The transportation capabilities above are approved target-MVP scope in CR-001 and are not yet fully implemented. WhatsApp capabilities are preserved as post-MVP requirements and are not part of CR-001 MVP acceptance.

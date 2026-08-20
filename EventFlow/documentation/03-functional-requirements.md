@@ -153,9 +153,9 @@ The following integration requirements remain pending and are not implemented by
 - REQ-105: After Start Return, return assignments are locked except for Admin correction. Corrections require warning, confirmation, reason, UID, server timestamp, and atomic event-status/timestamp recalculation.
 - REQ-106: Vehicle deactivation lists affected future events and clears eligible participant and driver assignments only for not-started events whose departure is in the future.
 - REQ-107: Admin configures the default return destination, initially `Mill Village`, inside Admin Configuration > Vehicles; Staff may read it operationally.
-- REQ-108: Event Details provides editable WhatsApp preparation. Copy explicitly copies; Open WhatsApp is best-effort, leaves the preview visible, and instructs use of Copy if it does not open. EventFlow never claims or records opening, sending, delivery, or receipt.
-- REQ-109: Confirmation messages become available after confirmation, outbound vehicle messages after Arrive at Event, and return vehicle messages after Start Return.
-- REQ-110: Confirmation messages exclude participant names and restriction details; vehicle messages contain only the leg-specific operational content approved in CR-001.
+- REQ-108 (post-MVP): Event Details provides editable WhatsApp preparation. Copy explicitly copies; Open WhatsApp is best-effort, leaves the preview visible, and instructs use of Copy if it does not open. EventFlow never claims or records opening, sending, delivery, or receipt.
+- REQ-109 (post-MVP): Confirmation messages become available after confirmation, outbound vehicle messages after Arrive at Event, and return vehicle messages after Start Return.
+- REQ-110 (post-MVP): Confirmation messages exclude participant names and restriction details; vehicle messages contain only the leg-specific operational content approved for the future handoff.
 - REQ-111: Staff/Admin return edits validate active participation, an active eligible departed target trip before return start, uniqueness, overlap, and recalculated capacity; warnings do not hard-block.
 - REQ-112: Cancelling Depart or Start Return review performs no writes and unassigned warnings list every applicable active participant.
 - REQ-113: Correction recalculation preserves cancelled, returns to confirmed when no active trip departed, uses in_progress while applicable trips remain out, and completes when all applicable trips returned; `startedAt`/`completedAt` remain consistent.
@@ -170,5 +170,11 @@ The following integration requirements remain pending and are not implemented by
 - REQ-122: Return occupants are hidden before departure. A future lifecycle milestone exposes a separate Edit return vehicle assignments action on each departed vehicle card.
 - REQ-123: Event-list transportation summaries derive only from active `eventVehicleTrips` and active participant vehicle fields, showing vehicles, per-leg driver differences, departure occupancy/capacity, incomplete/overcapacity warnings, and an explicit no-plan state without participant rosters.
 - REQ-124: Production application behavior does not read or write legacy `eventDrivers`; that collection remains only for migration tooling and temporary Rules compatibility until the approved reset decision is executed.
+- REQ-125: For each leg, a driver must occupy the vehicle they drive. Moving an individual or bulk-selected staff driver to another vehicle or Unassigned warns which leg roles will clear; Cancel writes nothing and Confirm atomically moves every selected occupant and clears the disclosed roles.
+- REQ-126: Driver-role clearing caused by an occupant move is leg-independent. A mirrored departure-driver move discloses and clears both roles while retaining a consistent mirror; a return-only move preserves departure and sets mirroring false when necessary.
 
 The complete authoritative behavior and acceptance criteria are in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md).
+
+## Post-MVP WhatsApp Handoff
+
+REQ-108 through REQ-110 are retained as future requirements, not MVP acceptance criteria. No WhatsApp API, paid integration, message UI, UAT gate, or go-live dependency is required for MVP. Any future implementation remains a user-initiated preview/edit/copy/best-effort handoff to an existing staff-only group and must operate independently of transportation lifecycle actions.

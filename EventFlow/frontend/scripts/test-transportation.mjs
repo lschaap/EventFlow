@@ -6,7 +6,7 @@ const output = new URL('../.transportation-test/', import.meta.url)
 try {
   const compiler = spawnSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p', 'tsconfig.transportation-test.json'], { cwd: new URL('..', import.meta.url), stdio: 'inherit' })
   if (compiler.status !== 0) process.exit(compiler.status ?? 1)
-  const { driverOccupantFields, groupTransportationOccupants, mirroredReturnVehicle, projectedOccupancy, removedStaffDriverFields, returnDriverIsVisible } = await import('../.transportation-test/services/transportationPlanning.js')
+  const { affectedDriverRolesForMove, clearedDriverFieldsForMove, driverOccupantFields, groupTransportationOccupants, mirroredReturnVehicle, projectedOccupancy, removedStaffDriverFields, returnDriverIsVisible } = await import('../.transportation-test/services/transportationPlanning.js')
   const { buildEventTransportationSummary } = await import('../.transportation-test/services/eventTransportationSummary.js')
   const { clearedVehicleAssignmentFields, isEligibleFutureTripForDeactivation } = await import('../.transportation-test/services/vehicleDeactivation.js')
   const trips = [{ vehicleId: 'van-a' }, { vehicleId: 'van-b' }]
@@ -34,6 +34,15 @@ try {
   assert.equal(returnDriverIsVisible(false), true, 'independent return confirmation reveals return driver')
   assert.deepEqual(removedStaffDriverFields({ departureDriverStaffId: 'driver', returnDriverStaffId: 'driver' }, 'driver'), { departureDriverStaffId: null, returnDriverStaffId: null, returnDriverMirrorsDeparture: true }, 'removing a participant clears both mirrored driver legs')
   assert.deepEqual(removedStaffDriverFields({ departureDriverStaffId: 'other', returnDriverStaffId: 'driver' }, 'driver'), { returnDriverStaffId: null, returnDriverMirrorsDeparture: false }, 'removing an independent return driver preserves the departure driver')
+  const mirroredTrip = { eventVehicleTripId: 'event__van-a', vehicleId: 'van-a', assignmentStatus: 'active', departureDriverStaffId: 'driver', returnDriverStaffId: 'driver', returnDriverMirrorsDeparture: true }
+  assert.deepEqual(affectedDriverRolesForMove([mirroredTrip], 'driver', 'departure', 'van-b').map((item) => item.leg), ['departure', 'return'], 'moving a mirrored departure driver discloses both cleared roles')
+  assert.deepEqual(clearedDriverFieldsForMove(mirroredTrip, 'driver', 'departure', 'van-b'), { departureDriverStaffId: null, returnDriverStaffId: null, returnDriverMirrorsDeparture: true }, 'mirrored departure move clears both roles consistently')
+  assert.deepEqual(clearedDriverFieldsForMove(mirroredTrip, 'driver', 'return', null), { returnDriverStaffId: null, returnDriverMirrorsDeparture: false }, 'return-only move preserves departure and breaks mirroring')
+  const independentTrip = { ...mirroredTrip, returnDriverStaffId: 'return-driver', returnDriverMirrorsDeparture: false }
+  assert.deepEqual(affectedDriverRolesForMove([independentTrip], 'driver', 'departure', null).map((item) => item.leg), ['departure'], 'independent departure move clears only departure role')
+  assert.deepEqual(clearedDriverFieldsForMove(independentTrip, 'return-driver', 'return', 'van-b'), { returnDriverStaffId: null }, 'independent return move clears only return role')
+  assert.deepEqual(affectedDriverRolesForMove([mirroredTrip], 'driver', 'departure', 'van-a'), [], 'remaining in the driven vehicle preserves roles')
+  assert.deepEqual(affectedDriverRolesForMove([mirroredTrip], 'student', 'departure', 'van-b'), [], 'students never produce driver-role effects')
   const event = { eventId: 'event', participantCount: 3 }
   const summaryTrips = [
     { eventId: 'event', vehicleId: 'van-a', assignmentStatus: 'active', departureDriverStaffId: 'driver', returnDriverStaffId: 'return-driver' },

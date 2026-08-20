@@ -21,7 +21,7 @@ Deliver a mobile-first MVP that allows authorized users to:
 - Track meals missed and dietary-restriction indicators.
 - Search and review current, upcoming, and past events.
 - Synchronize confirmed events with the school Google Calendar.
-- Prepare editable WhatsApp messages for manual staff-group handoff.
+- Preserve a post-MVP option for editable, user-initiated WhatsApp staff-group handoff without making messaging part of MVP delivery.
 
 ## Primary Users
 - Admin
@@ -45,7 +45,7 @@ Deliver a mobile-first MVP that allows authorized users to:
 - Inactive master-data records cannot be newly selected.
 - Historical references remain intact when records are deactivated.
 
-The transportation lifecycle, per-leg assignments, vehicle-based status automation, manual vehicle-free lifecycle, and WhatsApp handoff are approved target-MVP scope under CR-001 and are not yet implemented.
+The transportation lifecycle, per-leg assignments, vehicle-based status automation, and manual vehicle-free lifecycle are approved target-MVP scope under CR-001 and are not yet implemented. WhatsApp handoff is explicitly post-MVP and is not an MVP UAT or go-live requirement.
 
 ## Out of Scope
 - Offline support

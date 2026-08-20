@@ -4,7 +4,7 @@ import { addStudentParticipant, listParticipantsForEvent, removeStudentParticipa
 import { addStaffParticipant, listStaffParticipantsForEvent, removeStaffParticipant } from '../services/eventStaffParticipants'
 import { listStudents } from '../services/students'
 import { addPlannedEventVehicleTrip, listActiveEventVehicleTrips, mirrorReturnDriver, removePlannedEventVehicleTrip, setPlannedTripDriver } from '../services/eventVehicleTrips'
-import { bulkMoveParticipantsToDepartureVehicle, MAX_BULK_TRANSPORTATION_SELECTION, moveParticipantsToDepartureVehicle } from '../services/transportationAssignments'
+import { bulkMoveParticipantsToDepartureVehicle, findAffectedDriverRoles, MAX_BULK_TRANSPORTATION_SELECTION, moveParticipantsToDepartureVehicle } from '../services/transportationAssignments'
 import { combineTransportationOccupants, groupTransportationOccupants, projectedOccupancy, returnDriverIsVisible, type TransportationOccupant } from '../services/transportationPlanning'
 import type { EventParticipantRecord, EventStaffParticipantRecord, EventVehicleTripRecord, StaffRecord, StudentRecord, VehicleRecord } from '../types/models'
 
@@ -46,16 +46,29 @@ export default function VehicleTripPlanning({ eventId, vehicles, staff, onPartic
 
   function showError(error: unknown) { setMessage(error instanceof Error ? error.message : 'Unable to update transportation plan.') }
   async function act(action: () => Promise<unknown>, success: string) {
-    if (busy) return
+    if (busy) return false
     setBusy(true); setMessage(null)
-    try { await action(); await load(); await onParticipantsChanged?.(); setMessage(success) } catch (error) { showError(error) } finally { setBusy(false) }
+    try { await action(); await load(); await onParticipantsChanged?.(); setMessage(success); return true } catch (error) { showError(error); return false } finally { setBusy(false) }
   }
   function toggle(key: string) { setSelected((current) => { const next = new Set(current); next.has(key) ? next.delete(key) : next.add(key); return next }) }
   function toggleGroup(members: TransportationOccupant[]) {
     const keys = members.map(keyOf), all = keys.length > 0 && keys.every((key) => selected.has(key))
     setSelected((current) => { const next = new Set(current); keys.forEach((key) => all ? next.delete(key) : next.add(key)); return next })
   }
-  const move = (members: TransportationOccupant[], target: string | null, success: string) => act(() => moveParticipantsToDepartureVehicle(eventId, members.map(({ kind, personId }) => ({ kind, personId })), target), success)
+  const confirmAndMove = async (members: TransportationOccupant[], target: string | null, success: string, bulk = false) => {
+    const keys = members.map(({ kind, personId }) => ({ kind, personId }))
+    try {
+      const affected = await findAffectedDriverRoles(eventId, keys, target, 'departure')
+      if (affected.length) {
+        const staffNames = new Map(staff.map((item) => [item.staffId, item.displayName]))
+        const vehicleNames = new Map(vehicles.map((item) => [item.vehicleId, item.name]))
+        const details = affected.map((item) => `${staffNames.get(item.staffId) ?? item.staffId}: ${item.leg} driver of ${vehicleNames.get(item.vehicleId) ?? item.vehicleId}`).join('\n')
+        if (!window.confirm(`Moving ${bulk ? 'these occupants' : members[0]?.displayName ?? 'this occupant'} will clear the following driver role${affected.length === 1 ? '' : 's'}:\n\n${details}\n\nContinue with the occupant move and driver removal?`)) return false
+      }
+      return await act(() => bulk ? bulkMoveParticipantsToDepartureVehicle(eventId, keys, target, affected) : moveParticipantsToDepartureVehicle(eventId, keys, target, affected), success)
+    } catch (error) { showError(error); return false }
+  }
+  const move = (members: TransportationOccupant[], target: string | null, success: string) => confirmAndMove(members, target, success)
   const removeParticipant = (occupant: TransportationOccupant) => {
     if (occupant.kind === 'staff' && trips.some((trip) => trip.departureDriverStaffId === occupant.personId || trip.returnDriverStaffId === occupant.personId) && !window.confirm('This staff participant is assigned as a driver. Removing them as an occupant will also remove all of their driver assignments for this event. Continue?')) return Promise.resolve()
     return act(() => occupant.kind === 'student' ? removeStudentParticipant(eventId, occupant.personId, firebaseUser?.uid ?? '') : removeStaffParticipant(eventId, occupant.personId, firebaseUser?.uid ?? ''), `${occupant.displayName} removed.`)
@@ -85,7 +98,7 @@ export default function VehicleTripPlanning({ eventId, vehicles, staff, onPartic
       </article>
     })}</div>
 
-    {selected.size ? <div className="sticky bottom-3 mt-5 rounded-2xl border bg-white p-4 shadow-lg"><p className="text-sm font-semibold">{selected.size} selected</p><div className="mt-2 flex flex-col gap-2 sm:flex-row"><select value={destination} disabled={busy} onChange={(event) => setDestination(event.target.value)} className="rounded-xl border px-3 py-2"><option value="">Move selected to…</option><option value="unassigned">Unassigned</option>{trips.map((trip) => <option key={trip.vehicleId} value={trip.vehicleId}>{vehicles.find((item) => item.vehicleId === trip.vehicleId)?.name ?? trip.vehicleId}</option>)}</select><button disabled={!canPlan || busy || !destination || selected.size > MAX_BULK_TRANSPORTATION_SELECTION} onClick={() => void act(async () => { await bulkMoveParticipantsToDepartureVehicle(eventId, selectedPeople.map(({ kind, personId }) => ({ kind, personId })), destinationId); setSelected(new Set()); setDestination('') }, 'Selected participants moved.')} className="rounded-xl bg-slate-900 px-4 py-2 text-white disabled:opacity-50">Apply</button><button disabled={busy} onClick={() => setSelected(new Set())} className="rounded-xl border px-4 py-2">Clear</button></div>{destination ? <p className={`mt-2 text-sm ${projectedOver ? 'font-semibold text-rose-700' : 'text-slate-600'}`}>Projected destination occupancy: {projected}{destinationGroup?.capacity == null ? '' : `/${destinationGroup.capacity}`}{projectedOver ? ` — ${projectedOver} over capacity (warning only)` : ''}</p> : null}</div> : null}
+    {selected.size ? <div className="sticky bottom-3 mt-5 rounded-2xl border bg-white p-4 shadow-lg"><p className="text-sm font-semibold">{selected.size} selected</p><div className="mt-2 flex flex-col gap-2 sm:flex-row"><select value={destination} disabled={busy} onChange={(event) => setDestination(event.target.value)} className="rounded-xl border px-3 py-2"><option value="">Move selected to…</option><option value="unassigned">Unassigned</option>{trips.map((trip) => <option key={trip.vehicleId} value={trip.vehicleId}>{vehicles.find((item) => item.vehicleId === trip.vehicleId)?.name ?? trip.vehicleId}</option>)}</select><button disabled={!canPlan || busy || !destination || selected.size > MAX_BULK_TRANSPORTATION_SELECTION} onClick={() => void confirmAndMove(selectedPeople, destinationId, 'Selected participants moved.', true).then((moved) => { if (moved) { setSelected(new Set()); setDestination('') } })} className="rounded-xl bg-slate-900 px-4 py-2 text-white disabled:opacity-50">Apply</button><button disabled={busy} onClick={() => setSelected(new Set())} className="rounded-xl border px-4 py-2">Clear</button></div>{destination ? <p className={`mt-2 text-sm ${projectedOver ? 'font-semibold text-rose-700' : 'text-slate-600'}`}>Projected destination occupancy: {projected}{destinationGroup?.capacity == null ? '' : `/${destinationGroup.capacity}`}{projectedOver ? ` — ${projectedOver} over capacity (warning only)` : ''}</p> : null}</div> : null}
   </section>
 }
 

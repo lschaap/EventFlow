@@ -5,13 +5,16 @@
 - Cut Events list summaries over to active target trips/participant assignments with constant-query loading, driver/vehicle resolution, no-plan state, incomplete/overcapacity warnings, and malformed-count reporting.
 - Isolated legacy `eventDrivers` from all production frontend behavior while retaining migration tooling and restrictive Rules compatibility.
 - Added eligible future target-trip vehicle deactivation cleanup and verified student/staff removal clears both leg assignments plus applicable target drivers.
-- Added a project-locked, dry-run-first, bounded operational test-data reset utility and runbook; it has not been executed.
+- Added and executed a project-locked, dry-run-first, bounded operational test-data reset utility and runbook under Product Owner approval.
 - Narrow participant-removal Rules changes were deployed to `eventflow-612ed` on 2026-08-19 as ruleset `741d4181-b59e-4cd7-b7d8-a21297702303`; all four unchanged trip indexes report READY.
 - Product Owner approved the operational test-data reset on 2026-08-19. It deleted 47 scoped documents with no batch failures; post-reset verification reported all five operational collections empty, zero anomalies, and 27 preserved master/configuration documents.
+- Added leg-specific driver/occupant synchronization: warned individual/bulk moves atomically clear disclosed driver roles, preserve unrelated legs, and maintain mirror consistency. Depart remains unimplemented.
+- Deployed the matching driver/occupant invariant Rules to `eventflow-612ed` as ruleset `df4e8c69-0ac9-435e-adab-1192ef38511c`; no indexes or other Firebase resources changed.
+- Product Owner moved all WhatsApp functionality out of CR-001 MVP acceptance and into the future roadmap; it is not an MVP UAT, deployment, or go-live dependency.
 
 - Expanded planned transportation authorization to active approved Admin and Staff users for all events while keeping master data, settings, users, and corrections Admin-only.
 - Added nullable per-leg participant vehicle assignments, pre-departure return mirroring with an independent-return-driver exception, grouped planning, atomic individual/bulk movement, Unassigned groups, and per-leg capacity warnings.
-- Kept lifecycle actions, snapshots, post-Depart return editing, corrections, WhatsApp, reset execution, and frontend deployment planned.
+- Kept lifecycle actions, snapshots, post-Depart return editing, corrections, and frontend deployment planned; moved all WhatsApp behavior to post-MVP.
 - Consolidated participant and transportation management into one live-refreshing grouped section, retained bulk assignment as a Spark-compatible atomic Firestore transaction, standardized its failure message, and hid return occupants until the future per-departed-vehicle edit action.
 - Fixed grouped-planning UAT findings: staff-occupant removal now clears current trip driver references atomically, individual assignments verify committed state and surface failures, and the return-driver selector stays hidden until return transportation is explicitly marked different.
 - The four trip indexes are READY and the Spark-compatible transportation Rules adjustment is deployed; the grouped application is not deployed, and no Cloud Function is required.
@@ -28,7 +31,7 @@
 - Added `in_progress` and nullable `startedAt` compatibility without lifecycle actions or stored-status changes.
 - Added Admin Vehicles-tab default destination editing; missing settings display `Mill Village` without an implicit write.
 - Added dry-run-first, explicit-confirmation, idempotent migration tooling and fictional-fixture tests; no migration ran and `eventDrivers` remains the UI source.
-- Participant assignments, lifecycle automation, Staff return editing, WhatsApp, and UI cutover remain unimplemented.
+- Participant assignments, lifecycle automation, Staff return editing, and UI cutover remain unimplemented; WhatsApp is post-MVP.
 
 ## Approved Change Definition - 2026-08-18 (Not Implemented)
 

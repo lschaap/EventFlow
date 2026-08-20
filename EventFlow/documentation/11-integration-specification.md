@@ -136,9 +136,9 @@ Confirmation email is not part of the MVP. Optional automated email is deferred 
 ## 5. Future Integrations
 Future integrations are documented in `16-future-roadmap.md` and are not part of MVP.
 
-## 6. WhatsApp User Handoff - Approved and Planned (CR-001)
+## 6. WhatsApp User Handoff - Post-MVP
 
-This is a client-side convenience, not automated integration. EventFlow creates editable text on Event Details. Copy explicitly copies it. Open WhatsApp makes a best-effort handoff; the message stays visible and the UI instructs the user to use Copy if WhatsApp does not open. The user chooses an existing staff-only group and sends manually.
+This preserved future design is a client-side convenience, not an MVP integration or CR-001 acceptance requirement. EventFlow may create editable text on Event Details. Copy explicitly copies it. Open WhatsApp makes a best-effort handoff; the message stays visible and the user chooses an existing staff-only group and sends manually.
 
 Browsers cannot reliably determine whether WhatsApp opened. EventFlow never claims opened, sent, delivered, or received. It does not use the Business API, discover/store groups, store phone numbers/credentials/templates, send automatically, or record sent/share-attempt state.
 

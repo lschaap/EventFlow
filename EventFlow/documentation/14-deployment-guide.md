@@ -36,7 +36,6 @@ Deploy functions for:
 - Calendar create
 - Calendar update
 - Calendar delete
-- User-initiated WhatsApp preview, explicit Copy, and best-effort Open behavior (when CR-001 is implemented)
 
 Use secret management for sensitive credentials.
 
@@ -57,7 +56,7 @@ Resolve all errors before deployment.
 Deploy using selected hosting. Firebase Hosting is suitable but not required by product requirements.
 
 ## Post-Deployment Validation
-Validate authentication, permissions, CRUD, assignments, search, dashboard, Calendar, and mobile layout. When CR-001 is implemented, also validate snapshots, lifecycle/status transactions, bounded Staff return editing, total-seat capacity, settings permissions, and WhatsApp handoff without delivery claims.
+Validate authentication, permissions, CRUD, assignments, search, dashboard, Calendar, and mobile layout. When CR-001 is implemented, also validate snapshots, lifecycle/status transactions, bounded Staff return editing, total-seat capacity, settings permissions, and driver/occupant synchronization. WhatsApp is post-MVP and is not a deployment or go-live prerequisite.
 
 ## Rollback
 Maintain:

@@ -4,6 +4,10 @@
 
 Following Product Owner review of the dry-run scope, the project-locked reset deleted 47 operational test documents from `events`, `eventParticipants`, `eventStaffParticipants`, `eventDrivers`, and `eventVehicleTrips`. Post-reset verification reported zero remaining documents in those collections, no malformed/orphaned dependents, and unchanged reported preservation counts totaling 27 Firestore master/configuration documents. Firebase Authentication users were not targeted.
 
+## 2026-08-19 CR-001 stabilization decision
+
+Before lifecycle implementation, Product Owner approved leg-specific driver/occupant enforcement: moving a driver away warns, Cancel writes nothing, and Confirm atomically clears every disclosed applicable role with the occupant move, including consistent mirror consequences. Product Owner also moved every WhatsApp requirement to post-MVP; messaging is not part of CR-001 MVP acceptance, UAT, deployment, or go-live.
+
 ## Purpose
 
 This document defines how EventFlow changes move from an identified need to an approved, implementation-ready scope. It prevents planned behavior from being mistaken for functionality that is already available.
@@ -61,4 +65,4 @@ Approval to define a change does not authorize code changes, data migration, dep
 
 ## CR-001 approval record
 
-The product decisions for CR-001, including its authoritative corrections, were confirmed on 2026-08-18. CR-001 remains In implementation. Planning, grouped participants, Events-list cutover, target deactivation, participant cleanup, and production legacy isolation are implemented in source; lifecycle execution, reset execution, frontend deployment, and final UAT remain separate authorized activities.
+The product decisions for CR-001, including its authoritative corrections, were confirmed on 2026-08-18 and the stabilization decision above on 2026-08-19. CR-001 remains In implementation. Planning, grouped participants, Events-list cutover, target deactivation, participant cleanup, production legacy isolation, operational reset, and driver/occupant stabilization are implemented; lifecycle execution, frontend deployment, and final UAT remain separate authorized activities. WhatsApp is post-MVP.

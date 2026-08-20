@@ -170,7 +170,9 @@ The planned `eventVehicleTrips/{eventId__vehicleId}` aggregate replaces `eventDr
 
 Before departure, return assignments mirror departure without independent editing. Depart atomically snapshots return assignments for that vehicle's occupants. Subsequent return changes do not mutate departure history or get silently overwritten by departure corrections. Latest correction fields overwrite on a later correction and are not full history.
 
-`settings/transportation` stores `defaultReturnDestination`, initially `Mill Village`, plus update metadata and is surfaced in Admin Configuration > Vehicles. WhatsApp messages, edits, handoffs, and delivery state are not stored. Counts, occupancy, capacity, warnings, and message content remain derived. Capacity means total seats including the driver.
+`settings/transportation` stores `defaultReturnDestination`, initially `Mill Village`, plus update metadata and is surfaced in Admin Configuration > Vehicles. Counts, occupancy, capacity, and warnings remain derived. Capacity means total seats including the driver. Post-MVP WhatsApp messages, edits, handoffs, and delivery state are not stored.
+
+For each active trip, a non-null departure driver must match the staff participant's `departureVehicleId`, and a non-null return driver must match `returnVehicleId`. An occupant move that would break this invariant clears the disclosed applicable role in the same transaction; mirrored departure consequences remain internally consistent.
 
 Migration and atomic-write boundaries are defined in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md). No live migration or reset has been applied.
 

@@ -113,4 +113,4 @@ The grouped-planning milestone replaces Event Details legacy controls with Admin
 
 Depart and Start Return open an explicit review of vehicle, driver, occupants, count/capacity, overcapacity, and all event participants unassigned for that leg. Warnings do not disable confirmation. Corrections use a separate warning and required-reason confirmation.
 
-WhatsApp controls appear only on Event Details: confirmation after confirmation, outbound after arrival, return after return starts. Preview edits do not change EventFlow. Copy explicitly copies. Open WhatsApp is best-effort; preview remains visible with instructions to use Copy if it does not open. The UI never reports opened/sent/delivered/received.
+WhatsApp controls are post-MVP and do not appear in the MVP navigation or acceptance scope. A future Event Details-only handoff may provide confirmation, outbound, and return previews with explicit Copy and best-effort Open behavior without delivery claims.

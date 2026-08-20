@@ -4,7 +4,11 @@ All items are outside MVP unless formally promoted.
 
 ## Approved Change Queue
 
-CR-001, [Transportation Trip Lifecycle](change-requests/CR-001-transportation-trip-lifecycle.md), is approved for implementation and is no longer an unapproved future idea. It covers per-leg participant and driver assignments, the five-stage lifecycle, status automation, capacity review, corrections, default destination, vehicle-deactivation cleanup, and user-initiated WhatsApp handoff. It is not implemented by this documentation milestone.
+CR-001, [Transportation Trip Lifecycle](change-requests/CR-001-transportation-trip-lifecycle.md), is approved for implementation and is no longer an unapproved future idea. It covers per-leg participant and driver assignments, the five-stage lifecycle, status automation, capacity review, corrections, default destination, and vehicle-deactivation cleanup. WhatsApp is no longer part of CR-001 MVP acceptance.
+
+## Post-MVP WhatsApp Handoff
+
+Preserve a future user-initiated Event Details workflow for confirmation, outbound, and return text. The user may preview/edit, explicitly Copy, or make a best-effort Open WhatsApp handoff, then choose an existing staff-only group and press Send. EventFlow remains the source of truth and never sends automatically, discovers groups, uses a paid/API integration, stores recipients/credentials/templates, or claims/persists launch, send, delivery, receipt, or attempt state. This is not required for MVP UAT or go-live, and transportation lifecycle actions must work without it.
 
 ## Things to Fix
 
