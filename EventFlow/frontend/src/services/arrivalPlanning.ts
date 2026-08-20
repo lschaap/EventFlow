@@ -43,5 +43,30 @@ export function arrivalBlockingError(eventStatus: string, trip: Pick<EventVehicl
 }
 
 export function arrivalReviewToken(input: Omit<ArrivalReview, 'reviewToken'>) {
-  return JSON.stringify({ eventStatus: input.eventStatus, eventUpdatedAtMillis: input.eventUpdatedAtMillis, eventStartedAtMillis: input.eventStartedAtMillis, eventStartedByUserId: input.eventStartedByUserId, eventStartedByVehicleTripId: input.eventStartedByVehicleTripId, tripId: input.tripId, tripUpdatedAtMillis: input.tripUpdatedAtMillis, departedAtMillis: input.departedAtMillis, snapshot: input.departureSnapshot })
+  const snapshot = input.departureSnapshot
+  return JSON.stringify({
+    eventStatus: input.eventStatus,
+    eventUpdatedAtMillis: input.eventUpdatedAtMillis,
+    eventStartedAtMillis: input.eventStartedAtMillis,
+    eventStartedByUserId: input.eventStartedByUserId,
+    eventStartedByVehicleTripId: input.eventStartedByVehicleTripId,
+    tripId: input.tripId,
+    tripUpdatedAtMillis: input.tripUpdatedAtMillis,
+    departedAtMillis: input.departedAtMillis,
+    snapshot: {
+      vehicleId: snapshot.vehicleId,
+      vehicleName: snapshot.vehicleName,
+      driverStaffId: snapshot.driverStaffId,
+      driverName: snapshot.driverName,
+      studentOccupantIds: snapshot.studentOccupantIds,
+      studentOccupantNames: snapshot.studentOccupantNames,
+      staffOccupantIds: snapshot.staffOccupantIds,
+      staffOccupantNames: snapshot.staffOccupantNames,
+      studentCount: snapshot.studentCount,
+      staffCount: snapshot.staffCount,
+      totalOccupants: snapshot.totalOccupants,
+      vehicleCapacity: snapshot.vehicleCapacity,
+      overCapacity: snapshot.overCapacity,
+    },
+  })
 }

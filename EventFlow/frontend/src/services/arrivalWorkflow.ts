@@ -4,12 +4,24 @@ import type { EventVehicleTripRecord } from '../types/models'
 import { arrivalBlockingError, arrivalReviewToken, type ArrivalReview } from './arrivalPlanning'
 import { getEventVehicleTripId } from './eventVehicleTrips'
 
+const ARRIVAL_READ_TIMEOUT_MS = 15_000
+
+function awaitArrivalRead<T>(read: Promise<T>, message = 'Arrival confirmation timed out while reading current data. Check your connection, reload the event, and try again.') {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error(message)), ARRIVAL_READ_TIMEOUT_MS)
+    read.then(
+      (value) => { window.clearTimeout(timeout); resolve(value) },
+      (error) => { window.clearTimeout(timeout); reject(error) },
+    )
+  })
+}
+
 async function loadArrivalState(eventId: string, vehicleId: string) {
   const db = ensureDb()
   const eventRef = doc(db, 'events', eventId)
   const tripRef = doc(db, 'eventVehicleTrips', getEventVehicleTripId(eventId, vehicleId))
   const vehicleRef = doc(db, 'vehicles', vehicleId)
-  const [event, trip, vehicle] = await Promise.all([getDoc(eventRef), getDoc(tripRef), getDoc(vehicleRef)])
+  const [event, trip, vehicle] = await Promise.all([awaitArrivalRead(getDoc(eventRef)), awaitArrivalRead(getDoc(tripRef)), awaitArrivalRead(getDoc(vehicleRef))])
   if (!event.exists()) throw new Error('Event does not exist.')
   if (!trip.exists()) throw new Error('The vehicle trip does not exist.')
   if (!vehicle.exists()) throw new Error('The vehicle does not exist.')
@@ -36,7 +48,11 @@ export async function arriveVehicleAtEvent(eventId: string, vehicleId: string, u
   const state = await loadArrivalState(eventId, vehicleId)
   if (state.review.reviewToken !== reviewedToken) throw new Error('The trip changed after review. Review the current arrival details and try again.')
   await runTransaction(db, async (transaction) => {
-    const [event, trip, vehicle] = await Promise.all([transaction.get(state.eventRef), transaction.get(state.tripRef), transaction.get(state.vehicleRef)])
+    // Keep transaction reads ordered. Concurrent transaction.get calls can leave the
+    // Web SDK waiting without ever reaching the commit request in some browsers.
+    const event = await awaitArrivalRead(transaction.get(state.eventRef))
+    const trip = await awaitArrivalRead(transaction.get(state.tripRef))
+    const vehicle = await awaitArrivalRead(transaction.get(state.vehicleRef))
     if (!event.exists() || !trip.exists() || !vehicle.exists()) throw new Error('The event, trip, or vehicle is no longer available.')
     const tripData = { eventVehicleTripId: trip.id, ...trip.data() } as EventVehicleTripRecord
     const blockingError = arrivalBlockingError(String(event.data().status), tripData)
@@ -49,6 +65,6 @@ export async function arriveVehicleAtEvent(eventId: string, vehicleId: string, u
     if (arrivalReviewToken(base) !== reviewedToken) throw new Error('The trip changed after review. Review the current arrival details and try again.')
     transaction.update(state.tripRef, { stage: 'arrived_at_event', arrivedAtEventAt: serverTimestamp(), arrivedAtEventByUserId: userId, updatedAt: serverTimestamp() })
   })
-  const committed = await getDoc(state.tripRef)
+  const committed = await awaitArrivalRead(getDoc(state.tripRef), 'Arrival was submitted but verification timed out. Reload the event before trying again.')
   if (!committed.exists() || committed.data().stage !== 'arrived_at_event' || !committed.data().arrivedAtEventAt || committed.data().arrivedAtEventByUserId !== userId) throw new Error('Arrival could not be verified. Reload the event before trying again.')
 }
