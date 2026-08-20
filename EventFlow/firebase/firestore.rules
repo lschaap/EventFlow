@@ -80,6 +80,79 @@ service cloud.firestore {
         get(/databases/$(database)/documents/vehicles/$(vehicleId)).data.active == true);
     }
 
+    function currentParticipantVehicleIsPlanned(eventId, vehicleId) {
+      return vehicleId == null || (exists(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)) &&
+        get(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)).data.assignmentStatus == 'active' &&
+        get(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)).data.stage == 'planned');
+    }
+
+    function tripTransitionsToDeparted(eventId, vehicleId) {
+      let path = /databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId);
+      return vehicleId is string && exists(path) && existsAfter(path) &&
+        get(path).data.eventId == eventId && get(path).data.vehicleId == vehicleId &&
+        get(path).data.assignmentStatus == 'active' && get(path).data.stage == 'planned' &&
+        getAfter(path).data.assignmentStatus == 'active' && getAfter(path).data.stage == 'departed';
+    }
+
+    function validReturnVehicleAfterDepart(eventId, vehicleId) {
+      return vehicleId is string &&
+        existsAfter(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)) &&
+        getAfter(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)).data.eventId == eventId &&
+        getAfter(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)).data.vehicleId == vehicleId &&
+        getAfter(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)).data.assignmentStatus == 'active' &&
+        getAfter(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId)).data.stage in ['planned', 'departed'];
+    }
+
+    function validStudentDepartInitialization(eventId) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['returnVehicleId']) &&
+        request.resource.data.departureVehicleId == resource.data.departureVehicleId &&
+        tripTransitionsToDeparted(eventId, resource.data.departureVehicleId) &&
+        request.resource.data.returnVehicleId == resource.data.departureVehicleId;
+    }
+
+    function validStaffDepartInitialization(eventId, staffId) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['returnVehicleId']) &&
+        request.resource.data.departureVehicleId == resource.data.departureVehicleId &&
+        tripTransitionsToDeparted(eventId, resource.data.departureVehicleId) &&
+        validReturnVehicleAfterDepart(eventId, request.resource.data.returnVehicleId) &&
+        (request.resource.data.returnVehicleId == resource.data.departureVehicleId ||
+          getAfter(/databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + request.resource.data.returnVehicleId)).data.returnDriverStaffId == staffId);
+    }
+
+    function validFirstDepartEventTransition(eventId) {
+      return resource.data.status == 'confirmed' && request.resource.data.status == 'in_progress' &&
+        request.resource.data.startedAt == request.time && request.resource.data.updatedAt == request.time && request.resource.data.startedByUserId == request.auth.uid &&
+        request.resource.data.startedByVehicleTripId is string &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','startedAt','startedByUserId','startedByVehicleTripId','updatedAt']) &&
+        tripTransitionsToDeparted(eventId, getAfter(/databases/$(database)/documents/eventVehicleTrips/$(request.resource.data.startedByVehicleTripId)).data.vehicleId) &&
+        request.resource.data.startedByVehicleTripId == getAfter(/databases/$(database)/documents/eventVehicleTrips/$(request.resource.data.startedByVehicleTripId)).data.eventVehicleTripId;
+    }
+
+    function validDepartureSnapshot(snapshot, vehicleId, driverStaffId) {
+      return snapshot is map &&
+        snapshot.keys().hasAll(['vehicleId','vehicleName','driverStaffId','driverName','studentOccupantIds','studentOccupantNames','staffOccupantIds','staffOccupantNames','studentCount','staffCount','totalOccupants','vehicleCapacity','overCapacity']) &&
+        snapshot.keys().hasOnly(['vehicleId','vehicleName','driverStaffId','driverName','studentOccupantIds','studentOccupantNames','staffOccupantIds','staffOccupantNames','studentCount','staffCount','totalOccupants','vehicleCapacity','overCapacity']) &&
+        snapshot.vehicleId == vehicleId && snapshot.driverStaffId == driverStaffId &&
+        snapshot.vehicleName == get(/databases/$(database)/documents/vehicles/$(vehicleId)).data.name &&
+        snapshot.vehicleCapacity == get(/databases/$(database)/documents/vehicles/$(vehicleId)).data.capacity &&
+        snapshot.driverName == get(/databases/$(database)/documents/staff/$(driverStaffId)).data.displayName &&
+        snapshot.vehicleName is string && snapshot.vehicleName.size() > 0 && snapshot.driverName is string && snapshot.driverName.size() > 0 &&
+        snapshot.studentOccupantIds is list && snapshot.studentOccupantNames is list && snapshot.staffOccupantIds is list && snapshot.staffOccupantNames is list &&
+        snapshot.studentCount is int && snapshot.staffCount is int && snapshot.totalOccupants is int && snapshot.vehicleCapacity is int &&
+        snapshot.studentCount == snapshot.studentOccupantIds.size() && snapshot.studentCount == snapshot.studentOccupantNames.size() &&
+        snapshot.staffCount == snapshot.staffOccupantIds.size() && snapshot.staffCount == snapshot.staffOccupantNames.size() &&
+        snapshot.totalOccupants == snapshot.studentCount + snapshot.staffCount && snapshot.vehicleCapacity > 0 &&
+        snapshot.overCapacity is bool && snapshot.overCapacity == (snapshot.totalOccupants > snapshot.vehicleCapacity);
+    }
+
+    function validEventStateAfterDepart(eventId, tripId) {
+      let before = get(/databases/$(database)/documents/events/$(eventId)).data;
+      let after = getAfter(/databases/$(database)/documents/events/$(eventId)).data;
+      return (before.status == 'confirmed' && after.status == 'in_progress' && after.startedAt == request.time &&
+          after.startedByUserId == request.auth.uid && after.startedByVehicleTripId == tripId) ||
+        (before.status == 'in_progress' && after == before);
+    }
+
     function validEventStatus(status) {
       return status in ['draft', 'confirmed', 'in_progress', 'completed', 'cancelled'];
     }
@@ -98,6 +171,7 @@ service cloud.firestore {
         (resource.data.status == 'draft' && request.resource.data.status == 'confirmed' &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']) &&
           eventIsStructurallyValid(request.resource.data)) ||
+        validFirstDepartEventTransition(resource.data.eventId) ||
         ((resource.data.status == 'draft' || resource.data.status == 'confirmed') && request.resource.data.status == 'cancelled' &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','cancelledAt','updatedAt'])) ||
         ((resource.data.status == 'draft' || resource.data.status == 'confirmed') && request.resource.data.status == 'completed' &&
@@ -244,8 +318,15 @@ service cloud.firestore {
             request.resource.data.removedByUserId == resource.data.removedByUserId &&
             request.resource.data.removedAt == resource.data.removedAt &&
             request.resource.data.notes == resource.data.notes &&
+            currentParticipantVehicleIsPlanned(request.resource.data.eventId, resource.data.departureVehicleId) &&
+            currentParticipantVehicleIsPlanned(request.resource.data.eventId, resource.data.returnVehicleId) &&
             validParticipantVehicle(request.resource.data.eventId, request.resource.data.departureVehicleId) &&
             validParticipantVehicle(request.resource.data.eventId, request.resource.data.returnVehicleId)) ||
+          (resource.data.status == 'active' && request.resource.data.status == 'active' &&
+            request.resource.data.addedByUserId == resource.data.addedByUserId && request.resource.data.addedAt == resource.data.addedAt &&
+            request.resource.data.removedByUserId == resource.data.removedByUserId && request.resource.data.removedAt == resource.data.removedAt &&
+            request.resource.data.notes == resource.data.notes &&
+            validStudentDepartInitialization(request.resource.data.eventId)) ||
           (
             resource.data.status == 'active' &&
             request.resource.data.status == 'removed' &&
@@ -282,11 +363,16 @@ service cloud.firestore {
         request.resource.data.addedByUserId == resource.data.addedByUserId && request.resource.data.addedAt == resource.data.addedAt &&
         request.resource.data.removedByUserId == resource.data.removedByUserId && request.resource.data.removedAt == resource.data.removedAt &&
         request.resource.data.notes == resource.data.notes &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['departureVehicleId','returnVehicleId']) &&
-        validParticipantVehicle(request.resource.data.eventId, request.resource.data.departureVehicleId) &&
-        validParticipantVehicle(request.resource.data.eventId, request.resource.data.returnVehicleId) &&
-        departureDriverMoveIsValid(request.resource.data.eventId, request.resource.data.staffId, resource.data.departureVehicleId, request.resource.data.departureVehicleId) &&
-        returnDriverMoveIsValid(request.resource.data.eventId, request.resource.data.staffId, resource.data.returnVehicleId, request.resource.data.returnVehicleId);
+        (
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['departureVehicleId','returnVehicleId']) &&
+            currentParticipantVehicleIsPlanned(request.resource.data.eventId, resource.data.departureVehicleId) &&
+            currentParticipantVehicleIsPlanned(request.resource.data.eventId, resource.data.returnVehicleId) &&
+            validParticipantVehicle(request.resource.data.eventId, request.resource.data.departureVehicleId) &&
+            validParticipantVehicle(request.resource.data.eventId, request.resource.data.returnVehicleId) &&
+            departureDriverMoveIsValid(request.resource.data.eventId, request.resource.data.staffId, resource.data.departureVehicleId, request.resource.data.departureVehicleId) &&
+            returnDriverMoveIsValid(request.resource.data.eventId, request.resource.data.staffId, resource.data.returnVehicleId, request.resource.data.returnVehicleId)) ||
+          validStaffDepartInitialization(request.resource.data.eventId, request.resource.data.staffId)
+        );
 
       allow create: if isAuth() && isApproved(request.auth.uid) &&
         request.resource.data.keys().hasAll(['eventStaffParticipantId','eventId','staffId','status','addedByUserId','addedAt','removedByUserId','removedAt','notes','departureVehicleId','returnVehicleId']) &&
@@ -347,8 +433,8 @@ service cloud.firestore {
       allow read: if isAuth() && isApproved(request.auth.uid);
 
       allow create: if isAuth() && isApproved(request.auth.uid) &&
-        request.resource.data.keys().hasAll(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
-        request.resource.data.keys().hasOnly(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
+        request.resource.data.keys().hasAll(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','departedByUserId','departureSnapshot','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
+        request.resource.data.keys().hasOnly(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','departedByUserId','departureSnapshot','arrivedAtEventAt','returnStartedAt','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
         request.resource.data.eventVehicleTripId == tripId &&
         tripId == request.resource.data.eventId + '__' + request.resource.data.vehicleId &&
         request.resource.data.eventId is string && request.resource.data.vehicleId is string &&
@@ -357,7 +443,7 @@ service cloud.firestore {
         get(/databases/$(database)/documents/vehicles/$(request.resource.data.vehicleId)).data.active == true &&
         request.resource.data.assignmentStatus == 'active' &&
         request.resource.data.stage == 'planned' &&
-        request.resource.data.departedAt == null && request.resource.data.arrivedAtEventAt == null &&
+        request.resource.data.departedAt == null && request.resource.data.departedByUserId == null && request.resource.data.departureSnapshot == null && request.resource.data.arrivedAtEventAt == null &&
         request.resource.data.returnStartedAt == null && request.resource.data.returnedAt == null &&
         validTripDriver(request.resource.data.departureDriverStaffId) &&
         validTripDriver(request.resource.data.returnDriverStaffId) &&
@@ -375,16 +461,29 @@ service cloud.firestore {
         request.resource.data.createdAt == resource.data.createdAt &&
         tripId == request.resource.data.eventId + '__' + request.resource.data.vehicleId &&
         request.resource.data.assignmentStatus in ['active','removed'] &&
-        resource.data.stage == 'planned' && request.resource.data.stage == 'planned' &&
-        request.resource.data.departedAt == null && request.resource.data.arrivedAtEventAt == null && request.resource.data.returnStartedAt == null && request.resource.data.returnedAt == null &&
         request.resource.data.correctedAt == null && request.resource.data.correctedByUserId == null && request.resource.data.correctionReason == null &&
         request.resource.data.returnDriverMirrorsDeparture is bool &&
-        (!request.resource.data.returnDriverMirrorsDeparture || request.resource.data.returnDriverStaffId == request.resource.data.departureDriverStaffId) &&
         validTripDriver(request.resource.data.departureDriverStaffId) && validTripDriver(request.resource.data.returnDriverStaffId) &&
         validDepartureDriverParticipant(request.resource.data.eventId, request.resource.data.vehicleId, request.resource.data.departureDriverStaffId) && validReturnDriverParticipant(request.resource.data.eventId, request.resource.data.vehicleId, request.resource.data.returnDriverStaffId) &&
         (request.resource.data.assignmentStatus != 'active' || get(/databases/$(database)/documents/vehicles/$(request.resource.data.vehicleId)).data.active == true) &&
         request.resource.data.updatedAt is timestamp &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','updatedAt']);
+        (
+          (resource.data.stage == 'planned' && request.resource.data.stage == 'planned' &&
+            request.resource.data.departedAt == null && request.resource.data.departedByUserId == null && request.resource.data.departureSnapshot == null &&
+            request.resource.data.arrivedAtEventAt == null && request.resource.data.returnStartedAt == null && request.resource.data.returnedAt == null &&
+            (!request.resource.data.returnDriverMirrorsDeparture || request.resource.data.returnDriverStaffId == request.resource.data.departureDriverStaffId) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','updatedAt'])) ||
+          (resource.data.assignmentStatus == 'active' && request.resource.data.assignmentStatus == 'active' &&
+            resource.data.stage == 'planned' && request.resource.data.stage == 'departed' &&
+            resource.data.departedAt == null && resource.data.departedByUserId == null && resource.data.departureSnapshot == null &&
+            request.resource.data.departedAt == request.time && request.resource.data.updatedAt == request.time && request.resource.data.departedByUserId == request.auth.uid &&
+            validDepartureSnapshot(request.resource.data.departureSnapshot, request.resource.data.vehicleId, request.resource.data.departureDriverStaffId) &&
+            request.resource.data.departureDriverStaffId != null &&
+            request.resource.data.arrivedAtEventAt == null && request.resource.data.returnStartedAt == null && request.resource.data.returnedAt == null &&
+            request.resource.data.returnDriverMirrorsDeparture == false &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage','departedAt','departedByUserId','departureSnapshot','returnDriverMirrorsDeparture','updatedAt']) &&
+            validEventStateAfterDepart(request.resource.data.eventId, tripId))
+        );
 
       allow delete: if false;
     }

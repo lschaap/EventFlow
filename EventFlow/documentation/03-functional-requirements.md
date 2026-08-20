@@ -1,6 +1,6 @@
 # Functional Requirements
 
-> Existing requirements describe the implemented baseline unless marked otherwise. The CR-001 requirements below are approved and planned, not implemented.
+> Existing requirements describe the implemented baseline unless marked otherwise. CR-001 Depart requirements are implemented; later lifecycle stages remain approved and planned.
 
 ## Authentication and Access
 - REQ-001: Authorized users must authenticate before accessing the application.
@@ -138,7 +138,7 @@ The following integration requirements remain pending and are not implemented by
 
 - REQ-094: Confirmation email is not part of the MVP. Optional automated confirmation email is deferred to the Future Roadmap.
 
-## Transportation Trip Lifecycle - Approved and Planned (CR-001)
+## Transportation Trip Lifecycle - Depart Implemented; Later Stages Planned (CR-001)
 
 - REQ-095: Each active event vehicle follows `planned -> departed -> arrived_at_event -> return_started -> returned` without ordinary skipping or reversal.
 - REQ-096: Depart, Arrive at Event, Start Return, and Returned record their corresponding server timestamps.
@@ -172,6 +172,9 @@ The following integration requirements remain pending and are not implemented by
 - REQ-124: Production application behavior does not read or write legacy `eventDrivers`; that collection remains only for migration tooling and temporary Rules compatibility until the approved reset decision is executed.
 - REQ-125: For each leg, a driver must occupy the vehicle they drive. Moving an individual or bulk-selected staff driver to another vehicle or Unassigned warns which leg roles will clear; Cancel writes nothing and Confirm atomically moves every selected occupant and clears the disclosed roles.
 - REQ-126: Driver-role clearing caused by an occupant move is leg-independent. A mirrored departure-driver move discloses and clears both roles while retaining a consistent mirror; a return-only move preserves departure and sets mirroring false when necessary.
+- REQ-127: Admin and Staff Depart an active planned vehicle only from a confirmed or in-progress event after a mobile review of committed driver, occupants, counts, capacity, and event-level Unassigned count. Unassigned and over-capacity conditions warn and require explicit confirmation but do not block.
+- REQ-128: Depart atomically records server `departedAt`, authenticated `departedByUserId`, an immutable departure snapshot, reconciled initial return assignments, and the trip's `planned -> departed` transition. The first departure also records server `startedAt` and event-start audit IDs while later departures preserve them.
+- REQ-129: A stale Depart review, duplicate attempt, invalid driver/trip/event, inconsistent return-driver plan, or failed write produces no partial changes and requires a fresh review. Arrive at Event, Start Return, Returned, corrections, and return editing remain unavailable.
 
 The complete authoritative behavior and acceptance criteria are in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md).
 

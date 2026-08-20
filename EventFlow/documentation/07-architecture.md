@@ -87,6 +87,8 @@ Public Firebase web configuration may be in frontend environment variables. Sens
 
 ## Approved Planned Transportation Architecture (CR-001)
 
+The Depart slice is implemented as a direct Firestore client transaction. A read-only review is followed by a transaction that re-reads the event, vehicle, target trip, every active participant relationship and master label used by the snapshot, and all active trips. A review token rejects material assignment, driver, capacity, warning-count, or event-state changes. One commit initializes reconciled return fields, stores the snapshot/audit fields, advances the trip, and starts the event when applicable. Firestore Rules independently enforce the same `planned -> departed` boundary with `getAfter()` checks. No Cloud Function, generalized movement collection, or new index is used.
+
 The implemented baseline uses `eventDrivers`. CR-001 replaces that relationship in the target architecture with deterministic `eventVehicleTrips/{eventId__vehicleId}` aggregates containing the vehicle lifecycle, separate leg drivers, timestamps, active/removed state, and latest correction metadata. Existing participant collections gain departure and return vehicle IDs. `settings/transportation` stores the default return destination.
 
 Firestore remains authoritative. Transactions couple driver/participant occupancy, Depart return snapshots, participant removal, lifecycle/event-status changes, bounded return edits, corrections, and eligible future cleanup. Rules mirror Admin planning permissions, Staff/Admin forward actions, and Staff return-passenger edits only after Depart and before Start Return. Composite indexes are finalized with implementation queries.

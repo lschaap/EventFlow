@@ -1,6 +1,6 @@
 # Firestore Collections
 
-> Current CR-001 grouped-planning rule target: active approved Admin and Staff users may update planned `eventVehicleTrips` and only `departureVehicleId`/`returnVehicleId` on active participant relationships for every event. Vehicle references must resolve to active planned trips for the same event. Admin-only master-data, user, and transportation-settings permissions are unchanged.
+> Current CR-001 rule target: active approved Admin and Staff users may plan transportation and atomically Depart an eligible vehicle. Rules permit only the `planned -> departed` lifecycle transition, its return initialization, and its first-depart event transition; later stages remain denied. Admin-only master-data, user, and transportation-settings permissions are unchanged.
 
 ## Strategy
 Use top-level collections to support cross-event queries and avoid deeply nested data access.
@@ -182,7 +182,7 @@ Do not delete master-data records merely because they become inactive. Use `acti
 
 ## CR-001 Transportation Collections (In Implementation)
 
-The schemas above include the implemented planning target. CR-001 still plans the following lifecycle/correction extensions and operational rollout work:
+The schemas above include planning and the implemented Depart target. CR-001 still plans later lifecycle/correction extensions and operational rollout work:
 
 - extend both participant collections with nullable `departureVehicleId`, `returnVehicleId`, and latest transport-correction metadata;
 - use planned event status domain `draft | confirmed | in_progress | completed | cancelled` and add nullable `startedAt` (not currently deployed);
@@ -191,4 +191,6 @@ The schemas above include the implemented planning target. CR-001 still plans th
 - add `settings/transportation` with `defaultReturnDestination` (initially `Mill Village`) and update metadata, managed in Admin Configuration > Vehicles;
 - derive occupancy, capacity, and warnings; any post-MVP WhatsApp content remains unstored and outside MVP acceptance.
 
-Before Depart, ordinary return fields mirror departure and cannot be independently edited; the independent return-driver exception is enforced by the service. Rules allow approved Admin/Staff planned trip and field-bounded participant transportation writes while settings remain Admin-only. Rules also require each driver participant's applicable vehicle field to equal the driven vehicle and require an occupant move away to clear the applicable driver role atomically. Participant removal clears both leg fields, and eligible Admin vehicle deactivation soft-removes target trips while clearing affected leg assignments. Lifecycle and correction writes remain disabled. The driver/occupant stabilization Rules were deployed to `eventflow-612ed` on 2026-08-19 as ruleset `df4e8c69-0ac9-435e-adab-1192ef38511c`. The four existing trip indexes are READY, no new index is required, and no Cloud Function is required. The approved operational reset was completed and verified on 2026-08-19; no live legacy migration was performed. See [legacy migration procedure](migrations/CR-001-legacy-event-drivers.md) and [test-data reset procedure](migrations/CR-001-test-data-reset.md).
+Before Depart, ordinary return fields mirror departure and cannot be independently edited; independent return-driver occupancy is preserved. Depart adds `departedByUserId` and `departureSnapshot` to the trip and may add `startedByUserId`/`startedByVehicleTripId` with `startedAt` to the event. Rules require request-time timestamps, immutable identities, valid drivers, snapshot shape/count consistency, driver/occupant consistency, field-bounded return initialization, and the atomic first/later event state. Departure planning fields for a departed vehicle are locked. Arrive/correction writes remain disabled. No new index or Cloud Function is required. The approved operational reset remains the baseline; no live legacy migration is required.
+
+The Depart Rules were deployed to `eventflow-612ed` on 2026-08-19 as ruleset `4014d1a7-f011-48ce-83c1-39793c6ade77`.

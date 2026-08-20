@@ -94,3 +94,9 @@
 - Driver/vehicle assignments
 - Calendar synchronization
 - Firebase architecture
+## 2026-08-19 CR-001 Per-Vehicle Depart - Implemented
+
+- Added the Admin/Staff mobile pre-Depart review with current driver/occupants, typed counts, capacity, Unassigned and over-capacity warnings, and explicit double-check confirmation; cancellation writes nothing.
+- Added the stale-safe atomic `planned -> departed` transaction, request-time/audit fields, immutable departure snapshot, return-passenger initialization with independent-driver reconciliation, committed-state verification, and first-depart event start.
+- Locked departed departure planning, exposed actual departure time and read-only initialized return occupants, and left Arrive, Start Return, Returned, corrections, return editing, notifications, and generalized movements unimplemented.
+- Added Rules protections and focused tests without adding Functions or indexes. Firestore Rules deployed only to `eventflow-612ed` as ruleset `4014d1a7-f011-48ce-83c1-39793c6ade77`.

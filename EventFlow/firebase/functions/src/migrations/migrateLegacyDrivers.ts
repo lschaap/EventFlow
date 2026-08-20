@@ -48,6 +48,8 @@ async function main() {
         returnDriverStaffId: candidate.driverStaffId,
         returnDriverMirrorsDeparture: true,
         departedAt: null,
+        departedByUserId: null,
+        departureSnapshot: null,
         arrivedAtEventAt: null,
         returnStartedAt: null,
         returnedAt: null,

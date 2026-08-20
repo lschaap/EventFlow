@@ -4,7 +4,7 @@
 
 Active approved Admin and Staff users may manage planned vehicles, either leg's driver, mirroring, and departure passenger assignments for every event. An individual or bulk departure move atomically mirrors return for ordinary passengers. An independently selected return driver's `returnVehicleId` remains fixed to the vehicle they will drive, while their departure assignment remains their actual outbound plan. Clearing or replacing a driver changes only the role; the former driver remains a participant with their passenger fields. Capacity is recalculated per leg and warns without blocking. Mixed student/staff bulk requests are limited to 100 and either commit completely or make no changes.
 
-After the future Depart action, departure groups become historical/read-only and return groups will use the same multi-group selection and Move selected interaction until Start Return. That switching behavior, lifecycle actions, snapshots, and corrections remain planned rather than active.
+After the implemented Depart action, that vehicle's departure group becomes historical/read-only and its initialized return occupants become visible read-only. Return editing, Arrive at Event, Start Return, Returned, and corrections remain planned.
 
 Participant management and departure planning use one list. Add Student, Add Staff, and Add Vehicle appear at the top; additions immediately enter Unassigned and removals immediately disappear from every departure group. Removing a staff occupant also clears every departure/return driver reference for that staff member in the event in the same transaction. Individual moves verify the committed assignment and display an error rather than silently accepting an unsaved move. Bulk Apply uses one secured Firestore client transaction and shows `Bulk assignment failed. Please try again or try individual assignment.` for every failure. Return occupants remain hidden before Depart, and the return-driver selector remains hidden while return transportation is confirmed to match departure. Later, each departed vehicle card receives its own Edit return vehicle assignments button; that control is not active yet.
 
@@ -137,13 +137,15 @@ The workflows above describe the implemented baseline. Where they describe a sin
 
 ### T1 - Plan departure and return
 
-Admin adds vehicles and both leg drivers, then bulk-assigns or individually moves departure participants. Before Depart, return passengers mirror departure and cannot be edited independently. Capacity means total seats including the driver. Each leg has independent warnings and overlap validation.
+Admin or Staff adds vehicles and both leg drivers, then bulk-assigns or individually moves departure participants. Before Depart, return passengers mirror departure and cannot be edited independently. Capacity means total seats including the driver. Each leg has independent warnings and overlap validation.
 
-During the driver-planning milestone, new trips set `returnDriverMirrorsDeparture = true`. Departure changes update both drivers while true. Explicit return selection or clear makes the return independent; Same as departure restores mirroring and copies the current departure driver. Future Depart will end mirroring after its snapshot, but is not implemented in this milestone.
+New trips set `returnDriverMirrorsDeparture = true`. Departure changes update both drivers while true. Explicit return selection or clear makes the return independent; Same as departure restores mirroring and copies the current departure driver. Depart reconciles driver-specific return occupancy, stores the snapshot, and ends mirroring.
 
 ### T2 - Depart
 
 Staff or Admin selects **Depart**. Review shows the vehicle, driver, occupants, total-seat capacity, overcapacity, and every unassigned active departure participant. Cancel writes nothing. Confirmation atomically records `departedAt`, advances the trip, snapshots return assignments for that vehicle's occupants, reveals the return list, and applies first-departure status/`startedAt`.
+
+The transaction rejects a missing/ineligible/misplaced driver, inactive or malformed trip, invalid event status, irreconcilable return-driver conflict, duplicate Depart, or stale review. Unassigned participants and overcapacity are warning-only. The first successful vehicle changes `confirmed` to `in_progress` and records event-start audit fields; later departures preserve the original start. Failures leave the trip planned and event/participants unchanged.
 
 ### T2A - Edit return passengers
 

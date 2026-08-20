@@ -9,6 +9,7 @@ try {
   const { affectedDriverRolesForMove, clearedDriverFieldsForMove, driverOccupantFields, groupTransportationOccupants, mirroredReturnVehicle, projectedOccupancy, removedStaffDriverFields, returnDriverIsVisible } = await import('../.transportation-test/services/transportationPlanning.js')
   const { buildEventTransportationSummary } = await import('../.transportation-test/services/eventTransportationSummary.js')
   const { clearedVehicleAssignmentFields, isEligibleFutureTripForDeactivation } = await import('../.transportation-test/services/vehicleDeactivation.js')
+  const { buildDepartureSnapshot, departureReviewToken, reconcileInitialReturnAssignments } = await import('../.transportation-test/services/departurePlanning.js')
   const trips = [{ vehicleId: 'van-a' }, { vehicleId: 'van-b' }]
   const vehicles = [{ vehicleId: 'van-a', capacity: 1 }, { vehicleId: 'van-b', capacity: 3 }]
   const occupants = [
@@ -65,6 +66,17 @@ try {
   assert.equal(isEligibleFutureTripForDeactivation({ ...future, status: 'completed' }, planned, new Date('2030-01-01T00:00:00Z')), false, 'completed event is preserved')
   assert.equal(isEligibleFutureTripForDeactivation({ ...future, startedAt: new Date() }, planned, new Date('2030-01-01T00:00:00Z')), false, 'started event is preserved')
   assert.deepEqual(clearedVehicleAssignmentFields({ departureVehicleId: 'van-a', returnVehicleId: 'van-b' }, 'van-a'), { departureVehicleId: null }, 'unrelated leg assignment is preserved')
+  const departureReview = { eventId: 'event', eventName: 'Museum', eventStatus: 'confirmed', eventUpdatedAtMillis: 1, tripId: 'event__van-a', vehicleId: 'van-a', vehicleName: 'Van A', vehicleCapacity: 2, departureDriverStaffId: 'driver', departureDriverName: 'Driver', occupants: [{ kind: 'staff', personId: 'driver', displayName: 'Driver', departureVehicleId: 'van-a', returnVehicleId: 'van-a' }, { kind: 'student', personId: 'student', displayName: 'Student', departureVehicleId: 'van-a', returnVehicleId: 'van-a' }], studentCount: 1, staffCount: 1, totalOccupants: 2, availableSeats: 0, overCapacityBy: 0, unassignedDepartureCount: 0 }
+  const reviewToken = departureReviewToken(departureReview)
+  assert.notEqual(reviewToken, departureReviewToken({ ...departureReview, occupants: departureReview.occupants.slice(0, 1) }), 'assignment changes invalidate a departure review')
+  assert.notEqual(reviewToken, departureReviewToken({ ...departureReview, departureDriverStaffId: 'other' }), 'driver changes invalidate a departure review')
+  assert.equal(buildDepartureSnapshot({ ...departureReview, reviewToken }).totalOccupants, 2, 'snapshot count matches committed occupants')
+  assert.deepEqual([...reconcileInitialReturnAssignments(departureReview.occupants, [{ eventVehicleTripId: 'event__van-a', eventId: 'event', vehicleId: 'van-a', assignmentStatus: 'active', stage: 'planned', returnDriverStaffId: 'driver' }], 'van-a').values()], ['van-a', 'van-a'], 'mirrored return occupants initialize to the departure vehicle')
+  const independentTrips = [{ eventVehicleTripId: 'event__van-a', eventId: 'event', vehicleId: 'van-a', assignmentStatus: 'active', stage: 'planned', returnDriverStaffId: 'return-driver' }, { eventVehicleTripId: 'event__van-b', eventId: 'event', vehicleId: 'van-b', assignmentStatus: 'active', stage: 'planned', returnDriverStaffId: 'driver' }]
+  const independent = reconcileInitialReturnAssignments(departureReview.occupants, independentTrips, 'van-a')
+  assert.equal(independent.get('staff:driver'), 'van-b', 'a return driver departing in another vehicle stays assigned to the vehicle they will drive')
+  assert.equal(independent.get('staff:return-driver'), 'van-a', 'the independent return driver is added to the driven vehicle without duplication')
+  assert.throws(() => reconcileInitialReturnAssignments(departureReview.occupants, [...independentTrips, { ...independentTrips[0], eventVehicleTripId: 'event__van-c', vehicleId: 'van-c', returnDriverStaffId: 'driver' }], 'van-a'), /multiple vehicles/, 'irreconcilable return-driver conflicts block Depart')
   console.log('transportation planning tests passed')
 } finally {
   rmSync(output, { recursive: true, force: true })

@@ -56,7 +56,7 @@ Resolve all errors before deployment.
 Deploy using selected hosting. Firebase Hosting is suitable but not required by product requirements.
 
 ## Post-Deployment Validation
-Validate authentication, permissions, CRUD, assignments, search, dashboard, Calendar, and mobile layout. When CR-001 is implemented, also validate snapshots, lifecycle/status transactions, bounded Staff return editing, total-seat capacity, settings permissions, and driver/occupant synchronization. WhatsApp is post-MVP and is not a deployment or go-live prerequisite.
+Validate authentication, permissions, CRUD, assignments, search, dashboard, Calendar, and mobile layout. For the CR-001 Depart milestone, run transportation/Depart/concurrency tests, Rules policy and cloud compilation, production build, migration/isolation/reset safeguards, and `git diff --check`; then deploy only Firestore Rules if changed. Manually validate snapshot accuracy, zero-write cancellation/failure, first/later event transitions, warnings, stale reviews, total-seat capacity, and driver reconciliation. Do not deploy Hosting, Functions, indexes, or create operational test data for this milestone. WhatsApp is post-MVP.
 
 ## Rollback
 Maintain:

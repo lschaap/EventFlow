@@ -103,7 +103,7 @@ The current grouped-planning milestone supersedes earlier Admin-only planning te
 
 Participant management is merged into this section rather than duplicated. Add Student, Add Staff, and Add Vehicle controls appear first; participants are then grouped by departure vehicle and Unassigned with assignment, checkbox, and Remove controls. Removing a staff occupant also removes that person's current event-trip driver assignments after confirmation. Return occupants are not shown before Depart, and a Return driver selector is shown only after the user confirms that return occupants differ from departure. In the future lifecycle UI, each departed vehicle card—not the event as a whole—will show its own Edit return vehicle assignments button.
 
-After the future Depart action, departure groups become historical/read-only and return groups will use the same selection and movement pattern across eligible departed vehicles and Unassigned until Start Return. This post-Depart mode is documented but not activated yet.
+After Depart, the departed vehicle card shows recorded actual departure time, locks its departure controls, and reveals its initialized return occupants read-only. Return movement/edit controls remain unavailable until a later milestone.
 
 The planned Event Details page adds transportation grouped by vehicle and **Unassigned**, with separate departure/return views. It shows drivers, participant names, counts, total-seat capacity including driver, warnings, stage, and lifecycle times. Before Depart return mirrors departure and is hidden as an independent list; Depart snapshots and reveals that vehicle's return list.
 
@@ -112,5 +112,7 @@ Admin and Staff edit planned departure passengers, both drivers, and event vehic
 The grouped-planning milestone replaces Event Details legacy controls with Admin/Staff vehicle-trip cards containing drivers, mirroring, grouped participants, bulk movement, Unassigned, and capacity warnings. Event-list cards now use only active `eventVehicleTrips` and active participant vehicle assignments. They show vehicle/driver summaries, differing return drivers, departure assigned/total counts, total capacity, no-plan state, and incomplete/overcapacity warnings without participant rosters.
 
 Depart and Start Return open an explicit review of vehicle, driver, occupants, count/capacity, overcapacity, and all event participants unassigned for that leg. Warnings do not disable confirmation. Corrections use a separate warning and required-reason confirmation.
+
+The implemented mobile Depart review additionally shows event and vehicle names, student/staff/total counts, available seats or over-capacity result, and a required double-check checkbox. Closing or cancelling submits no transaction; progress disables repeat submission. Only Depart is currently exposed.
 
 WhatsApp controls are post-MVP and do not appear in the MVP navigation or acceptance scope. A future Event Details-only handoff may provide confirmation, outbound, and return previews with explicit Copy and best-effort Open behavior without delivery claims.

@@ -2,6 +2,20 @@
 
 ## CR-001 Grouped Participant Planning
 
+### Depart milestone
+
+- UAT-167: As Admin, open Depart for a confirmed planned vehicle and verify event, vehicle, eligible driver, named occupants, student/staff/total counts, capacity result, Unassigned count, actual-departure explanation, return-initialization explanation, and required double-check confirmation are shown.
+- UAT-168: Repeat UAT-167 as Staff. Verify inactive, unapproved, unauthenticated, and unsupported-role users cannot read/write the action through Rules.
+- UAT-169: Cancel/close ordinary, Unassigned-warning, over-capacity-warning, and combined-warning reviews; verify zero trip, participant, timestamp, snapshot, count, dietary, or event writes.
+- UAT-170: Confirm each warning case and verify warning-only conditions do not block. Verify missing/ineligible/misplaced driver, inactive/malformed trip, and draft/cancelled/completed event do block with actionable errors.
+- UAT-171: Depart the first vehicle and verify one atomic commit sets trip `departed`, request-time `departedAt`, confirming UID, snapshot, reconciled return assignments, event `in_progress`, original `startedAt`, and event-start audit IDs while preserving counts/dietary state.
+- UAT-172: Depart a later vehicle and verify the event remains `in_progress` and the original event start timestamp/audit IDs are unchanged.
+- UAT-173: Verify mirrored and independent return drivers, a return driver departing in another vehicle, a departure driver who is only an ordinary return occupant, and deduplicated driver-participants reconcile correctly; conflicting multiple return-driver roles block with zero writes.
+- UAT-174: Open review, then change an occupant, driver, capacity, warning count, or event state in another session. Confirm the original review and verify it fails, writes nothing, refreshes safely, and requires review again.
+- UAT-175: Submit Depart concurrently from two sessions. Verify exactly one succeeds, duplicate/retry attempts do not change the authoritative timestamp/snapshot, and simultaneous first departures cannot overwrite event start state.
+- UAT-176: After success, verify actual departure time and read-only initial return occupants appear, departure planning controls and Depart disappear for that vehicle, and Arrive at Event/return editing are absent.
+- UAT-177: Attempt direct trip, participant, and event writes that skip or separate the required atomic transition, trust an arbitrary departure time/UID, alter counts/dietary/identity, omit or corrupt the snapshot, or perform Arrive. Verify Rules deny each.
+
 - UAT-138: Admin and Staff can add/remove planned vehicles and manage both drivers for any event; inactive/unapproved users are denied and Staff cannot edit master data or transportation settings.
 - UAT-139: Assign, move, and clear a student and a staff participant; departure and ordinary pre-Depart return assignments update atomically, while missing legacy fields display as Unassigned.
 - UAT-140: Select mixed students/staff across groups, review destination/projected capacity, and apply one bulk move; selection clears on success and a failed validation makes no partial changes.
@@ -9,7 +23,7 @@
 - UAT-142: Replace or clear either driver; the former driver remains an event participant and retains their passenger vehicle fields.
 - UAT-143: Confirm vehicle cards and Unassigned show per-leg occupants, `used/capacity`, available seats or overcapacity, and a distinct Transportation Incomplete warning.
 - UAT-144: Confirm overcapacity warns but does not block individual or bulk saves, while inactive participants, removed/wrong-event trips, and overlapping vehicle/participant/driver use are rejected.
-- UAT-145: Confirm return occupants are hidden before departure and no Depart, snapshot, independent return-passenger, correction, or other lifecycle controls are present.
+- UAT-145: Confirm return occupants are hidden before departure; only the implemented Depart review/action is present, while independent return editing, correction, and later lifecycle controls are absent.
 - UAT-146: As Admin and Staff, bulk-move mixed occupants to a vehicle and Unassigned; confirm all selected records move together and selection clears.
 - UAT-147: Force a bulk transaction validation failure; confirm no participant moves and the UI displays exactly `Bulk assignment failed. Please try again or try individual assignment.`
 - UAT-148: Add a student and staff member from the combined section; confirm each immediately appears in Unassigned without refreshing the page and overview counts/dietary details refresh.
@@ -199,7 +213,7 @@ Automated confirmation email is outside MVP and therefore has no MVP acceptance 
 
 ## Approved Planned Transportation UAT (CR-001)
 
-These cases define future acceptance; they are not evidence that CR-001 is implemented.
+Depart cases above are implemented acceptance coverage. The table below remains authoritative planning for later CR-001 stages unless duplicated by the implemented Depart cases.
 
 | ID | Scenario | Expected Result |
 |---|---|---|

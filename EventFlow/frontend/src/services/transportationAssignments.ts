@@ -101,6 +101,8 @@ export async function moveParticipantsToVehicle(
     participantSnapshots.forEach((snapshot, index) => {
       const key = unique[index]
       if (!snapshot.exists() || snapshot.data().status !== 'active' || snapshot.data().eventId !== eventId) throw new Error('Only active participants for this event can be moved.')
+      const currentVehicleId = leg === 'departure' ? snapshot.data().departureVehicleId : snapshot.data().returnVehicleId
+      if (currentVehicleId && currentTrips.find((trip) => trip.vehicleId === currentVehicleId)?.stage !== 'planned') throw new Error('Recorded transportation assignments cannot be changed by the planning controls.')
       transaction.update(participantRefs[index], leg === 'departure' ? {
         departureVehicleId: destinationVehicleId,
         returnVehicleId: mirroredReturnVehicle(key.kind, key.personId, destinationVehicleId, independentReturnVehicles),

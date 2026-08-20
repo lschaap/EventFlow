@@ -16,7 +16,7 @@ Implemented in the foundation milestone: shared `in_progress` and nullable `star
 
 The current milestone completes target-model production cutover for Event Details, Events list, eligible vehicle deactivation, and participant removal. Events-list data loading is constant-query and derives summaries without denormalized documents. New/migrated trips default mirroring true; explicit return selection/clear sets false; restoring matching copies the departure driver atomically.
 
-Production UI/services no longer read or write `eventDrivers`; it remains only in migration/reset tooling, historical documentation, and restrictive Rules compatibility. The approved operational test-data reset was completed and verified on 2026-08-19; no live migration was performed. Snapshots, stage actions, post-Depart return editing, corrections, automatic status transitions, vehicle-free controls, Calendar/email, and frontend deployment remain unimplemented. WhatsApp is post-MVP and outside CR-001 acceptance. CR-001 is not Ready for UAT, Accepted, or Released.
+Production UI/services no longer read or write `eventDrivers`; it remains only in migration/reset tooling, historical documentation, and restrictive Rules compatibility. The approved operational test-data reset was completed and verified on 2026-08-19; no live migration was performed. The per-vehicle Depart milestone is implemented: review/warnings, stale-safe atomic `planned -> departed`, server departure/event-start audit fields, durable snapshot, reconciled initial return assignments, read-only return display, Rules, and focused UAT. Arrive at Event, Start Return, Returned, return editing, corrections, automatic completion, vehicle-free controls, Calendar/email, and frontend deployment remain unimplemented. WhatsApp is post-MVP and outside CR-001 acceptance. CR-001 as a whole is not Accepted or Released.
 
 ## Scope
 
@@ -123,6 +123,16 @@ Store `defaultReturnDestination` and update metadata in `settings/transportation
 
 Atomic writes cover driver/participant/occupancy synchronization; Depart plus return snapshot/visibility/event start; participant removal; validated return moves; Start Return plus edit locking; Returned plus applicable-trip completion; correction plus trip timestamps/audit/event status/`startedAt`/`completedAt`; and eligible vehicle-deactivation cleanup.
 
+### Implemented Depart milestone boundary
+
+Depart is available to active approved Admin and Staff for an active planned trip on a confirmed or already in-progress event. A mobile review is read-only and requires explicit double-check confirmation. It shows event/vehicle/driver, named occupants, typed and total counts, capacity result, and event-level Unassigned count. Unassigned and over-capacity conditions warn but do not block; cancel/close submits no transaction.
+
+The commit re-reads all critical event/trip/vehicle/participant/driver state and compares a review token, then atomically initializes reconciled return assignments, stores `departedAt`, `departedByUserId`, and `departureSnapshot`, sets stage `departed`, and ends mirroring. The first departure also stores event `startedAt`, `startedByUserId`, and `startedByVehicleTripId`; later departures preserve them. The snapshot map stores vehicle and driver IDs/labels, typed occupant ID/name arrays, counts, confirmed capacity, and over-capacity result. Duplicate or stale confirmation and every blocking invariant fail without partial writes. Rules enforce request-time timestamps, authenticated audit IDs, snapshot shape/counts, driver occupancy, participant field bounds, and the atomic first/later event state.
+
+This milestone does not implement Arrive at Event, Start Return, Returned, correction, return editing, automatic completion, outbound messaging, generalized movement/multi-run concepts, or frontend deployment.
+
+The scoped Firestore Rules deployment completed on 2026-08-19 as ruleset `4014d1a7-f011-48ce-83c1-39793c6ade77`; Hosting, Functions, and indexes were not deployed.
+
 ## Target rules and queries
 
 Rules allow active approved Staff/Admin planned vehicle, driver, and participant transportation writes for all events while enforcing Admin-only settings and corrections. Rules validate identities and stages rather than relying on UI. Implementation finalizes only indexes required by actual queries.
@@ -175,7 +185,7 @@ The narrow participant-removal Rules correction was deployed to `eventflow-612ed
 
 The driver/occupant invariant Rules were deployed to `eventflow-612ed` on 2026-08-19 as ruleset `df4e8c69-0ac9-435e-adab-1192ef38511c`. They require each non-null leg driver to occupy the driven vehicle and reject occupant moves that leave the applicable source-trip driver reference in place.
 
-Still planned: lifecycle actions and timestamps, return snapshots, post-Depart independent return editing, corrections, frontend deployment, and post-reset UAT. No live legacy migration is required for the cleared operational test data. WhatsApp is post-MVP.
+Implemented: Depart action/timestamp/audit, departure snapshot, initial return assignment reconciliation, first-depart event start, Rules, and focused UAT. Still planned: Arrive at Event, Start Return, Returned, post-Depart independent return editing, corrections, automatic completion, frontend deployment, and remaining lifecycle UAT. No live legacy migration is required for the cleared operational test data. WhatsApp is post-MVP.
 
 ## Implementation checklist
 

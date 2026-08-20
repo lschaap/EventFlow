@@ -61,8 +61,11 @@ Approval to define a change does not authorize code changes, data migration, dep
 
 | ID | Change | State | Record |
 |---|---|---|---|
-| CR-001 | Transportation trip lifecycle and participant vehicle assignments | In implementation | [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md) |
+| CR-001 | Transportation trip lifecycle and participant vehicle assignments | Depart implemented; later stages in implementation | [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md) |
 
 ## CR-001 approval record
 
 The product decisions for CR-001, including its authoritative corrections, were confirmed on 2026-08-18 and the stabilization decision above on 2026-08-19. CR-001 remains In implementation. Planning, grouped participants, Events-list cutover, target deactivation, participant cleanup, production legacy isolation, operational reset, and driver/occupant stabilization are implemented; lifecycle execution, frontend deployment, and final UAT remain separate authorized activities. WhatsApp is post-MVP.
+## 2026-08-19 CR-001 Depart implementation decision
+
+Product Owner authorized only the per-vehicle Depart milestone. The implementation uses a mandatory review and stale-state token followed by one client transaction. Unassigned participants and overcapacity remain warning-only for Admin and Staff. The transaction stores a durable departure snapshot, reconciles initial return occupancy, advances only `planned -> departed`, and starts the event only on the first departure. Rules mirror this boundary. Arrive at Event, Start Return, Returned, corrections, return editing, completion, WhatsApp/email, multi-run movements, routes/stops, saved locations, and frontend deployment remain excluded.

@@ -162,13 +162,15 @@ Recalculate when active student or staff participant records change.
 
 ## Approved Planned Transportation Model (CR-001)
 
-The structures above are the implemented baseline. For CR-001, the planned event status domain is `draft | confirmed | in_progress | completed | cancelled`; `events` adds nullable `startedAt`; and participant collections add nullable `departureVehicleId`, `returnVehicleId`, and latest-correction metadata. `in_progress` and `startedAt` are not currently deployed.
+The implemented CR-001 Depart milestone uses event status domain `draft | confirmed | in_progress | completed | cancelled`. `events` includes nullable `startedAt`, `startedByUserId`, and `startedByVehicleTripId`; participant collections include nullable `departureVehicleId` and `returnVehicleId`. Later lifecycle correction metadata remains planned.
 
 The planned `eventVehicleTrips/{eventId__vehicleId}` aggregate replaces `eventDrivers`. It stores `eventId`, `vehicleId`, `assignmentStatus`, the five-stage lifecycle, independent departure and return driver staff IDs, the four lifecycle timestamps, creation/update metadata, and latest-correction metadata. This makes the vehicle trip—not a driver assignment—the lifecycle owner while preserving one driver per vehicle per leg.
 
-`returnDriverMirrorsDeparture` is required Boolean state. New and migrated planned trips use `true`. Explicit return-driver selection/clear sets it to `false`; Same as departure restores `true` and copies the departure driver atomically. Missing legacy target fields parse safely as `false` because equality alone does not prove intent. Future Depart will synchronize a true mirror and then snapshot it as false; that action is not implemented yet.
+`returnDriverMirrorsDeparture` is required Boolean state. New and migrated planned trips use `true`. Explicit return-driver selection/clear sets it to `false`; Same as departure restores `true` and copies the departure driver atomically. Depart ends mirroring after reconciling the initial return assignments and persists the independent departure snapshot.
 
 Before departure, return assignments mirror departure without independent editing. Depart atomically snapshots return assignments for that vehicle's occupants. Subsequent return changes do not mutate departure history or get silently overwritten by departure corrections. Latest correction fields overwrite on a later correction and are not full history.
+
+The implemented `departureSnapshot` map contains immutable vehicle/driver IDs and historical labels; typed student/staff occupant ID and display-name arrays; student, staff, and total counts; vehicle capacity; and the over-capacity result. `departedAt` is the authoritative snapshot time and `departedByUserId` identifies the confirming user.
 
 `settings/transportation` stores `defaultReturnDestination`, initially `Mill Village`, plus update metadata and is surfaced in Admin Configuration > Vehicles. Counts, occupancy, capacity, and warnings remain derived. Capacity means total seats including the driver. Post-MVP WhatsApp messages, edits, handoffs, and delivery state are not stored.
 

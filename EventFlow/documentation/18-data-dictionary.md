@@ -77,7 +77,7 @@
 | name | string | Event name |
 | activityId | string | Activity FK |
 | eventTypeId | string | Event-type FK |
-| status | enum | draft/confirmed/completed/cancelled |
+| status | enum | draft/confirmed/in_progress/completed/cancelled |
 | departureDateTime | timestamp | Departure |
 | returnDateTime | timestamp | Expected return |
 | location | string | Destination/location |
@@ -93,6 +93,9 @@
 | createdByUserName | string | Creator display name |
 | createdAt | timestamp | Creation |
 | updatedAt | timestamp | Last update |
+| startedAt | timestamp/null | First actual vehicle departure time |
+| startedByUserId | string/null | UID confirming the first vehicle departure |
+| startedByVehicleTripId | string/null | Trip that first moved the event to in_progress |
 | completedAt | timestamp/null | Completion |
 | cancelledAt | timestamp/null | Cancellation |
 | calendarEventId | string/null | Linked Calendar event |
@@ -174,6 +177,8 @@ Before departure, `returnVehicleId` mirrors `departureVehicleId`. Depart creates
 | returnDriverStaffId | string/null | Return driver FK |
 | returnDriverMirrorsDeparture | boolean | True while departure changes must atomically copy to return; explicit return selection/clear sets false |
 | departedAt | timestamp/null | Server departure time |
+| departedByUserId | string/null | UID that confirmed Depart |
+| departureSnapshot | map/null | Immutable vehicle/driver labels and IDs, typed occupant IDs/names, counts, capacity, and over-capacity result confirmed at departure |
 | arrivedAtEventAt | timestamp/null | Server event-arrival time |
 | returnStartedAt | timestamp/null | Server return-start time |
 | returnedAt | timestamp/null | Server returned time |

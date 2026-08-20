@@ -56,6 +56,8 @@ export interface EventRecord {
   createdAt: Date
   updatedAt: Date
   startedAt?: Date | null
+  startedByUserId?: string | null
+  startedByVehicleTripId?: string | null
   completedAt?: Date | null
   cancelledAt?: Date | null
   calendarEventId?: string | null
@@ -113,6 +115,22 @@ export interface VehicleRecord {
   updatedAt?: Timestamp
 }
 
+export interface DepartureSnapshot {
+  vehicleId: string
+  vehicleName: string
+  driverStaffId: string
+  driverName: string
+  studentOccupantIds: string[]
+  studentOccupantNames: string[]
+  staffOccupantIds: string[]
+  staffOccupantNames: string[]
+  studentCount: number
+  staffCount: number
+  totalOccupants: number
+  vehicleCapacity: number
+  overCapacity: boolean
+}
+
 export interface EventVehicleTripRecord {
   eventVehicleTripId: string
   eventId: string
@@ -123,6 +141,8 @@ export interface EventVehicleTripRecord {
   returnDriverStaffId: string | null
   returnDriverMirrorsDeparture: boolean
   departedAt: Timestamp | null
+  departedByUserId: string | null
+  departureSnapshot: DepartureSnapshot | null
   arrivedAtEventAt: Timestamp | null
   returnStartedAt: Timestamp | null
   returnedAt: Timestamp | null
