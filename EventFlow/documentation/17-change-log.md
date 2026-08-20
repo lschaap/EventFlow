@@ -7,6 +7,7 @@
 - Added eligible future target-trip vehicle deactivation cleanup and verified student/staff removal clears both leg assignments plus applicable target drivers.
 - Added a project-locked, dry-run-first, bounded operational test-data reset utility and runbook; it has not been executed.
 - Narrow participant-removal Rules changes were deployed to `eventflow-612ed` on 2026-08-19 as ruleset `741d4181-b59e-4cd7-b7d8-a21297702303`; all four unchanged trip indexes report READY.
+- Product Owner approved the operational test-data reset on 2026-08-19. It deleted 47 scoped documents with no batch failures; post-reset verification reported all five operational collections empty, zero anomalies, and 27 preserved master/configuration documents.
 
 - Expanded planned transportation authorization to active approved Admin and Staff users for all events while keeping master data, settings, users, and corrections Admin-only.
 - Added nullable per-leg participant vehicle assignments, pre-departure return mirroring with an independent-return-driver exception, grouped planning, atomic individual/bulk movement, Unassigned groups, and per-leg capacity warnings.

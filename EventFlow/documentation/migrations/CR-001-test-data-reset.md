@@ -33,4 +33,6 @@ npm run reset:test-data -- --project=eventflow-612ed --apply --ack-disposable-da
 
 Apply reports every committed batch and final per-collection totals. It stops and reports the failed collection if a batch fails. Rerun the dry run after a successful reset; every reset collection must report zero while preserved master collections remain intact.
 
-This procedure has been implemented but has not been executed.
+## Execution record
+
+Product Owner approval was received and the reset was executed against `eventflow-612ed` on 2026-08-19. The approved apply deleted 10 `events`, 20 `eventParticipants`, 9 `eventStaffParticipants`, 4 legacy `eventDrivers`, and 4 `eventVehicleTrips` (47 documents total) with no batch failures. The required post-reset dry run reported zero documents in all five reset collections, zero malformed/orphaned dependents, and 27 preserved master/configuration documents. Firebase Authentication users were outside the Firestore deletion scope.

@@ -1,5 +1,9 @@
 # Change Management
 
+## 2026-08-19 CR-001 operational test-data reset
+
+Following Product Owner review of the dry-run scope, the project-locked reset deleted 47 operational test documents from `events`, `eventParticipants`, `eventStaffParticipants`, `eventDrivers`, and `eventVehicleTrips`. Post-reset verification reported zero remaining documents in those collections, no malformed/orphaned dependents, and unchanged reported preservation counts totaling 27 Firestore master/configuration documents. Firebase Authentication users were not targeted.
+
 ## Purpose
 
 This document defines how EventFlow changes move from an identified need to an approved, implementation-ready scope. It prevents planned behavior from being mistaken for functionality that is already available.

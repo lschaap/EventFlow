@@ -16,7 +16,7 @@ Implemented in the foundation milestone: shared `in_progress` and nullable `star
 
 The current milestone completes target-model production cutover for Event Details, Events list, eligible vehicle deactivation, and participant removal. Events-list data loading is constant-query and derives summaries without denormalized documents. New/migrated trips default mirroring true; explicit return selection/clear sets false; restoring matching copies the departure driver atomically.
 
-Production UI/services no longer read or write `eventDrivers`; it remains only in migration/reset tooling, historical documentation, and restrictive Rules compatibility. No live migration or reset occurred. Snapshots, stage actions, post-Depart return editing, corrections, automatic status transitions, vehicle-free controls, WhatsApp, Calendar/email, and frontend deployment remain unimplemented. CR-001 is not Ready for UAT, Accepted, or Released.
+Production UI/services no longer read or write `eventDrivers`; it remains only in migration/reset tooling, historical documentation, and restrictive Rules compatibility. The approved operational test-data reset was completed and verified on 2026-08-19; no live migration was performed. Snapshots, stage actions, post-Depart return editing, corrections, automatic status transitions, vehicle-free controls, WhatsApp, Calendar/email, and frontend deployment remain unimplemented. CR-001 is not Ready for UAT, Accepted, or Released.
 
 ## Scope
 
@@ -170,7 +170,7 @@ Implemented in this cutover milestone: Events-list target summaries, target-mode
 
 The narrow participant-removal Rules correction was deployed to `eventflow-612ed` on 2026-08-19 as ruleset `741d4181-b59e-4cd7-b7d8-a21297702303`. Existing indexes are unchanged and sufficient for the implemented queries; all four required `eventVehicleTrips` indexes report `READY`.
 
-Still planned: lifecycle actions and timestamps, return snapshots, post-Depart independent return editing, corrections, WhatsApp, live migration/reset execution, frontend deployment, and UAT.
+Still planned: lifecycle actions and timestamps, return snapshots, post-Depart independent return editing, corrections, WhatsApp, frontend deployment, and post-reset UAT. No live legacy migration is required for the cleared operational test data.
 
 ## Implementation checklist
 
