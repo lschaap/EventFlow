@@ -180,6 +180,7 @@ Before departure, `returnVehicleId` mirrors `departureVehicleId`. Depart creates
 | departedByUserId | string/null | UID that confirmed Depart |
 | departureSnapshot | map/null | Immutable vehicle/driver labels and IDs, typed occupant IDs/names, counts, capacity, and over-capacity result confirmed at departure |
 | arrivedAtEventAt | timestamp/null | Server event-arrival time |
+| arrivedAtEventByUserId | string/null | UID that confirmed Arrive at Event |
 | returnStartedAt | timestamp/null | Server return-start time |
 | returnedAt | timestamp/null | Server returned time |
 | createdAt | timestamp | Creation time |

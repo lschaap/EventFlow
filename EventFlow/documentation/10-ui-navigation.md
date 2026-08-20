@@ -105,6 +105,8 @@ Participant management is merged into this section rather than duplicated. Add S
 
 After Depart, the departed vehicle card shows recorded actual departure time, locks its departure controls, and reveals its initialized return occupants read-only. Return movement/edit controls remain unavailable until a later milestone.
 
+While the trip is exactly `departed`, the card shows **Arrive at Event**. Its mobile confirmation includes the event/vehicle, snapshot driver and occupant count, actual departure, location, and explicit statements that the event stays in progress, return assignments do not change, Start Return is not performed, and UI undo is unavailable. After success the action disappears and actual arrival time is displayed; no Start Return or correction control appears.
+
 The planned Event Details page adds transportation grouped by vehicle and **Unassigned**, with separate departure/return views. It shows drivers, participant names, counts, total-seat capacity including driver, warnings, stage, and lifecycle times. Before Depart return mirrors departure and is hidden as an independent list; Depart snapshots and reveals that vehicle's return list.
 
 Admin and Staff edit planned departure passengers, both drivers, and event vehicles for every event. Staff/Admin may edit return passengers for eligible departed vehicles until Start Return when that lifecycle milestone is implemented. Corrections and the default destination inside Admin Configuration > Vehicles remain Admin-only. Both roles see the next valid forward action. Vehicle-based events hide manual Start/Complete; vehicle-free events retain them with planned status/timestamps.

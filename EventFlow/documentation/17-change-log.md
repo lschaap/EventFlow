@@ -11,6 +11,7 @@
 - Added leg-specific driver/occupant synchronization: warned individual/bulk moves atomically clear disclosed driver roles, preserve unrelated legs, and maintain mirror consistency. Depart remains unimplemented.
 - Deployed the matching driver/occupant invariant Rules to `eventflow-612ed` as ruleset `df4e8c69-0ac9-435e-adab-1192ef38511c`; no indexes or other Firebase resources changed.
 - Product Owner moved all WhatsApp functionality out of CR-001 MVP acceptance and into the future roadmap; it is not an MVP UAT, deployment, or go-live dependency.
+- Added the per-vehicle Arrive at Event review and atomic transition, durable arrival user audit, immutable departure-snapshot review, stale-write protection, and duplicate/invalid-stage denial. Matching Rules, including planned-trip compatibility for missing nullable lifecycle fields, were deployed to `eventflow-612ed` on 2026-08-20 as ruleset `385bfe7e-69e6-46be-96bd-334315411243`; no Functions, indexes, or Hosting resources changed.
 
 - Expanded planned transportation authorization to active approved Admin and Staff users for all events while keeping master data, settings, users, and corrections Admin-only.
 - Added nullable per-leg participant vehicle assignments, pre-departure return mirroring with an independent-return-driver exception, grouped planning, atomic individual/bulk movement, Unassigned groups, and per-leg capacity warnings.
@@ -100,3 +101,10 @@
 - Added the stale-safe atomic `planned -> departed` transaction, request-time/audit fields, immutable departure snapshot, return-passenger initialization with independent-driver reconciliation, committed-state verification, and first-depart event start.
 - Locked departed departure planning, exposed actual departure time and read-only initialized return occupants, and left Arrive, Start Return, Returned, corrections, return editing, notifications, and generalized movements unimplemented.
 - Added Rules protections and focused tests without adding Functions or indexes. Firestore Rules deployed only to `eventflow-612ed` as ruleset `4014d1a7-f011-48ce-83c1-39793c6ade77`.
+## 2026-08-20 CR-001 Per-Vehicle Arrival - Implemented
+
+- Added the Admin/Staff mobile Arrive at Event confirmation and exact `departed -> arrived_at_event` client transaction with request-time `arrivedAtEventAt` and authenticated `arrivedAtEventByUserId`.
+- Revalidates event/trip/vehicle and durable departure data, rejects stale/duplicate/invalid attempts, verifies committed state, preserves event/participants/assignments/departure snapshot, and leaves other vehicles unchanged.
+- Displays actual arrival and retains read-only return occupants without exposing Start Return, return editing, corrections, notifications, or completion.
+- Added backward-compatible Rules handling for planned records missing newly introduced nullable lifecycle fields, resolving driver-assignment permission denials while keeping lifecycle writes strict.
+- Automated verification is complete; combined Depart/Arrive manual UAT is pending and Depart tests 5–10 remain deferred.

@@ -16,7 +16,7 @@ Implemented in the foundation milestone: shared `in_progress` and nullable `star
 
 The current milestone completes target-model production cutover for Event Details, Events list, eligible vehicle deactivation, and participant removal. Events-list data loading is constant-query and derives summaries without denormalized documents. New/migrated trips default mirroring true; explicit return selection/clear sets false; restoring matching copies the departure driver atomically.
 
-Production UI/services no longer read or write `eventDrivers`; it remains only in migration/reset tooling, historical documentation, and restrictive Rules compatibility. The approved operational test-data reset was completed and verified on 2026-08-19; no live migration was performed. The per-vehicle Depart milestone is implemented: review/warnings, stale-safe atomic `planned -> departed`, server departure/event-start audit fields, durable snapshot, reconciled initial return assignments, read-only return display, Rules, and focused UAT. Arrive at Event, Start Return, Returned, return editing, corrections, automatic completion, vehicle-free controls, Calendar/email, and frontend deployment remain unimplemented. WhatsApp is post-MVP and outside CR-001 acceptance. CR-001 as a whole is not Accepted or Released.
+Production UI/services no longer read or write `eventDrivers`; it remains only in migration/reset tooling, historical documentation, and restrictive Rules compatibility. The approved operational test-data reset was completed and verified on 2026-08-19; no live migration was performed. Per-vehicle Depart and Arrive at Event are implemented with automated verification. Depart manual tests 5–10 and combined Depart/Arrive UAT remain pending. Start Return, Returned, return editing, corrections, automatic completion, vehicle-free controls, Calendar/email, and frontend deployment remain unimplemented. WhatsApp is post-MVP and outside CR-001 acceptance. CR-001 as a whole is not Accepted or Released.
 
 ## Scope
 
@@ -129,7 +129,13 @@ Depart is available to active approved Admin and Staff for an active planned tri
 
 The commit re-reads all critical event/trip/vehicle/participant/driver state and compares a review token, then atomically initializes reconciled return assignments, stores `departedAt`, `departedByUserId`, and `departureSnapshot`, sets stage `departed`, and ends mirroring. The first departure also stores event `startedAt`, `startedByUserId`, and `startedByVehicleTripId`; later departures preserve them. The snapshot map stores vehicle and driver IDs/labels, typed occupant ID/name arrays, counts, confirmed capacity, and over-capacity result. Duplicate or stale confirmation and every blocking invariant fail without partial writes. Rules enforce request-time timestamps, authenticated audit IDs, snapshot shape/counts, driver occupancy, participant field bounds, and the atomic first/later event state.
 
-This milestone does not implement Arrive at Event, Start Return, Returned, correction, return editing, automatic completion, outbound messaging, generalized movement/multi-run concepts, or frontend deployment.
+The Depart milestone did not itself implement later stages; Arrive at Event is now implemented separately below. Start Return, Returned, correction, return editing, automatic completion, outbound messaging, generalized movement/multi-run concepts, and frontend deployment remain unimplemented.
+
+### Implemented Arrive at Event milestone boundary
+
+For an active trip exactly at `departed` on an `in_progress` event, active approved Admin and Staff receive a vehicle-specific review of the durable departure facts and event destination. Confirmation re-reads event/trip/vehicle, rejects stale state, and atomically records only `stage = arrived_at_event`, server `arrivedAtEventAt`, authenticated `arrivedAtEventByUserId`, and `updatedAt`. Event start data, departure timestamp/audit/snapshot, drivers, mirroring, participant and return assignments, counts/dietary state, later timestamps, and other vehicles remain unchanged. Cancel/close writes nothing and duplicate or skipped transitions are denied by service and Rules.
+
+Start Return remains blocked until combined Depart/Arrive manual UAT passes or the Product Owner explicitly accepts identified defects. No return editing, corrections, Returned, completion, messaging, generalized movement, frontend deployment, Functions, indexes, or operational data are included.
 
 The scoped Firestore Rules deployment completed on 2026-08-19 as ruleset `4014d1a7-f011-48ce-83c1-39793c6ade77`; Hosting, Functions, and indexes were not deployed.
 
@@ -185,7 +191,9 @@ The narrow participant-removal Rules correction was deployed to `eventflow-612ed
 
 The driver/occupant invariant Rules were deployed to `eventflow-612ed` on 2026-08-19 as ruleset `df4e8c69-0ac9-435e-adab-1192ef38511c`. They require each non-null leg driver to occupy the driven vehicle and reject occupant moves that leave the applicable source-trip driver reference in place.
 
-Implemented: Depart action/timestamp/audit, departure snapshot, initial return assignment reconciliation, first-depart event start, Rules, and focused UAT. Still planned: Arrive at Event, Start Return, Returned, post-Depart independent return editing, corrections, automatic completion, frontend deployment, and remaining lifecycle UAT. No live legacy migration is required for the cleared operational test data. WhatsApp is post-MVP.
+Implemented with automated verification: Depart and Arrive at Event actions/timestamps/audits, departure snapshot, initial return reconciliation, first-depart event start, and Rules. Still planned and blocked pending combined manual UAT: Start Return, Returned, post-Depart return editing, corrections, automatic completion, frontend deployment, and remaining lifecycle UAT. No live legacy migration is required for cleared operational test data. WhatsApp is post-MVP.
+
+The Arrive at Event and planned-trip compatibility Rules were deployed to `eventflow-612ed` on 2026-08-20 as ruleset `385bfe7e-69e6-46be-96bd-334315411243`. The deployment changed Firestore Rules only; Functions, indexes, and Hosting were not deployed.
 
 ## Implementation checklist
 

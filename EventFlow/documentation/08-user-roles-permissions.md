@@ -65,6 +65,6 @@ The latest approved milestone supersedes rows below that describe Staff transpor
 
 All users must still be authenticated, approved, and active. A driver must additionally be active staff with `canDrive = true`. Planned Staff return edits will save immediately after the same participant/trip/overlap/capacity validation used for Admin edits and target only departed vehicles before return start. Rules, not UI visibility alone, enforce these boundaries.
 
-Current implementation note: only **Depart** is available from the forward-action row. Arrive at Event, Start Return, Returned, return editing, and corrections remain planned. Both active approved roles may confirm Depart warnings; configuration remains Admin-only.
+Current implementation note: **Depart** and **Arrive at Event** are available from the forward-action row. Start Return, Returned, return editing, and corrections remain planned. Both active approved roles may use the implemented actions; configuration remains Admin-only.
 
 For both Admin and Staff, moving a driver occupant away from the vehicle they drive requires a disclosed confirmation and atomically clears the applicable role. Cancelling writes nothing. WhatsApp permissions are not active MVP permissions.

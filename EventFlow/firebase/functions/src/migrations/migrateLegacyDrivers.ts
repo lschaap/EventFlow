@@ -51,6 +51,7 @@ async function main() {
         departedByUserId: null,
         departureSnapshot: null,
         arrivedAtEventAt: null,
+        arrivedAtEventByUserId: null,
         returnStartedAt: null,
         returnedAt: null,
         createdAt: FieldValue.serverTimestamp(),

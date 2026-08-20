@@ -1,6 +1,6 @@
 # Functional Requirements
 
-> Existing requirements describe the implemented baseline unless marked otherwise. CR-001 Depart requirements are implemented; later lifecycle stages remain approved and planned.
+> Existing requirements describe the implemented baseline unless marked otherwise. CR-001 Depart and Arrive at Event requirements are implemented; later lifecycle stages remain approved and planned.
 
 ## Authentication and Access
 - REQ-001: Authorized users must authenticate before accessing the application.
@@ -138,7 +138,7 @@ The following integration requirements remain pending and are not implemented by
 
 - REQ-094: Confirmation email is not part of the MVP. Optional automated confirmation email is deferred to the Future Roadmap.
 
-## Transportation Trip Lifecycle - Depart Implemented; Later Stages Planned (CR-001)
+## Transportation Trip Lifecycle - Depart and Arrival Implemented; Later Stages Planned (CR-001)
 
 - REQ-095: Each active event vehicle follows `planned -> departed -> arrived_at_event -> return_started -> returned` without ordinary skipping or reversal.
 - REQ-096: Depart, Arrive at Event, Start Return, and Returned record their corresponding server timestamps.
@@ -175,6 +175,8 @@ The following integration requirements remain pending and are not implemented by
 - REQ-127: Admin and Staff Depart an active planned vehicle only from a confirmed or in-progress event after a mobile review of committed driver, occupants, counts, capacity, and event-level Unassigned count. Unassigned and over-capacity conditions warn and require explicit confirmation but do not block.
 - REQ-128: Depart atomically records server `departedAt`, authenticated `departedByUserId`, an immutable departure snapshot, reconciled initial return assignments, and the trip's `planned -> departed` transition. The first departure also records server `startedAt` and event-start audit IDs while later departures preserve them.
 - REQ-129: A stale Depart review, duplicate attempt, invalid driver/trip/event, inconsistent return-driver plan, or failed write produces no partial changes and requires a fresh review. Arrive at Event, Start Return, Returned, corrections, and return editing remain unavailable.
+- REQ-130: Active approved Admin and Staff may confirm a per-vehicle `departed -> arrived_at_event` transition only while the event remains `in_progress` and valid departure timestamp, audit, and snapshot data exist. Arrival records request-time `arrivedAtEventAt` and authenticated `arrivedAtEventByUserId` atomically while preserving event, departure, driver, participant, and return-assignment state.
+- REQ-131: The Arrive review shows event, vehicle, departure driver/time, location, and snapshot occupant count; cancellation writes nothing. Duplicate, stale, skipped, inactive, malformed, unauthorized, or invalid-event attempts fail without overwriting the original lifecycle data.
 
 The complete authoritative behavior and acceptance criteria are in [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md).
 

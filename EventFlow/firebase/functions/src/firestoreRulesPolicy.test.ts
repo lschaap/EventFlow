@@ -14,7 +14,12 @@ assert.match(trips, /request\.resource\.data\.departedAt == request\.time/, 'Dep
 assert.match(trips, /request\.resource\.data\.departedByUserId == request\.auth\.uid/, 'Depart records the authenticated user')
 assert.match(trips, /validDepartureSnapshot/, 'Depart requires a structurally valid immutable snapshot')
 assert.match(trips, /validEventStateAfterDepart/, 'Depart validates the atomic first/later event state')
-assert.doesNotMatch(trips, /request\.resource\.data\.stage == 'arrived_at_event'/, 'Arrive at Event remains unavailable')
+assert.match(trips, /resource\.data\.stage == 'departed' && request\.resource\.data\.stage == 'arrived_at_event'/, 'only departed trips can record arrival')
+assert.match(trips, /request\.resource\.data\.arrivedAtEventAt == request\.time/, 'arrival uses the server-authoritative request time')
+assert.match(trips, /request\.resource\.data\.arrivedAtEventByUserId == request\.auth\.uid/, 'arrival records the authenticated user')
+assert.match(trips, /affectedKeys\(\)\.hasOnly\(\['stage','arrivedAtEventAt','arrivedAtEventByUserId','updatedAt'\]\)/, 'arrival preserves departure, drivers, assignments, and later timestamps')
+assert.match(trips, /validEventStateForArrival/, 'arrival requires and preserves the in-progress event')
+assert.doesNotMatch(trips, /request\.resource\.data\.stage == 'return_started'/, 'Start Return remains unavailable')
 assert.match(trips, /validDepartureDriverParticipant\(request\.resource\.data\.eventId, request\.resource\.data\.vehicleId, request\.resource\.data\.departureDriverStaffId\)/, 'departure driver must occupy the driven vehicle')
 assert.match(trips, /validReturnDriverParticipant\(request\.resource\.data\.eventId, request\.resource\.data\.vehicleId, request\.resource\.data\.returnDriverStaffId\)/, 'return driver must occupy the driven vehicle')
 

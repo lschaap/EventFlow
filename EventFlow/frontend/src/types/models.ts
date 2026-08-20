@@ -144,6 +144,7 @@ export interface EventVehicleTripRecord {
   departedByUserId: string | null
   departureSnapshot: DepartureSnapshot | null
   arrivedAtEventAt: Timestamp | null
+  arrivedAtEventByUserId: string | null
   returnStartedAt: Timestamp | null
   returnedAt: Timestamp | null
   createdAt: Timestamp

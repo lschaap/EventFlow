@@ -1,6 +1,6 @@
 # Firestore Collections
 
-> Current CR-001 rule target: active approved Admin and Staff users may plan transportation and atomically Depart an eligible vehicle. Rules permit only the `planned -> departed` lifecycle transition, its return initialization, and its first-depart event transition; later stages remain denied. Admin-only master-data, user, and transportation-settings permissions are unchanged.
+> Current CR-001 rule target: active approved Admin and Staff users may plan transportation, Depart an eligible vehicle, and record its arrival at the event. Rules permit `planned -> departed -> arrived_at_event`; later stages remain denied. Admin-only master-data, user, and transportation-settings permissions are unchanged.
 
 ## Strategy
 Use top-level collections to support cross-event queries and avoid deeply nested data access.
@@ -194,3 +194,7 @@ The schemas above include planning and the implemented Depart target. CR-001 sti
 Before Depart, ordinary return fields mirror departure and cannot be independently edited; independent return-driver occupancy is preserved. Depart adds `departedByUserId` and `departureSnapshot` to the trip and may add `startedByUserId`/`startedByVehicleTripId` with `startedAt` to the event. Rules require request-time timestamps, immutable identities, valid drivers, snapshot shape/count consistency, driver/occupant consistency, field-bounded return initialization, and the atomic first/later event state. Departure planning fields for a departed vehicle are locked. Arrive/correction writes remain disabled. No new index or Cloud Function is required. The approved operational reset remains the baseline; no live legacy migration is required.
 
 The Depart Rules were deployed to `eventflow-612ed` on 2026-08-19 as ruleset `4014d1a7-f011-48ce-83c1-39793c6ade77`.
+
+Arrive at Event adds nullable `arrivedAtEventByUserId` beside `arrivedAtEventAt`. Its transaction changes only stage, arrival timestamp/audit UID, and `updatedAt`; Rules require the event to remain byte-for-byte unchanged and `in_progress`. Existing planned records missing recently introduced nullable audit/snapshot keys remain planning-compatible, while new trips and lifecycle transitions write the complete schema.
+
+The Arrive at Event and planned-trip compatibility Rules were deployed to `eventflow-612ed` on 2026-08-20 as ruleset `385bfe7e-69e6-46be-96bd-334315411243`. No Functions, indexes, or Hosting resources were deployed.

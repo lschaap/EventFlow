@@ -132,7 +132,7 @@ export async function departVehicle(eventId: string, vehicleId: string, userId: 
     const committedReview: DepartureReview = { ...state.review, vehicleName: String(vehicle.data().name ?? vehicleId), vehicleCapacity: Number(vehicle.data().capacity), departureDriverName: String(driver.data().displayName ?? state.review.departureDriverStaffId), occupants: reviewedCurrentPeople, studentCount, staffCount, totalOccupants: reviewedCurrentPeople.length, availableSeats: Math.max(0, Number(vehicle.data().capacity) - reviewedCurrentPeople.length), overCapacityBy: Math.max(0, reviewedCurrentPeople.length - Number(vehicle.data().capacity)) }
     transaction.update(tripRef, {
       stage: 'departed', departedAt: serverTimestamp(), departedByUserId: userId,
-      departureSnapshot: buildDepartureSnapshot(committedReview), returnDriverMirrorsDeparture: false, updatedAt: serverTimestamp(),
+      departureSnapshot: buildDepartureSnapshot(committedReview), arrivedAtEventByUserId: null, returnDriverMirrorsDeparture: false, updatedAt: serverTimestamp(),
     })
     if (event.data().status === 'confirmed') transaction.update(eventRef, { status: 'in_progress', startedAt: serverTimestamp(), startedByUserId: userId, startedByVehicleTripId: trip.id, updatedAt: serverTimestamp() })
   })

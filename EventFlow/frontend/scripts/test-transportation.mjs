@@ -10,6 +10,7 @@ try {
   const { buildEventTransportationSummary } = await import('../.transportation-test/services/eventTransportationSummary.js')
   const { clearedVehicleAssignmentFields, isEligibleFutureTripForDeactivation } = await import('../.transportation-test/services/vehicleDeactivation.js')
   const { buildDepartureSnapshot, departureReviewToken, reconcileInitialReturnAssignments } = await import('../.transportation-test/services/departurePlanning.js')
+  const { arrivalBlockingError, arrivalReviewToken, isValidDepartureSnapshot } = await import('../.transportation-test/services/arrivalPlanning.js')
   const trips = [{ vehicleId: 'van-a' }, { vehicleId: 'van-b' }]
   const vehicles = [{ vehicleId: 'van-a', capacity: 1 }, { vehicleId: 'van-b', capacity: 3 }]
   const occupants = [
@@ -77,6 +78,19 @@ try {
   assert.equal(independent.get('staff:driver'), 'van-b', 'a return driver departing in another vehicle stays assigned to the vehicle they will drive')
   assert.equal(independent.get('staff:return-driver'), 'van-a', 'the independent return driver is added to the driven vehicle without duplication')
   assert.throws(() => reconcileInitialReturnAssignments(departureReview.occupants, [...independentTrips, { ...independentTrips[0], eventVehicleTripId: 'event__van-c', vehicleId: 'van-c', returnDriverStaffId: 'driver' }], 'van-a'), /multiple vehicles/, 'irreconcilable return-driver conflicts block Depart')
+  const snapshot = buildDepartureSnapshot({ ...departureReview, reviewToken })
+  const departedTrip = { vehicleId: 'van-a', assignmentStatus: 'active', stage: 'departed', departedAt: { toMillis: () => 10 }, departedByUserId: 'admin', departureSnapshot: snapshot, arrivedAtEventAt: null, arrivedAtEventByUserId: null, returnStartedAt: null, returnedAt: null }
+  assert.equal(isValidDepartureSnapshot(snapshot, 'van-a'), true, 'arrival accepts the durable valid departure snapshot')
+  assert.equal(arrivalBlockingError('in_progress', departedTrip), null, 'active departed trip is eligible to arrive')
+  assert.match(arrivalBlockingError('confirmed', departedTrip), /in progress/, 'confirmed event cannot record arrival')
+  assert.match(arrivalBlockingError('in_progress', { ...departedTrip, stage: 'planned' }), /not departed/, 'planned trip cannot skip to arrival')
+  assert.match(arrivalBlockingError('in_progress', { ...departedTrip, stage: 'arrived_at_event', arrivedAtEventAt: { toMillis: () => 20 }, arrivedAtEventByUserId: 'staff' }), /no longer eligible/, 'duplicate arrival is denied')
+  assert.match(arrivalBlockingError('in_progress', { ...departedTrip, departureSnapshot: null }), /missing valid departure/, 'malformed departure data blocks arrival')
+  const arrivalBase = { eventId: 'event', eventName: 'Museum', eventLocation: 'Museum', eventStatus: 'in_progress', eventUpdatedAtMillis: 5, eventStartedAtMillis: 4, eventStartedByUserId: 'admin', eventStartedByVehicleTripId: 'event__van-a', tripId: 'event__van-a', tripUpdatedAtMillis: 10, vehicleId: 'van-a', vehicleName: 'Van A', departureDriverName: 'Driver', departedAtMillis: 10, departureOccupantCount: 2, departureSnapshot: snapshot }
+  const arrivalToken = arrivalReviewToken(arrivalBase)
+  assert.notEqual(arrivalToken, arrivalReviewToken({ ...arrivalBase, tripUpdatedAtMillis: 11 }), 'trip lifecycle changes invalidate arrival confirmation')
+  assert.notEqual(arrivalToken, arrivalReviewToken({ ...arrivalBase, eventStatus: 'cancelled' }), 'event status changes invalidate arrival confirmation')
+  assert.equal(snapshot, departedTrip.departureSnapshot, 'arrival validation never mutates the departure snapshot')
   console.log('transportation planning tests passed')
 } finally {
   rmSync(output, { recursive: true, force: true })
