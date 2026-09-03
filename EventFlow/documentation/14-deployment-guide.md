@@ -1,5 +1,7 @@
 # Deployment Guide
 
+The unified Add/effective-return Firestore Rules were compiled and deployed to `eventflow-612ed` on 2026-09-03 as ruleset `1788b61d-c434-4359-98e9-0fac8a46e641`. No Functions, Hosting, indexes, or operational data were deployed. Manual UAT-204 through UAT-209 is the acceptance gate.
+
 The CR-001 return-stabilization Rules were deployed to `eventflow-612ed` on 2026-09-03 as ruleset `f294a8cc-826f-4404-a25f-93352222c0b6` after production-build, policy, safeguard, legacy-isolation, and executable emulator verification. No Functions, indexes, Hosting, or operational data were deployed. Manual UAT-196 through UAT-201 remains pending.
 
 ## Prerequisites

@@ -7,10 +7,10 @@
 | State | In implementation |
 | Decision date | 2026-08-18 |
 | Scope | Per-leg transportation planning, trip execution, capacity review, status automation, and manual vehicle-free lifecycle |
-| Current implementation | Target-model planning, Depart, Arrive at Event, return-only editing, Start Return, audited return-roster corrections, and legacy production isolation are implemented; Returned and automatic completion are not |
-| Current milestone | Return planning, Start Return, and audited roster correction |
+| Current implementation | Target-model planning, unified atomic Add, Depart, Arrive at Event, direct effective return editing, Start Return, and legacy production isolation are implemented; Returned and automatic completion are not |
+| Current milestone | Unified Add and effective return-plan simplification |
 
-The 2026-09-03 stabilization extends the current milestone with stage-focused vehicle cards, event-wide reversible post-start passenger corrections, and append-only effective return-driver corrections through `return_started`. Verified Firestore Rules were deployed as ruleset `f294a8cc-826f-4404-a25f-93352222c0b6`; manual UAT-196 through UAT-201 is pending. Returned and automatic completion remain out of scope.
+The latest 2026-09-03 stabilization supersedes correction history with direct effective return passenger/driver edits through `return_started`, keeps departure facts snapshot-based, and unifies student/staff/vehicle additions in one atomic dialog capped at 20 selections. Returned and automatic completion remain out of scope.
 
 ## Implementation progress
 
@@ -26,7 +26,7 @@ Production UI/services no longer read or write `eventDrivers`; it remains only i
 - A departure-time return snapshot and bounded Staff/Admin return-passenger editing window.
 - Per-leg overlap, capacity, and unassigned review.
 - Automatic vehicle-based status changes and manual vehicle-free controls.
-- Staff/Admin append-only return-roster corrections; broader lifecycle correction remains planned for Admin.
+- Staff/Admin direct effective return-plan edits through `return_started`; broader lifecycle correction remains planned for Admin.
 - Default return destination in Admin Configuration > Vehicles, initially `Mill Village`.
 - Eligible future cleanup during vehicle deactivation.
 
@@ -61,7 +61,7 @@ When a vehicle reaches `departed`, the same transaction snapshots `returnVehicle
 
 Only departed vehicles may receive independent return edits. After departure and before the target vehicle reaches `return_started`, active approved Staff and Admin users may move active student/staff participants between eligible departed return vehicles, assign an unassigned participant, clear an assignment, and bulk reassign. Valid Staff changes save immediately without Admin approval.
 
-Admin and Staff cannot use ordinary controls at invalid stages or after Start Return. Both roles share ordinary vehicle, driver, departure, and eligible return-planning permissions; after Start Return, either role may use the bounded audited return-roster correction workflow.
+Admin and Staff cannot use controls at invalid stages. Both roles share vehicle, driver, departure, and effective return-planning permissions; return edits remain available through `return_started` and stop before Returned.
 
 ### Validation, drivers, and capacity
 
@@ -95,7 +95,7 @@ Staff cannot undo stages. The broader Admin lifecycle-correction design below re
 
 A completed event can return to `in_progress` after an authorized backward correction and complete again after correction forward. Planned unused/removed trips do not count. Completed/cancelled events have no normal transportation actions.
 
-The planned broader lifecycle correction retains latest-only metadata. Implemented return-roster corrections instead append immutable operation records and link each changed participant to the latest applicable operation. WhatsApp edits/handoffs are never corrections.
+The planned broader lifecycle correction remains separate. Effective return edits do not create history records or participant links; immutable departure and original Start Return snapshots preserve confirmed facts.
 
 ### Deactivation and settings
 
@@ -123,7 +123,7 @@ Store `defaultReturnDestination` and update metadata in `settings/transportation
 
 ## Atomic boundaries
 
-Atomic writes cover driver/participant/occupancy synchronization; Depart plus return snapshot/visibility/event start; participant removal; validated return moves; Start Return plus immutable snapshot/edit locking; audited return-roster correction plus any disclosed return-driver clearing; future Returned/completion and broader lifecycle correction; and eligible vehicle-deactivation cleanup.
+Atomic writes cover unified additions; driver/participant/occupancy synchronization; Depart plus return snapshot/visibility/event start; participant removal; validated effective return moves including disclosed return-driver clearing; Start Return plus immutable snapshot; future Returned/completion and broader lifecycle correction; and eligible vehicle-deactivation cleanup.
 
 ### Implemented Depart milestone boundary
 
@@ -143,7 +143,7 @@ The scoped Firestore Rules deployment completed on 2026-08-19 as ruleset `4014d1
 
 ## Target rules and queries
 
-Rules allow active approved Staff/Admin planned vehicle, driver, participant, return-planning, Start Return, and bounded return-roster correction writes while enforcing Admin-only settings and any future broader lifecycle correction. Rules validate identities and stages rather than relying on UI. Implementation finalizes only indexes required by actual queries.
+Rules allow active approved Staff/Admin planned vehicle, driver, participant, direct effective return-planning, unified Add, and Start Return writes while enforcing Admin-only settings and any future broader lifecycle correction. Obsolete correction collections are write-denied.
 
 ## Migration and rollback
 
@@ -165,14 +165,14 @@ Rules allow active approved Staff/Admin planned vehicle, driver, participant, re
 - Cross-document authorization and concurrent return edits/stage transitions require careful transactions and Rules.
 - Ambiguous legacy drivers/capacities require explicit review.
 - Post-MVP browser WhatsApp handoff cannot prove launch or delivery.
-- Broader lifecycle correction remains latest-only/planned; implemented return-roster correction history is append-only.
+- Broader lifecycle correction remains planned; current effective return edits intentionally create no correction-history records.
 
 ## Acceptance criteria
 
 - Statuses, stages, applicable completion, timestamps, and vehicle-free controls match this record.
 - Depart creates the independent return snapshot; before it, return mirrors departure and is not editable.
 - Staff return edits work only for departed eligible trips before Start Return with full validation.
-- Planned transportation, implemented valid forward actions, and return-roster corrections are available to Admin and Staff; settings, master data, users, and broader lifecycle corrections remain Admin-only.
+- Planned transportation, implemented valid forward actions, unified Add, and effective return edits are available to Admin and Staff; settings, master data, users, and broader lifecycle corrections remain Admin-only.
 - Capacity includes the driver, is leg-specific/deduplicated, and warns without blocking.
 - Corrections atomically recalculate status/timestamps backward and forward.
 - Planned unused/removed trips do not block completion; no completion precedes a departure.

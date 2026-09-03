@@ -47,17 +47,12 @@ const legacyDrivers = block('eventDrivers/{driverId}', 'eventVehicleTrips/{tripI
 assert.match(legacyDrivers, /allow delete: if false;/, 'legacy drivers cannot be hard deleted through the application')
 
 const corrections = block('returnRosterCorrections/{correctionId}', 'settings/transportation')
-assert.match(corrections, /allow create: if isAuth\(\) && isApproved\(request\.auth\.uid\)/, 'Admin and Staff can append valid return corrections')
-assert.match(corrections, /correctedAt == request\.time/, 'correction history uses server-authoritative time')
-assert.match(corrections, /correctedByUserId == request\.auth\.uid/, 'correction history records the authenticated user')
-assert.match(corrections, /allow update, delete: if false/, 'correction history is append-only')
-assert.match(rules, /validReturnCorrection/, 'post-start participant changes require linked correction history')
+assert.match(corrections, /allow create, update, delete: if false/, 'obsolete return-roster history cannot be written')
+assert.doesNotMatch(rules, /validReturnCorrection/, 'effective return assignments do not depend on correction history')
 const driverCorrections = block('returnDriverCorrections/{correctionId}', 'settings/transportation')
-assert.match(driverCorrections, /correctedAt == request\.time/, 'driver correction history uses server-authoritative time')
-assert.match(driverCorrections, /correctedByUserId == request\.auth\.uid/, 'driver correction history records the authenticated user')
-assert.match(driverCorrections, /allow update, delete: if false/, 'driver correction history is append-only')
+assert.match(driverCorrections, /allow create, update, delete: if false/, 'obsolete return-driver history cannot be written')
 assert.match(trips, /resource\.data\.stage in \['departed','arrived_at_event','return_started'\]/, 'effective return-driver editing ends before Returned')
-assert.match(trips, /validReturnDriverCorrection/, 'effective driver changes require linked correction history')
+assert.match(trips, /affectedKeys\(\)\.hasOnly\(\['returnDriverStaffId','returnDriverMirrorsDeparture','updatedAt'\]\)/, 'return-driver edits cannot mutate departure facts')
 
 for (const name of ['students/{studentId}', 'staff/{staffId}', 'vehicles/{vehicleId}', 'settings/transportation']) {
   const start = rules.indexOf(marker(name))

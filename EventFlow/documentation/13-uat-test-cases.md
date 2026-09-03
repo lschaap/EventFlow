@@ -1,5 +1,16 @@
 # UAT Test Cases
 
+## Unified Add and Effective Return Editing
+
+- UAT-204: On a draft event, open the single Add dialog and verify Students, Staff, and Vehicles sections, per-item and select-all controls, live counts, Cancel, and `Add selected (N)`.
+- UAT-205: Add a mixed selection and verify all items commit together, participants remain Unassigned, vehicles have no occupants/drivers, counts and dietary state refresh, and duplicates are no longer offered.
+- UAT-206: Cancel, exceed 20 selections, create a concurrent conflict, and force permission failure; verify clear feedback and zero partial writes.
+- UAT-207: Change a return driver at departed, arrived, and return-started stages as Admin and Staff; verify only effective return fields change and departure displays retain snapshot facts.
+- UAT-208: Move return passengers before/after Start Return, including a driver; verify atomic role clearing, unchanged snapshots, and no correction-history UI or record.
+- UAT-209: Verify return edits stop before Returned, unauthorized users are denied, and effective rosters/counts/warnings refresh.
+
+These supersede UAT-189 through UAT-192 and correction-history portions of UAT-196 through UAT-201; older cases remain as historical records.
+
 ## CR-001 Grouped Participant Planning
 
 ### Depart milestone
@@ -307,3 +318,6 @@ UAT of commit `6ea8363` found: return driver/occupants/action were difficult to 
 - UAT-199: Assign, change, clear, and restore an eligible effective return driver at departed, arrived, and return-started stages as Admin and Staff; verify each change is audited and the former driver is not restored automatically.
 - UAT-200: Verify a candidate must occupy the vehicle, a driver assigned to another vehicle is blocked with guidance, and Returned exposes no driver-edit control.
 - UAT-201: Verify Start Return, original snapshots, departure facts, counts, dietary state, event status, and correction history remain unchanged except for the intended effective assignment.
+- UAT-202: As separate active Admin and Staff users on a planned vehicle, assign and replace both departure and return drivers; verify the eligible driver becomes the applicable vehicle occupant, both saves succeed without an insufficient-permission error, and invalid/inactive drivers remain denied.
+- UAT-203: As separate active Admin and Staff users, move an Unassigned student and an Unassigned non-driver staff participant into a planned vehicle; verify both departure/return occupant fields update, the grouped roster refreshes, and no insufficient-permission error or partial write occurs.
+- UAT-204: Open the departure Unassigned card with both student and staff participants; verify every unassigned name and participant type is visible, individually selectable/movable/removable, and available to Select all without requiring a trip record for the card.

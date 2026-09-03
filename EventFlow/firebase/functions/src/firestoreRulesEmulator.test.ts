@@ -25,6 +25,7 @@ async function main() {
     batch.set(doc(db, 'vehicles/van-b'), { vehicleId: 'van-b', name: 'Van B', capacity: 4, active: true, createdAt: now, updatedAt: now })
     batch.set(doc(db, 'staff/driver'), { staffId: 'driver', displayName: 'Driver', active: true, canDrive: true })
     batch.set(doc(db, 'staff/alternate-driver'), { staffId: 'alternate-driver', displayName: 'Alternate Driver', active: true, canDrive: true })
+    batch.set(doc(db, 'students/student'), { studentId: 'student', displayName: 'Student', active: true })
     batch.set(doc(db, 'eventStaffParticipants/event__driver'), { eventStaffParticipantId: 'event__driver', eventId: 'event', staffId: 'driver', status: 'active', addedByUserId: 'admin', addedAt: now, removedByUserId: null, removedAt: null, notes: null, departureVehicleId: 'van-a', returnVehicleId: 'van-a' })
     batch.set(doc(db, 'eventStaffParticipants/event__alternate-driver'), { eventStaffParticipantId: 'event__alternate-driver', eventId: 'event', staffId: 'alternate-driver', status: 'active', addedByUserId: 'admin', addedAt: now, removedByUserId: null, removedAt: null, notes: null, departureVehicleId: 'van-a', returnVehicleId: 'van-a' })
     batch.set(doc(db, 'eventParticipants/event__student'), { eventParticipantId: 'event__student', eventId: 'event', studentId: 'student', status: 'active', addedByUserId: 'admin', addedAt: now, removedByUserId: null, removedAt: null, notes: null, departureVehicleId: 'van-a', returnVehicleId: 'van-a' })
@@ -34,8 +35,10 @@ async function main() {
     for (const [suffix, userId] of [['admin-depart', 'admin'], ['staff-depart', 'staff-user']] as const) {
       const eventId = `event-${suffix}`, tripId = `${eventId}__van-a`
       batch.set(doc(db, `events/${eventId}`), { eventId, name: 'Depart Event', activityId: 'activity', eventTypeId: 'type', departureDateTime: now, returnDateTime: Timestamp.fromMillis(2_000), location: 'Destination', status: 'confirmed', createdByUserId: userId, createdByUserName: 'User', createdAt: now, updatedAt: now })
-      batch.set(doc(db, `eventStaffParticipants/${eventId}__driver`), { eventStaffParticipantId: `${eventId}__driver`, eventId, staffId: 'driver', status: 'active', addedByUserId: userId, addedAt: now, removedByUserId: null, removedAt: null, notes: null, departureVehicleId: 'van-a', returnVehicleId: 'van-a' })
-      batch.set(doc(db, `eventVehicleTrips/${tripId}`), { ...baseTrip, eventVehicleTripId: tripId, eventId, stage: 'planned', departedAt: null, departedByUserId: null, departureSnapshot: null, arrivedAtEventAt: null, arrivedAtEventByUserId: null })
+      batch.set(doc(db, `eventStaffParticipants/${eventId}__driver`), { eventStaffParticipantId: `${eventId}__driver`, eventId, staffId: 'driver', status: 'active', addedByUserId: userId, addedAt: now, removedByUserId: null, removedAt: null, notes: null, departureVehicleId: null, returnVehicleId: null })
+      batch.set(doc(db, `eventStaffParticipants/${eventId}__alternate-driver`), { eventStaffParticipantId: `${eventId}__alternate-driver`, eventId, staffId: 'alternate-driver', status: 'active', addedByUserId: userId, addedAt: now, removedByUserId: null, removedAt: null, notes: null, departureVehicleId: null, returnVehicleId: null })
+      batch.set(doc(db, `eventParticipants/${eventId}__student`), { eventParticipantId: `${eventId}__student`, eventId, studentId: 'student', status: 'active', addedByUserId: userId, addedAt: now, removedByUserId: null, removedAt: null, notes: null, departureVehicleId: null, returnVehicleId: null })
+      batch.set(doc(db, `eventVehicleTrips/${tripId}`), { ...baseTrip, eventVehicleTripId: tripId, eventId, stage: 'planned', departureDriverStaffId: null, returnDriverStaffId: null, returnDriverMirrorsDeparture: true, departedAt: null, departedByUserId: null, departureSnapshot: null, arrivedAtEventAt: null, arrivedAtEventByUserId: null })
     }
     await batch.commit()
   })
@@ -44,7 +47,16 @@ async function main() {
   const inactive = env.authenticatedContext('inactive').firestore()
   const departSnapshot = { ...baseTrip.departureSnapshot, studentOccupantIds: [], studentOccupantNames: [], studentCount: 0, staffCount: 1, totalOccupants: 1 }
   for (const [db, eventId, userId] of [[admin, 'event-admin-depart', 'admin'], [staff, 'event-staff-depart', 'staff-user']] as const) {
-    const tripId = `${eventId}__van-a`, departBatch = writeBatch(db)
+    const tripId = `${eventId}__van-a`, participantId = `${eventId}__driver`
+    const assignDepartureBatch = writeBatch(db)
+    assignDepartureBatch.update(doc(db, `eventStaffParticipants/${participantId}`), { departureVehicleId: 'van-a', returnVehicleId: 'van-a' })
+    assignDepartureBatch.update(doc(db, `eventVehicleTrips/${tripId}`), { departureDriverStaffId: 'driver', returnDriverStaffId: 'driver', returnDriverMirrorsDeparture: true, updatedAt: serverTimestamp() })
+    await assertSucceeds(assignDepartureBatch.commit())
+    await assertSucceeds(updateDoc(doc(db, `eventVehicleTrips/${tripId}`), { returnDriverStaffId: null, returnDriverMirrorsDeparture: false, updatedAt: serverTimestamp() }))
+    await assertSucceeds(updateDoc(doc(db, `eventVehicleTrips/${tripId}`), { returnDriverStaffId: 'driver', returnDriverMirrorsDeparture: false, updatedAt: serverTimestamp() }))
+    await assertSucceeds(updateDoc(doc(db, `eventParticipants/${eventId}__student`), { departureVehicleId: 'van-a', returnVehicleId: 'van-a' }))
+    await assertSucceeds(updateDoc(doc(db, `eventStaffParticipants/${eventId}__alternate-driver`), { departureVehicleId: 'van-a', returnVehicleId: 'van-a' }))
+    const departBatch = writeBatch(db)
     departBatch.update(doc(db, `eventVehicleTrips/${tripId}`), { stage: 'departed', departedAt: serverTimestamp(), departedByUserId: userId, departureSnapshot: departSnapshot, returnDriverMirrorsDeparture: false, updatedAt: serverTimestamp() })
     departBatch.update(doc(db, `events/${eventId}`), { status: 'in_progress', startedAt: serverTimestamp(), startedByUserId: userId, startedByVehicleTripId: tripId, updatedAt: serverTimestamp() })
     await assertSucceeds(departBatch.commit())
@@ -57,30 +69,14 @@ async function main() {
   const startSnapshot = { ...baseTrip.departureSnapshot, destination: 'Mill Village', startedByUserId: 'admin', startedAt: serverTimestamp() }
   await assertSucceeds(updateDoc(doc(admin, 'eventVehicleTrips/event__van-a'), { stage: 'return_started', returnStartedAt: serverTimestamp(), returnStartedByUserId: 'admin', originalReturnSnapshot: startSnapshot, updatedAt: serverTimestamp() }))
   await assertFails(updateDoc(doc(admin, 'eventVehicleTrips/event__van-a'), { originalReturnSnapshot: { ...baseTrip.departureSnapshot, destination: 'Changed' }, updatedAt: serverTimestamp() }))
-  const correctionId = 'correction-one', correction = { correctionId, eventId: 'event', correctionType: 'return_roster_assignment', correctedByUserId: 'staff-user', correctedAt: serverTimestamp(), changes: { student__student: { participantType: 'student', participantId: 'student', participantName: 'Student', previousReturnVehicleId: 'van-b', correctedReturnVehicleId: 'van-a', sourceTripId: 'event__van-b', destinationTripId: 'event__van-a', clearedReturnDriverTripId: null } } }
-  const correctionBatch = writeBatch(staff)
-  correctionBatch.update(doc(staff, 'eventParticipants/event__student'), { returnVehicleId: 'van-a', latestReturnCorrectionId: correctionId })
-  correctionBatch.set(doc(staff, `returnRosterCorrections/${correctionId}`), correction)
-  await assertSucceeds(correctionBatch.commit())
-  for (const [correctionId, fromVehicle, toVehicle] of [['correction-two', 'van-a', 'van-b'], ['correction-three', 'van-b', 'van-a']] as const) {
-    const reversalBatch = writeBatch(staff)
-    reversalBatch.update(doc(staff, 'eventParticipants/event__student'), { returnVehicleId: toVehicle, latestReturnCorrectionId: correctionId })
-    reversalBatch.set(doc(staff, `returnRosterCorrections/${correctionId}`), { correctionId, eventId: 'event', correctionType: 'return_roster_assignment', correctedByUserId: 'staff-user', correctedAt: serverTimestamp(), changes: { student__student: { participantType: 'student', participantId: 'student', participantName: 'Student', previousReturnVehicleId: fromVehicle, correctedReturnVehicleId: toVehicle, sourceTripId: `event__${fromVehicle}`, destinationTripId: `event__${toVehicle}`, clearedReturnDriverTripId: null } } })
-    await assertSucceeds(reversalBatch.commit())
-  }
-  const driverCorrectionId = 'driver-correction-one', driverCorrectionBatch = writeBatch(staff)
-  driverCorrectionBatch.update(doc(staff, 'eventVehicleTrips/event__van-a'), { returnDriverStaffId: 'alternate-driver', returnDriverMirrorsDeparture: false, latestReturnDriverCorrectionId: driverCorrectionId, updatedAt: serverTimestamp() })
-  driverCorrectionBatch.set(doc(staff, `returnDriverCorrections/${driverCorrectionId}`), { correctionId: driverCorrectionId, eventId: 'event', tripId: 'event__van-a', vehicleId: 'van-a', previousReturnDriverStaffId: 'driver', correctedReturnDriverStaffId: 'alternate-driver', correctedByUserId: 'staff-user', correctedAt: serverTimestamp(), correctionType: 'return_driver_assignment' })
-  await assertSucceeds(driverCorrectionBatch.commit())
-  const restoreDriverId = 'driver-correction-two', restoreDriverBatch = writeBatch(admin)
-  restoreDriverBatch.update(doc(admin, 'eventVehicleTrips/event__van-a'), { returnDriverStaffId: 'driver', returnDriverMirrorsDeparture: false, latestReturnDriverCorrectionId: restoreDriverId, updatedAt: serverTimestamp() })
-  restoreDriverBatch.set(doc(admin, `returnDriverCorrections/${restoreDriverId}`), { correctionId: restoreDriverId, eventId: 'event', tripId: 'event__van-a', vehicleId: 'van-a', previousReturnDriverStaffId: 'alternate-driver', correctedReturnDriverStaffId: 'driver', correctedByUserId: 'admin', correctedAt: serverTimestamp(), correctionType: 'return_driver_assignment' })
-  await assertSucceeds(restoreDriverBatch.commit())
-  await assertFails(updateDoc(doc(staff, `returnDriverCorrections/${driverCorrectionId}`), { correctedByUserId: 'admin' }))
-  await assertFails(updateDoc(doc(staff, 'eventVehicleTrips/event__van-a'), { returnDriverStaffId: 'driver', updatedAt: serverTimestamp() }))
-  await assertFails(updateDoc(doc(staff, `returnRosterCorrections/${correctionId}`), { correctedByUserId: 'admin' }))
-  await assertFails(updateDoc(doc(staff, 'eventParticipants/event__student'), { returnVehicleId: null, latestReturnCorrectionId: 'missing-correction' }))
-  assert.ok(true, 'Rules emulator exercised ordinary editing, Start Return, authorization, immutable snapshot, and append-only correction linkage')
+  await assertSucceeds(updateDoc(doc(staff, 'eventParticipants/event__student'), { returnVehicleId: 'van-a' }))
+  await assertSucceeds(updateDoc(doc(staff, 'eventParticipants/event__student'), { returnVehicleId: 'van-b' }))
+  await assertSucceeds(updateDoc(doc(staff, 'eventVehicleTrips/event__van-a'), { returnDriverStaffId: 'alternate-driver', returnDriverMirrorsDeparture: false, updatedAt: serverTimestamp() }))
+  const departureDriverBefore = baseTrip.departureDriverStaffId
+  await assertFails(updateDoc(doc(staff, 'eventVehicleTrips/event__van-a'), { departureDriverStaffId: 'alternate-driver', returnDriverStaffId: 'driver', returnDriverMirrorsDeparture: false, updatedAt: serverTimestamp() }))
+  await assertFails(writeBatch(staff).set(doc(staff, 'returnRosterCorrections/obsolete'), { eventId: 'event' }).commit())
+  assert.equal(departureDriverBefore, 'driver')
+  assert.ok(true, 'Rules emulator exercised direct effective return editing, authorization, immutable snapshots, and departure-driver isolation')
   await env.cleanup()
 }
 

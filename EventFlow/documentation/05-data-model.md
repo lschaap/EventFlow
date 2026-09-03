@@ -197,6 +197,6 @@ EVENTS
 
 USERS ── STAFF
 ```
-# Return-driver correction stabilization
+# Effective return-plan stabilization
 
-`eventVehicleTrips.latestReturnDriverCorrectionId` links the effective `returnDriverStaffId` to the newest immutable `returnDriverCorrections` record. Each record captures event/trip/vehicle identity, previous and corrected driver, authenticated user, server timestamp, and `return_driver_assignment` type. Original departure and Start Return snapshots remain unchanged.
+`eventVehicleTrips.returnDriverStaffId` and participant `returnVehicleId` fields are the effective return plan. Approved Admin and Staff may update them directly after Depart and through `return_started`; departure driver/occupant fields and immutable snapshots remain unchanged. No correction-history link or record is created.

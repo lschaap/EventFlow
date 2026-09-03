@@ -11,7 +11,7 @@ try {
   const { clearedVehicleAssignmentFields, isEligibleFutureTripForDeactivation } = await import('../.transportation-test/services/vehicleDeactivation.js')
   const { buildDepartureSnapshot, departureReviewToken, reconcileInitialReturnAssignments } = await import('../.transportation-test/services/departurePlanning.js')
   const { arrivalBlockingError, arrivalReviewToken, isValidDepartureSnapshot } = await import('../.transportation-test/services/arrivalPlanning.js')
-  const { buildOriginalReturnSnapshot, effectiveRosterDiffers, returnCorrectionPhaseIsActive, returnMoveRequiresCorrection, returnTargetIsEligible, startReturnBlockingError, startReturnReviewToken, startReturnWarnings } = await import('../.transportation-test/services/returnPlanning.js')
+  const { buildOriginalReturnSnapshot, effectiveRosterDiffers, returnTargetIsEligible, startReturnBlockingError, startReturnReviewToken, startReturnWarnings } = await import('../.transportation-test/services/returnPlanning.js')
   const arrivalWorkflowSource = readFileSync(new URL('../src/services/arrivalWorkflow.ts', import.meta.url), 'utf8')
   assert.doesNotMatch(arrivalWorkflowSource, /Promise\.all\(\[transaction\.get/, 'arrival transaction reads remain ordered so the commit request is reached')
   assert.match(arrivalWorkflowSource, /transaction\.get\(state\.eventRef\)[\s\S]*transaction\.get\(state\.tripRef\)[\s\S]*transaction\.get\(state\.vehicleRef\)/, 'arrival transaction rereads event, trip, and vehicle sequentially')
@@ -20,11 +20,11 @@ try {
   assert.match(vehicleTripPlanningSource, /<details className="mt-3 text-sm"><summary className="cursor-pointer font-semibold">Completed departure details<\/summary>/, 'completed departure details use an accessible collapsed disclosure')
   assert.match(vehicleTripPlanningSource, /Current return operation[\s\S]*Effective driver:[\s\S]*Start Return/, 'effective return state and Start Return share the primary return card')
   assert.match(vehicleTripPlanningSource, /<button type="button" disabled=\{busy\} onClick=\{\(\) => void openStartReturnReview/, 'Start Return cannot submit an ancestor form')
-  assert.equal(returnCorrectionPhaseIsActive('in_progress', ['arrived_at_event', 'return_started']), true, 'one started return makes subsequent moves audited and reversible event-wide')
-  assert.equal(returnCorrectionPhaseIsActive('in_progress', ['departed', 'arrived_at_event']), false, 'ordinary editing remains available before any return starts')
-  assert.equal(returnCorrectionPhaseIsActive('completed', ['returned']), true, 'completed events retain correction mode')
+  assert.match(vehicleTripPlanningSource, /Add selected \(\$\{total\}\)/, 'one unified Add dialog commits the selected students, staff, and vehicles')
+  assert.doesNotMatch(vehicleTripPlanningSource, /Correction History|returnRosterCorrections|returnDriverCorrections/, 'obsolete correction history is not shown or loaded')
   const arrivalDialogSource = vehicleTripPlanningSource.slice(vehicleTripPlanningSource.indexOf('function ArrivalReviewDialog'), vehicleTripPlanningSource.indexOf('function StartReturnReviewDialog'))
   assert.equal((arrivalDialogSource.match(/<button type="button"/g) ?? []).length, 2, 'arrival confirmation and cancellation cannot submit an ancestor form')
+  assert.match(vehicleTripPlanningSource, /\{departureEditable \? <>\{trip \? <div/, 'Unassigned departure cards render their editable occupant list without requiring a trip record')
   const trips = [{ vehicleId: 'van-a' }, { vehicleId: 'van-b' }]
   const vehicles = [{ vehicleId: 'van-a', capacity: 1 }, { vehicleId: 'van-b', capacity: 3 }]
   const occupants = [
@@ -112,10 +112,8 @@ try {
   assert.equal(returnTargetIsEligible('planned', false), false, 'ordinary return editing rejects planned targets')
   assert.equal(returnTargetIsEligible('return_started', false), false, 'ordinary return editing locks after Start Return')
   assert.equal(returnTargetIsEligible('returned', false), false, 'ordinary return editing rejects returned targets')
-  assert.equal(returnTargetIsEligible('return_started', true), true, 'corrections accept return-started targets')
-  assert.equal(returnTargetIsEligible('returned', true), true, 'corrections accept returned targets')
-  assert.equal(returnMoveRequiresCorrection('return_started'), true, 'post-start moves require correction history')
-  assert.equal(returnMoveRequiresCorrection('arrived_at_event'), false, 'pre-start moves remain ordinary edits')
+  assert.equal(returnTargetIsEligible('return_started', true), true, 'effective return editing accepts return-started targets')
+  assert.equal(returnTargetIsEligible('returned', true), false, 'effective return editing ends before Returned')
   assert.deepEqual(startReturnWarnings(2, 1), ['2 event participant(s) remain Return Unassigned.', 'This vehicle is 1 occupant(s) over capacity.'], 'Start Return combines warning-only conditions')
   const returnTrip = { ...departedTrip, stage: 'arrived_at_event', returnDriverStaffId: 'driver', arrivedAtEventAt: { toMillis: () => 20 }, arrivedAtEventByUserId: 'staff', returnStartedAt: null, returnStartedByUserId: null, originalReturnSnapshot: null }
   assert.equal(startReturnBlockingError('in_progress', returnTrip), null, 'active arrived trip with driver is eligible for Start Return')

@@ -205,6 +205,4 @@ The Arrive at Event and planned-trip compatibility Rules were deployed to `event
 
 Participant documents may add nullable `latestReturnCorrectionId`. Ordinary return edits change only `returnVehicleId`; audited post-start edits change `returnVehicleId` plus this link in the same atomic operation.
 
-`returnRosterCorrections/{generatedOperationId}` is an append-only operation collection. Each document contains `correctionId`, `eventId`, `correctionType`, `correctedByUserId`, server `correctedAt`, and a keyed `changes` map (1–100 entries). Rules allow approved Admin/Staff reads and valid creates only; update/delete are denied. No new composite index is required by the event-ID history query.
-
-`returnDriverCorrections/{generatedOperationId}` is append-only and records `eventId`, `tripId`, `vehicleId`, previous/corrected effective driver IDs, authenticated user, server timestamp, and `return_driver_assignment`. The affected trip stores `latestReturnDriverCorrectionId`. Rules require the linked record in the same transaction and deny history update/delete. The event-ID query uses existing single-field indexing.
+The former `returnRosterCorrections` and `returnDriverCorrections` collections are obsolete. Current application code does not read or write them, and Rules deny create, update, and delete. Existing records may remain only as legacy cleanup data; effective return state lives directly on participant and trip records.

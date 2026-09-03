@@ -117,7 +117,6 @@
 | notes | string/null | Optional notes |
 | departureVehicleId | string/null | Active planned outbound vehicle; missing field parses as null |
 | returnVehicleId | string/null | Active planned return vehicle; pre-Depart mirror except for an independent return driver; missing field parses as null |
-| latestReturnCorrectionId | string/null | Most recent append-only return-roster correction operation affecting this participant |
 
 ## eventStaffParticipants
 | Field | Type | Description |
@@ -133,7 +132,6 @@
 | notes | string/null | Optional notes |
 | departureVehicleId | string/null | Active planned outbound vehicle; missing field parses as null |
 | returnVehicleId | string/null | Active planned return vehicle; pre-Depart mirror except for an independent return driver; missing field parses as null |
-| latestReturnCorrectionId | string/null | Most recent append-only return-roster correction operation affecting this participant |
 
 ## eventDrivers
 Legacy compatibility data only. Production application code no longer reads or writes these records; fields remain documented for migration inspection and the approved reset procedure.
@@ -193,7 +191,11 @@ Before departure, `returnVehicleId` mirrors `departureVehicleId`. Depart creates
 | correctedByUserId | string/null | Admin UID for latest trip correction |
 | correctionReason | string/null | Required latest correction reason |
 
-### returnRosterCorrections
+### Obsolete return-correction collections (legacy cleanup only)
+
+`returnRosterCorrections` and `returnDriverCorrections` are no longer created, read, or displayed by the application. Firestore Rules deny writes. The field lists below describe legacy records only and are retained for cleanup awareness.
+
+### Legacy returnRosterCorrections
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -203,7 +205,7 @@ Before departure, `returnVehicleId` mirrors `departureVehicleId`. Depart creates
 | correctedByUserId | string | Authenticated correcting user |
 | correctedAt | timestamp | Server-authoritative correction time |
 
-### returnDriverCorrections
+### Legacy returnDriverCorrections
 
 | Field | Type | Meaning |
 |---|---|---|

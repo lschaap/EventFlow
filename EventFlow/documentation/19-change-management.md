@@ -1,5 +1,11 @@
 # Change Management
 
+## 2026-09-03 unified Add and effective-return simplification
+
+This milestone supersedes append-only return corrections. Effective return passenger/driver assignments are edited directly after Depart through `return_started`, while immutable departure and original Start Return snapshots remain authoritative. Correction-history UI/writes were removed and legacy collections are write-denied. Event Details now has one atomic Add dialog for up to 20 combined active students, staff, and vehicles on draft/confirmed events. Returned, automatic completion, Functions, Hosting, indexes, and operational-data mutation remain excluded.
+
+Production build, regression, Rules policy, migration, isolation, reset-safeguard, and executable Firestore emulator suites passed. Firestore Rules only were deployed to `eventflow-612ed` as ruleset `1788b61d-c434-4359-98e9-0fac8a46e641`; manual UAT-204 through UAT-209 remains pending.
+
 ## 2026-08-20 CR-001 return-milestone Rules deployment
 
 After production build, regression, policy, and Java 21 Firestore emulator verification passed, the scoped return-planning/Start Return/correction Rules were cloud-compiled without warnings and deployed to `eventflow-612ed` as ruleset `e8a29a89-d4bc-4413-a094-d9eae4365212`. Functions, indexes, Hosting, and operational data were unchanged. Manual UAT-182 through UAT-192 remains the acceptance gate; no implementation commit is created before Product Owner acceptance.
@@ -13,6 +19,10 @@ Start Return UAT subsequently appeared to do nothing for both roles. Executable 
 Final milestone hardening removed redundant broad Depart/Arrive authorization branches after their compact exact replacements were proven. The full executable Rules suite passed and Firestore Rules only were deployed on 2026-09-03 as ruleset `16fb9b8e-0cfc-4719-b3b0-1157de1a59c6`. Post-Depart return-driver swapping remains a separate follow-up because the attempted multi-document client swap exceeded Firestore Rules' expression budget; no partial or weakened-security implementation is included.
 
 The subsequent return-stabilization milestone implements that follow-up with a bounded, append-only `returnDriverCorrections` write linked atomically to the effective trip driver. It also makes post-start passenger correction mode event-wide so occupants remain movable between eligible vehicles after the first return starts. Production and emulator verification passed, and Firestore Rules only were deployed on 2026-09-03 as ruleset `f294a8cc-826f-4404-a25f-93352222c0b6`. Manual UAT-196 through UAT-201 remains the acceptance gate; Functions, indexes, Hosting, and operational data were unchanged.
+
+UAT then exposed insufficient permission when either approved role assigned a planned departure or return driver. The shared multi-document driver/occupant transaction exceeded the Rules expression ceiling. Compact paired authorization paths now preserve driver eligibility, occupant linkage, mirroring, exact-field, and role checks while stage-first evaluation protects Depart and Arrive. The complete Admin/Staff lifecycle emulator suite passed, and Firestore Rules only were deployed on 2026-09-03 as ruleset `5bd0d8cd-150c-4044-896f-29d18ed18745`. UAT-202 remains pending.
+
+The following UAT pass found the same expression-ceiling denial for first assignment of Unassigned student and staff passengers. Narrow first-assignment paths permit only active relationships to mirror both vehicle fields onto one active planned trip. Admin/Staff passenger and complete lifecycle emulator coverage passed, and Firestore Rules only were deployed on 2026-09-03 as ruleset `146317d8-9e8b-4d3a-a375-d013bca36f22`. UAT-203 remains pending.
 
 ## 2026-08-19 CR-001 operational test-data reset
 

@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.9 - Unified Add and Effective Return Editing
+
+- Replaced separate event-add controls with one atomic Students/Staff/Vehicles dialog capped at 20 combined selections.
+- Removed return correction-history creation/display and retained direct effective edits through `return_started`.
+- Preserved immutable departure driver/occupant facts when the effective return driver changes.
+
 ## 2026-08-20 — CR-001 Return Planning and Start Return (Ready for verification)
 
 - Closed the supplied Depart/Arrive UAT record at the Product Owner’s accepted overall outcome without fabricating individual case evidence.
@@ -129,3 +135,6 @@
 - Added stage-focused vehicle cards, event-wide reversible post-start passenger corrections, and audited effective return-driver editing through `return_started`.
 - Cross-vehicle driver conflicts are intentionally blocked; original snapshots and lifecycle timestamps remain immutable. Returned and automatic completion remain unimplemented.
 - Production build, focused regressions, policy checks, migration/reset safeguards, legacy isolation, and the executable Firestore emulator suite passed. Firestore Rules only were deployed to `eventflow-612ed` as ruleset `f294a8cc-826f-4404-a25f-93352222c0b6`; Functions, indexes, Hosting, and operational data were unchanged.
+- Follow-up UAT found insufficient permission when Admin or Staff assigned either planned-trip driver. Compact planned-driver and paired occupant Rules paths, stage-first lifecycle evaluation, and permanent role-paired emulator regressions were added. Firestore Rules only were deployed as ruleset `5bd0d8cd-150c-4044-896f-29d18ed18745`; UAT-202 records the production retest.
+- The next UAT pass found the equivalent denial when an Unassigned student or staff passenger was first placed in a planned vehicle. Compact first-assignment paths and Admin/Staff emulator regressions were added, then Firestore Rules only were deployed as ruleset `146317d8-9e8b-4d3a-a375-d013bca36f22`; UAT-203 records the production retest.
+- The departure Unassigned group calculated occupants correctly but hid its roster because rendering required a trip record. It now uses the editable-group condition, keeping Unassigned names/actions visible while progressed vehicle history remains collapsed; UAT-204 records the retest.

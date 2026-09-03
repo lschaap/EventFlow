@@ -2,7 +2,7 @@ import type { DepartureSnapshot, EventVehicleTripRecord } from '../types/models'
 import type { TransportationOccupant } from './transportationPlanning'
 
 export const ORDINARY_RETURN_STAGES = ['departed', 'arrived_at_event'] as const
-export const CORRECTABLE_RETURN_STAGES = ['departed', 'arrived_at_event', 'return_started', 'returned'] as const
+export const EDITABLE_RETURN_STAGES = ['departed', 'arrived_at_event', 'return_started'] as const
 
 export type StartReturnReview = {
   eventId: string; eventName: string; eventStatus: string; eventUpdatedAtMillis: number
@@ -13,14 +13,8 @@ export type StartReturnReview = {
   reviewToken: string
 }
 
-export function returnTargetIsEligible(stage: string, correction: boolean) {
-  return (correction ? CORRECTABLE_RETURN_STAGES : ORDINARY_RETURN_STAGES).includes(stage as never)
-}
-
-export function returnMoveRequiresCorrection(sourceStage: string | null) { return sourceStage === 'return_started' || sourceStage === 'returned' }
-
-export function returnCorrectionPhaseIsActive(eventStatus: string, stages: string[]) {
-  return eventStatus === 'completed' || stages.some((stage) => stage === 'return_started' || stage === 'returned')
+export function returnTargetIsEligible(stage: string, afterStart = false) {
+  return (afterStart ? EDITABLE_RETURN_STAGES : ORDINARY_RETURN_STAGES).includes(stage as never)
 }
 
 export function effectiveRosterDiffers(snapshot: DepartureSnapshot | null, occupants: TransportationOccupant[]) {

@@ -59,15 +59,15 @@ The latest approved milestone supersedes rows below that describe Staff transpor
 | Add/remove an event vehicle | Yes | Yes |
 | Perform the next valid Depart/Arrive/Start Return/Returned action | Yes | Yes |
 | Skip or undo a stage through normal controls | No | No |
-| Use explicit return-roster correction workflow after Start Return | Yes | Yes |
+| Edit the effective return plan through `return_started` | Yes | Yes |
 | Configure default return destination in Admin Configuration > Vehicles | No | Yes |
 | Preview/copy/open an Event Details WhatsApp message | Post-MVP | Post-MVP |
 
 All users must still be authenticated, approved, and active. A driver must additionally be active staff with `canDrive = true`. Staff return edits save immediately after the same participant/trip/overlap/capacity validation used for Admin edits and target only departed or arrived vehicles before return start. Rules, not UI visibility alone, enforce these boundaries.
 
-Current implementation note: **Depart**, **Arrive at Event**, ordinary return editing, **Start Return**, and audited return-roster corrections are available to both active approved roles. Returned and automatic completion remain planned; configuration remains Admin-only.
+Current implementation note: **Depart**, **Arrive at Event**, direct effective return editing, and **Start Return** are available to both active approved roles. Return edits preserve departure facts and stop before Returned. Returned and automatic completion remain planned; configuration remains Admin-only.
 
-The current milestone supersedes older Admin-only correction text for return-roster records: active approved Staff and Admin may append bounded return corrections after Start Return, after Returned fixture states, and after event completion. Neither role can update/delete correction history, overwrite original snapshots, reopen lifecycle stages, or alter departure assignments through this workflow.
+The current milestone supersedes the former correction-history design. Active approved Staff and Admin directly edit bounded effective return assignments through `return_started`; no correction record is created or displayed, and neither role can overwrite original snapshots, reopen lifecycle stages, or alter departure assignments through this workflow.
 
 For both Admin and Staff, moving a driver occupant away from the vehicle they drive requires a disclosed confirmation and atomically clears the applicable role. Cancelling writes nothing. WhatsApp permissions are not active MVP permissions.
 # Return stabilization permissions
