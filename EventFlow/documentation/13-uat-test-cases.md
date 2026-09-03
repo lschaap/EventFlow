@@ -4,6 +4,36 @@
 
 ### Depart milestone
 
+#### Depart/Arrive UAT outcome — accepted 2026-08-20
+
+The Product Owner reported rerunning the supplied Depart and Arrive at Event checks after the Arrive confirmation defect was corrected in commit `6e2814a`, and accepted the corrected combined behavior. The previously deferred scope was:
+
+5. Validate mirrored and independent return-driver reconciliation, including a return driver departing in another vehicle and deduplication.
+6. Depart the first vehicle and then a later vehicle; verify the original event start timestamp and audit IDs are preserved.
+7. Change assignments, driver, capacity, warning count, or event status after opening the review; verify the stale confirmation writes nothing and requires a new review.
+8. Attempt concurrent and duplicate Depart actions; verify only one succeeds and event-start data is not overwritten.
+9. Verify the stored snapshot, actual departure time, locked departure controls, and read-only initialized return occupants.
+10. Verify the then-current milestone boundary for Arrive at Event and later return controls.
+
+This records the supplied overall acceptance outcome; it does not fabricate separate pass evidence for each numbered case below. Any case not actually exercised or evidenced by that outcome remains pending for a later regression session. Return editing, Start Return, and post-start correction cases in this document are now the next manual UAT gate; Returned and automatic completion remain pending implementation.
+
+### Return planning, Start Return, and correction milestone — manual UAT pending
+
+- UAT-182: Confirm return rosters are hidden while planned and become visible/editable for Admin and Staff after Depart.
+- UAT-183: Move student/staff return passengers individually and in mixed bulk groups among departed/arrived vehicles and Return Unassigned; verify departure fields never change.
+- UAT-184: Attempt ordinary moves to planned, return-started, returned, removed, inactive, or outside-event vehicles; verify denial and zero partial writes.
+- UAT-185: Move a return driver away; verify disclosed warning, zero-write Cancel, and atomic role clearing plus move on Confirm.
+- UAT-186: Review Start Return as Admin and Staff; verify event, vehicle, destination, driver, named roster, counts, capacity, warnings, arrival time, and required double-check confirmation.
+- UAT-187: Confirm Start Return with Unassigned, overcapacity, and both warnings; verify exact `arrived_at_event -> return_started`, server time/user audit, immutable original snapshot, and unchanged event/departure/participant facts.
+- UAT-188: Verify invalid driver, stale review, duplicate/concurrent confirmation, cancelled/invalid event, and transaction failure produce no partial writes.
+- UAT-189: Correct effective return assignments after `return_started`, after `returned` fixture state, and after event completion; verify lifecycle/event timestamps and original snapshots never change.
+- UAT-190: Verify corrections to/from Unassigned and between two snapshotted vehicles append visible user/time history and update effective capacity state.
+- UAT-191: Correct a current return driver; verify warning, atomic return-role clearing, unchanged departure role, preserved original snapshot driver, and appended audit history.
+- UAT-192: Verify unauthorized/inactive users cannot edit/start/correct and correction history cannot be edited or deleted.
+- UAT-193: As separate active Admin and Staff users, fill a planned vehicle and confirm Depart; verify the transaction succeeds, the trip/event audit state advances atomically, and no insufficient-permission error appears.
+- UAT-194: After successful Depart, confirm Arrive at Event as separate active Admin and Staff users; verify the exact trip transition and arrival audit succeed without changing departure, return-roster, participant, or event state and without an insufficient-permission error.
+- UAT-195: After Arrive, press Start Return as separate Admin and Staff users; verify immediate Preparing feedback, a populated review or a vehicle-local actionable error within 15 seconds, then check the required confirmation and verify Start Return records successfully.
+
 - UAT-167: As Admin, open Depart for a confirmed planned vehicle and verify event, vehicle, eligible driver, named occupants, student/staff/total counts, capacity result, Unassigned count, actual-departure explanation, return-initialization explanation, and required double-check confirmation are shown.
 - UAT-168: Repeat UAT-167 as Staff. Verify inactive, unapproved, unauthenticated, and unsupported-role users cannot read/write the action through Rules.
 - UAT-169: Cancel/close ordinary, Unassigned-warning, over-capacity-warning, and combined-warning reviews; verify zero trip, participant, timestamp, snapshot, count, dietary, or event writes.

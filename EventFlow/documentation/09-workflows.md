@@ -161,7 +161,7 @@ Staff or Admin confirms **Arrive at Event**. EventFlow records server `arrivedAt
 
 ### T4 - Start Return
 
-The return equivalent of T2 validates and reviews the return plan. Confirmation records server `returnStartedAt`, advances the trip, and enables that vehicle's return preview without changing event status.
+Staff or Admin edits the visible return roster after Depart using individual/bulk controls limited to departed/arrived targets or Return Unassigned. Moving a return driver requires disclosed atomic role clearing. From `arrived_at_event`, Start Return reviews the configured destination, eligible driver, named roster, counts, capacity, all Return Unassigned participants, and arrival time. Explicit confirmation stores server `returnStartedAt`/user audit plus the immutable original return snapshot and advances only to `return_started`; the event remains `in_progress`.
 
 ### T5 - Returned
 
@@ -173,7 +173,7 @@ Staff/Admin uses Start Event to record server `startedAt` and change confirmed t
 
 ### T6 - Correct a begun trip or assignment
 
-Admin uses an explicit correction action, reviews a warning, supplies a required reason, and confirms. One transaction updates stage/timestamps, overwrites latest correction metadata, and recalculates event status plus `startedAt`/`completedAt`. Cancelled remains cancelled; backward/forward corrections can move completed to in_progress and back. Staff cannot undo stages.
+For return-roster records, Staff or Admin uses the explicit correction controls after Start Return. One transaction changes only effective participant return assignments, clears a disclosed conflicting return-driver role when necessary, and creates an append-only correction operation with authenticated UID/server time and before/after/source/destination facts. Original snapshots, departure facts, lifecycle timestamps, and event status remain unchanged, including after Returned fixture states or event completion. Broader lifecycle correction remains unimplemented.
 
 ### T7 - Deactivate a vehicle
 

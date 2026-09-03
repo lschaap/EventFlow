@@ -60,6 +60,10 @@ Validate authentication, permissions, CRUD, assignments, search, dashboard, Cale
 
 For Arrive at Event, additionally validate exact `departed -> arrived_at_event`, request-time/user audit fields, stale/duplicate denial, preservation of event/departure/participant/return state, action visibility, and absence of Start Return. Combine this with deferred Depart manual UAT before authorizing the next lifecycle milestone.
 
+For the return milestone, run return-planning/Start Return/correction/concurrency tests, executable Firestore emulator tests, Rules policy/cloud compilation, full regression suites, TypeScript and production builds, and `git diff --check`. Deploy Firestore Rules only; do not deploy Hosting, Functions, indexes, or operational data. Manually gate Returned work on accepted UAT for ordinary return edits, warning-confirmed Start Return, immutable snapshots, and audited post-start corrections.
+
+The return-milestone Rules were deployed to `eventflow-612ed` on 2026-08-20 as ruleset `e8a29a89-d4bc-4413-a094-d9eae4365212` after warning-free cloud compilation and executable Java 21 emulator verification. No Functions, indexes, Hosting, or operational data were deployed.
+
 ## Rollback
 Maintain:
 - Last known-good release/tag

@@ -7,8 +7,8 @@
 | State | In implementation |
 | Decision date | 2026-08-18 |
 | Scope | Per-leg transportation planning, trip execution, capacity review, status automation, and manual vehicle-free lifecycle |
-| Current implementation | Target-model planning, grouped participants, driver/occupant synchronization, Events-list summaries, eligible deactivation cleanup, participant cleanup, and legacy production isolation are implemented; trip lifecycle and return snapshot are not |
-| Current milestone | Transportation-planning cutover and legacy isolation |
+| Current implementation | Target-model planning, Depart, Arrive at Event, return-only editing, Start Return, audited return-roster corrections, and legacy production isolation are implemented; Returned and automatic completion are not |
+| Current milestone | Return planning, Start Return, and audited roster correction |
 
 ## Implementation progress
 
@@ -16,7 +16,7 @@ Implemented in the foundation milestone: shared `in_progress` and nullable `star
 
 The current milestone completes target-model production cutover for Event Details, Events list, eligible vehicle deactivation, and participant removal. Events-list data loading is constant-query and derives summaries without denormalized documents. New/migrated trips default mirroring true; explicit return selection/clear sets false; restoring matching copies the departure driver atomically.
 
-Production UI/services no longer read or write `eventDrivers`; it remains only in migration/reset tooling, historical documentation, and restrictive Rules compatibility. The approved operational test-data reset was completed and verified on 2026-08-19; no live migration was performed. Per-vehicle Depart and Arrive at Event are implemented with automated verification, and their combined UAT was accepted by the Product Owner on 2026-08-20 after arrival stabilization. Start Return, Returned, return editing, corrections, automatic completion, vehicle-free controls, Calendar/email, and frontend deployment remain unimplemented. WhatsApp is post-MVP and outside CR-001 acceptance. CR-001 as a whole is not Accepted or Released.
+Production UI/services no longer read or write `eventDrivers`; it remains only in migration/reset tooling, historical documentation, and restrictive Rules compatibility. The approved operational test-data reset was completed and verified on 2026-08-19; no live migration was performed. Per-vehicle Depart and Arrive at Event are implemented with automated verification, and their combined UAT was accepted by the Product Owner on 2026-08-20 after arrival stabilization. Return-only editing, per-vehicle Start Return, and append-only audited post-start roster corrections are implemented in the current milestone pending manual UAT. Returned, automatic completion, vehicle-free controls, Calendar/email, and frontend deployment remain unimplemented. WhatsApp is post-MVP and outside CR-001 acceptance. CR-001 as a whole is not Accepted or Released.
 
 ## Scope
 
@@ -24,7 +24,7 @@ Production UI/services no longer read or write `eventDrivers`; it remains only i
 - A departure-time return snapshot and bounded Staff/Admin return-passenger editing window.
 - Per-leg overlap, capacity, and unassigned review.
 - Automatic vehicle-based status changes and manual vehicle-free controls.
-- Admin corrections with latest-only correction metadata.
+- Staff/Admin append-only return-roster corrections; broader lifecycle correction remains planned for Admin.
 - Default return destination in Admin Configuration > Vehicles, initially `Mill Village`.
 - Eligible future cleanup during vehicle deactivation.
 
@@ -33,7 +33,7 @@ Production UI/services no longer read or write `eventDrivers`; it remains only i
 - Confirmation email is removed from MVP and is an optional future enhancement.
 - All WhatsApp behavior is post-MVP. No messaging UI, automated sending, API/paid integration, delivery/app-open verification, group discovery, phone numbers, credentials, stored templates, sent state, or share-attempt timestamps are part of MVP.
 - No automatic scheduled completion for vehicle-free events or browser/read-time substitute.
-- No route calculation, event-specific return destination, hard capacity/unassigned block, general activity log, or full correction history.
+- No route calculation, event-specific return destination, hard capacity/unassigned block, or general activity log. Full history is implemented only for return-roster corrections.
 
 ## Authoritative decisions
 
@@ -59,7 +59,7 @@ When a vehicle reaches `departed`, the same transaction snapshots `returnVehicle
 
 Only departed vehicles may receive independent return edits. After departure and before the target vehicle reaches `return_started`, active approved Staff and Admin users may move active student/staff participants between eligible departed return vehicles, assign an unassigned participant, clear an assignment, and bulk reassign. Valid Staff changes save immediately without Admin approval.
 
-Admin and Staff cannot edit invalid stages or return passengers after Start Return. Both roles share ordinary vehicle, driver, departure, and eligible return planning permissions; after Start Return, only Admin correction can change return assignments.
+Admin and Staff cannot use ordinary controls at invalid stages or after Start Return. Both roles share ordinary vehicle, driver, departure, and eligible return-planning permissions; after Start Return, either role may use the bounded audited return-roster correction workflow.
 
 ### Validation, drivers, and capacity
 
@@ -82,7 +82,7 @@ Depart and Start Return reviews list vehicle, applicable driver, occupants, coun
 
 ### Correction and status recalculation
 
-Staff cannot undo stages. Admin correction requires warning, confirmation, reason, UID, and server timestamp. One transaction updates stage and consistent trip timestamps, overwrites latest correction metadata, recalculates event status, and updates event timestamps:
+Staff cannot undo stages. The broader Admin lifecycle-correction design below remains planned and is distinct from the implemented Staff/Admin return-roster correction workflow, which does not change stages or event status. A future lifecycle correction requires warning, confirmation, reason, UID, and server timestamp and would atomically recalculate state:
 
 - cancelled remains `cancelled`;
 - no active trip reached departed: `confirmed`;
@@ -93,7 +93,7 @@ Staff cannot undo stages. Admin correction requires warning, confirmation, reaso
 
 A completed event can return to `in_progress` after an authorized backward correction and complete again after correction forward. Planned unused/removed trips do not count. Completed/cancelled events have no normal transportation actions.
 
-Only the latest correction reason, UID, and timestamp are stored and later corrections overwrite them. This is not full audit history; `activityLog` remains future. WhatsApp edits/handoffs are never corrections.
+The planned broader lifecycle correction retains latest-only metadata. Implemented return-roster corrections instead append immutable operation records and link each changed participant to the latest applicable operation. WhatsApp edits/handoffs are never corrections.
 
 ### Deactivation and settings
 
@@ -113,7 +113,7 @@ No confirmation email is part of target MVP.
 
 ## Planned data design
 
-Extend both participant collections with nullable `departureVehicleId`, `returnVehicleId`, and latest correction reason/UID/server timestamp. Before departure return mirrors departure; Depart creates the independent snapshot.
+Extend both participant collections with nullable `departureVehicleId`, `returnVehicleId`, and `latestReturnCorrectionId`. Before departure return mirrors departure; Depart creates the independent snapshot. Append return-roster history under `returnRosterCorrections`.
 
 Replace `eventDrivers` with deterministic `eventVehicleTrips/{eventId__vehicleId}` containing identity, `assignmentStatus`, stage, independent drivers, lifecycle timestamps, created/updated metadata, and latest correction metadata. Add `events.startedAt` and planned `in_progress`; maintain `completedAt` per the lifecycle/correction rules.
 
@@ -121,7 +121,7 @@ Store `defaultReturnDestination` and update metadata in `settings/transportation
 
 ## Atomic boundaries
 
-Atomic writes cover driver/participant/occupancy synchronization; Depart plus return snapshot/visibility/event start; participant removal; validated return moves; Start Return plus edit locking; Returned plus applicable-trip completion; correction plus trip timestamps/audit/event status/`startedAt`/`completedAt`; and eligible vehicle-deactivation cleanup.
+Atomic writes cover driver/participant/occupancy synchronization; Depart plus return snapshot/visibility/event start; participant removal; validated return moves; Start Return plus immutable snapshot/edit locking; audited return-roster correction plus any disclosed return-driver clearing; future Returned/completion and broader lifecycle correction; and eligible vehicle-deactivation cleanup.
 
 ### Implemented Depart milestone boundary
 
@@ -129,19 +129,19 @@ Depart is available to active approved Admin and Staff for an active planned tri
 
 The commit re-reads all critical event/trip/vehicle/participant/driver state and compares a review token, then atomically initializes reconciled return assignments, stores `departedAt`, `departedByUserId`, and `departureSnapshot`, sets stage `departed`, and ends mirroring. The first departure also stores event `startedAt`, `startedByUserId`, and `startedByVehicleTripId`; later departures preserve them. The snapshot map stores vehicle and driver IDs/labels, typed occupant ID/name arrays, counts, confirmed capacity, and over-capacity result. Duplicate or stale confirmation and every blocking invariant fail without partial writes. Rules enforce request-time timestamps, authenticated audit IDs, snapshot shape/counts, driver occupancy, participant field bounds, and the atomic first/later event state.
 
-The Depart milestone did not itself implement later stages; Arrive at Event is now implemented separately below. Start Return, Returned, correction, return editing, automatic completion, outbound messaging, generalized movement/multi-run concepts, and frontend deployment remain unimplemented.
+The Depart milestone did not itself implement later stages; Arrive at Event and the return milestone are now implemented separately below. Returned, automatic completion, outbound messaging, generalized movement/multi-run concepts, and frontend deployment remain unimplemented.
 
 ### Implemented Arrive at Event milestone boundary
 
 For an active trip exactly at `departed` on an `in_progress` event, active approved Admin and Staff receive a vehicle-specific review of the durable departure facts and event destination. Confirmation re-reads event/trip/vehicle, rejects stale state, and atomically records only `stage = arrived_at_event`, server `arrivedAtEventAt`, authenticated `arrivedAtEventByUserId`, and `updatedAt`. Event start data, departure timestamp/audit/snapshot, drivers, mirroring, participant and return assignments, counts/dietary state, later timestamps, and other vehicles remain unchanged. Cancel/close writes nothing and duplicate or skipped transitions are denied by service and Rules.
 
-Start Return remains blocked until combined Depart/Arrive manual UAT passes or the Product Owner explicitly accepts identified defects. No return editing, corrections, Returned, completion, messaging, generalized movement, frontend deployment, Functions, indexes, or operational data are included.
+Combined Depart/Arrive manual UAT passed and was accepted by the Product Owner on 2026-08-20, unblocking the separately scoped return milestone. This Arrive milestone did not include return editing, corrections, Returned, completion, messaging, generalized movement, frontend deployment, Functions, indexes, or operational data.
 
 The scoped Firestore Rules deployment completed on 2026-08-19 as ruleset `4014d1a7-f011-48ce-83c1-39793c6ade77`; Hosting, Functions, and indexes were not deployed.
 
 ## Target rules and queries
 
-Rules allow active approved Staff/Admin planned vehicle, driver, and participant transportation writes for all events while enforcing Admin-only settings and corrections. Rules validate identities and stages rather than relying on UI. Implementation finalizes only indexes required by actual queries.
+Rules allow active approved Staff/Admin planned vehicle, driver, participant, return-planning, Start Return, and bounded return-roster correction writes while enforcing Admin-only settings and any future broader lifecycle correction. Rules validate identities and stages rather than relying on UI. Implementation finalizes only indexes required by actual queries.
 
 ## Migration and rollback
 
@@ -163,14 +163,14 @@ Rules allow active approved Staff/Admin planned vehicle, driver, and participant
 - Cross-document authorization and concurrent return edits/stage transitions require careful transactions and Rules.
 - Ambiguous legacy drivers/capacities require explicit review.
 - Post-MVP browser WhatsApp handoff cannot prove launch or delivery.
-- Latest-only correction metadata cannot reconstruct history.
+- Broader lifecycle correction remains latest-only/planned; implemented return-roster correction history is append-only.
 
 ## Acceptance criteria
 
 - Statuses, stages, applicable completion, timestamps, and vehicle-free controls match this record.
 - Depart creates the independent return snapshot; before it, return mirrors departure and is not editable.
 - Staff return edits work only for departed eligible trips before Start Return with full validation.
-- Planned transportation and future valid forward actions are available to Admin and Staff; settings, master data, users, and corrections remain Admin-only.
+- Planned transportation, implemented valid forward actions, and return-roster corrections are available to Admin and Staff; settings, master data, users, and broader lifecycle corrections remain Admin-only.
 - Capacity includes the driver, is leg-specific/deduplicated, and warns without blocking.
 - Corrections atomically recalculate status/timestamps backward and forward.
 - Planned unused/removed trips do not block completion; no completion precedes a departure.
@@ -191,11 +191,31 @@ The narrow participant-removal Rules correction was deployed to `eventflow-612ed
 
 The driver/occupant invariant Rules were deployed to `eventflow-612ed` on 2026-08-19 as ruleset `df4e8c69-0ac9-435e-adab-1192ef38511c`. They require each non-null leg driver to occupy the driven vehicle and reject occupant moves that leave the applicable source-trip driver reference in place.
 
-Implemented with automated verification and Product Owner-accepted combined UAT: Depart and Arrive at Event actions/timestamps/audits, departure snapshot, initial return reconciliation, first-depart event start, and Rules. Still planned: Start Return, Returned, post-Depart return editing, corrections, automatic completion, frontend deployment, and remaining lifecycle UAT. No live legacy migration is required for cleared operational test data. WhatsApp is post-MVP.
+Implemented with automated verification and Product Owner-accepted combined UAT: Depart and Arrive at Event actions/timestamps/audits, departure snapshot, initial return reconciliation, first-depart event start, and Rules. The subsequent return milestone implements post-Depart return editing, Start Return, immutable original return snapshots, and append-only roster corrections pending manual UAT. Still planned: Returned, automatic completion, frontend deployment, and remaining lifecycle UAT. No live legacy migration is required for cleared operational test data. WhatsApp is post-MVP.
 
 The Arrive at Event and planned-trip compatibility Rules were deployed to `eventflow-612ed` on 2026-08-20 as ruleset `385bfe7e-69e6-46be-96bd-334315411243`. The deployment changed Firestore Rules only; Functions, indexes, and Hosting were not deployed.
 
 Arrival UAT exposed a client-side interruption after successful prerequisite reads and before the commit request. The stabilization fix orders the transaction's event, trip, and vehicle rereads sequentially, bounds read waits, canonicalizes snapshot fields so equivalent Firestore map ordering cannot invalidate the review token, and surfaces failures inside non-submit confirmation-dialog controls. The write contract and deployed Rules are unchanged. The Product Owner reran the supplied UAT and accepted the corrected behavior on 2026-08-20.
+
+## Implemented return-planning and Start Return milestone boundary
+
+After Depart, return rosters are visible. Active approved Admin and Staff may use individual or mixed bulk controls (up to 100 participants) while source/target trips remain active at `departed` or `arrived_at_event`; planned, return-started, returned, removed, inactive, and outside-event targets are excluded from ordinary editing. Return-driver moves disclose and atomically clear only the return role. Departure fields and snapshots remain locked.
+
+Start Return is manual per vehicle and advances exactly `arrived_at_event -> return_started`. Its mobile review includes configured destination, eligible driver, named effective roster, counts, capacity/overcapacity, event-level Return Unassigned count, and actual arrival time. Unassigned and overcapacity are warning-only with required explicit double-check confirmation. The transaction re-reads material state, rejects stale/duplicate/invalid attempts, records request-time/user audit, and writes a single immutable original return snapshot without changing the event or participants.
+
+After return start, Returned fixture states, or event completion, active approved Admin and Staff may correct the effective return roster. One generated append-only `returnRosterCorrections` operation stores server user/time and a keyed map of before/after participant changes; changed relationships link to that operation. Cross-vehicle and Return Unassigned corrections are atomic. A current return-driver correction requires disclosed role clearing in the same operation. Original snapshots, lifecycle timestamps, departure roles/assignments, event status, counts, and dietary state remain unchanged.
+
+This milestone does not implement Returned, automatic completion, lifecycle reopening, broader driver replacement, generalized movements/runs/routes/stops, WhatsApp, Hosting, Functions deployment, or operational data. Manual UAT for return editing, Start Return, and corrections is the next release gate.
+
+The matching Firestore Rules were warning-free in cloud compilation and deployed to `eventflow-612ed` on 2026-08-20 as ruleset `e8a29a89-d4bc-4413-a094-d9eae4365212`. No Functions, indexes, Hosting, or operational data were deployed. The implementation remains uncommitted pending Product Owner acceptance of UAT-182 through UAT-192.
+
+Final Rules hardening removed superseded broad Depart/Arrive branches and retained the exact validated lifecycle paths. The full emulator suite and cloud compilation passed; Rules-only release `16fb9b8e-0cfc-4719-b3b0-1157de1a59c6` was deployed on 2026-09-03. Broader post-Depart return-driver swapping is not part of this milestone.
+
+Initial UAT exposed first-Depart denial for both approved roles after the broad Rules expansion crossed Firestore's 1,000-expression evaluation ceiling. Compact exact event/trip Depart authorization paths now preserve the same invariants without traversing the multi-purpose rule. Admin and Staff emulator regressions pass, and the scoped fix was deployed as ruleset `dd4b94bb-a586-49b3-bde7-68cf8c0e6865`. UAT-193 must be rerun before acceptance.
+
+Follow-up UAT exposed the equivalent ceiling on Arrive. Its compact exact path permits only `stage`, `arrivedAtEventAt`, `arrivedAtEventByUserId`, and `updatedAt`, with authenticated request-time audit and unchanged in-progress event validation. Chained Admin/Staff Depart-and-Arrive emulator coverage passes, and ruleset `32d5839e-c550-496f-b8e8-9aa2eb39bfaa` is deployed. UAT-194 must be rerun before acceptance.
+
+Start Return then appeared inert during UAT for both roles. The full chained Rules transition passes for Admin and Staff; the client was waiting on unbounded review/transaction reads without vehicle-local feedback. Start Return now shows immediate Preparing state, bounds every prerequisite/transaction/verification read, and renders actionable errors beside the vehicle or inside the review. UAT-195 must be rerun; this stabilization requires no further Rules deployment.
 
 ## Implementation checklist
 

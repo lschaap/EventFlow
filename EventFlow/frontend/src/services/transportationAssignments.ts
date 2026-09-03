@@ -4,6 +4,7 @@ import type { EventVehicleTripRecord } from '../types/models'
 import { listActiveEventVehicleTrips } from './eventVehicleTrips'
 import { assertNoParticipationOverlap } from './participationConflicts'
 import { affectedDriverRolesForMove, clearedDriverFieldsForMove, mirroredReturnVehicle, type AffectedDriverRole, type TransportationLeg, type TransportationParticipantKey } from './transportationPlanning'
+import { returnTargetIsEligible } from './returnPlanning'
 
 export const MAX_BULK_TRANSPORTATION_SELECTION = 100
 const MAX_RULE_ACCESS_DOCUMENTS = 19
@@ -40,7 +41,7 @@ export async function moveParticipantsToVehicle(
 
   const trips = await listActiveEventVehicleTrips(eventId)
   const destination = destinationVehicleId ? trips.find((trip) => trip.vehicleId === destinationVehicleId) : null
-  if (destinationVehicleId && (!destination || destination.stage !== 'planned')) throw new Error('The destination vehicle is not actively planned for this event.')
+  if (destinationVehicleId && (!destination || (leg === 'departure' ? destination.stage !== 'planned' : !returnTargetIsEligible(destination.stage, false)))) throw new Error(leg === 'departure' ? 'The destination vehicle is not actively planned for this event.' : 'Return passengers may only be assigned to a departed or arrived vehicle before Start Return.')
 
   const affectedRoles = unique.flatMap((item) => item.kind === 'staff' ? affectedDriverRolesForMove(trips, item.personId, leg, destinationVehicleId) : [])
   const confirmedKeys = new Set(confirmedDriverRoles.map((item) => `${item.tripId}:${item.staffId}:${item.leg}`))
@@ -65,7 +66,7 @@ export async function moveParticipantsToVehicle(
       vehicleRef ? transaction.get(vehicleRef) : Promise.resolve(null),
     ])
     if (destinationVehicleId && (!vehicleSnapshot?.exists() || vehicleSnapshot.data().active !== true)) throw new Error('The destination vehicle is inactive or unavailable.')
-    if (destinationVehicleId && (!destinationTripSnapshot?.exists() || destinationTripSnapshot.data().assignmentStatus !== 'active' || destinationTripSnapshot.data().stage !== 'planned')) throw new Error('The destination vehicle is not actively planned for this event.')
+    if (destinationVehicleId && (!destinationTripSnapshot?.exists() || destinationTripSnapshot.data().assignmentStatus !== 'active' || (leg === 'departure' ? destinationTripSnapshot.data().stage !== 'planned' : !returnTargetIsEligible(String(destinationTripSnapshot.data().stage), false)))) throw new Error(leg === 'departure' ? 'The destination vehicle is not actively planned for this event.' : 'The return destination is no longer eligible for ordinary editing.')
     const currentTrips = tripSnapshots.map((snapshot, index) => {
       if (!snapshot.exists() || snapshot.data().assignmentStatus !== 'active') throw new Error('The transportation plan changed. Reload and try again.')
       return { eventVehicleTripId: snapshot.id, ...snapshot.data() } as EventVehicleTripRecord
@@ -102,7 +103,10 @@ export async function moveParticipantsToVehicle(
       const key = unique[index]
       if (!snapshot.exists() || snapshot.data().status !== 'active' || snapshot.data().eventId !== eventId) throw new Error('Only active participants for this event can be moved.')
       const currentVehicleId = leg === 'departure' ? snapshot.data().departureVehicleId : snapshot.data().returnVehicleId
-      if (currentVehicleId && currentTrips.find((trip) => trip.vehicleId === currentVehicleId)?.stage !== 'planned') throw new Error('Recorded transportation assignments cannot be changed by the planning controls.')
+      if (currentVehicleId) {
+        const sourceStage = currentTrips.find((trip) => trip.vehicleId === currentVehicleId)?.stage
+        if (leg === 'departure' ? sourceStage !== 'planned' : !sourceStage || !returnTargetIsEligible(sourceStage, false)) throw new Error('Recorded transportation assignments cannot be changed by the ordinary planning controls.')
+      }
       transaction.update(participantRefs[index], leg === 'departure' ? {
         departureVehicleId: destinationVehicleId,
         returnVehicleId: mirroredReturnVehicle(key.kind, key.personId, destinationVehicleId, independentReturnVehicles),
@@ -132,6 +136,18 @@ export async function bulkMoveParticipantsToDepartureVehicle(eventId: string, pa
   try {
     await moveParticipantsToDepartureVehicle(eventId, participants, destinationVehicleId, confirmedDriverRoles)
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith('This assignment touches too many distinct transportation records')) throw error
+    throw new Error('Bulk assignment failed. Please try again or try individual assignment.')
+  }
+}
+
+export async function moveParticipantsToReturnVehicle(eventId: string, participants: TransportationParticipantKey[], destinationVehicleId: string | null, confirmedDriverRoles: AffectedDriverRole[] = []) {
+  return moveParticipantsToVehicle(eventId, participants, destinationVehicleId, 'return', confirmedDriverRoles)
+}
+
+export async function bulkMoveParticipantsToReturnVehicle(eventId: string, participants: TransportationParticipantKey[], destinationVehicleId: string | null, confirmedDriverRoles: AffectedDriverRole[] = []) {
+  try { await moveParticipantsToReturnVehicle(eventId, participants, destinationVehicleId, confirmedDriverRoles) }
+  catch (error) {
     if (error instanceof Error && error.message.startsWith('This assignment touches too many distinct transportation records')) throw error
     throw new Error('Bulk assignment failed. Please try again or try individual assignment.')
   }

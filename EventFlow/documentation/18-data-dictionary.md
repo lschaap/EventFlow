@@ -117,6 +117,7 @@
 | notes | string/null | Optional notes |
 | departureVehicleId | string/null | Active planned outbound vehicle; missing field parses as null |
 | returnVehicleId | string/null | Active planned return vehicle; pre-Depart mirror except for an independent return driver; missing field parses as null |
+| latestReturnCorrectionId | string/null | Most recent append-only return-roster correction operation affecting this participant |
 
 ## eventStaffParticipants
 | Field | Type | Description |
@@ -132,6 +133,7 @@
 | notes | string/null | Optional notes |
 | departureVehicleId | string/null | Active planned outbound vehicle; missing field parses as null |
 | returnVehicleId | string/null | Active planned return vehicle; pre-Depart mirror except for an independent return driver; missing field parses as null |
+| latestReturnCorrectionId | string/null | Most recent append-only return-roster correction operation affecting this participant |
 
 ## eventDrivers
 Legacy compatibility data only. Production application code no longer reads or writes these records; fields remain documented for migration inspection and the approved reset procedure.
@@ -182,12 +184,27 @@ Before departure, `returnVehicleId` mirrors `departureVehicleId`. Depart creates
 | arrivedAtEventAt | timestamp/null | Server event-arrival time |
 | arrivedAtEventByUserId | string/null | UID that confirmed Arrive at Event |
 | returnStartedAt | timestamp/null | Server return-start time |
+| returnStartedByUserId | string/null | Authenticated user who confirmed original Start Return |
+| originalReturnSnapshot | map/null | Immutable vehicle, driver, occupant IDs/names, counts, capacity result, destination, and Start Return audit |
 | returnedAt | timestamp/null | Server returned time |
 | createdAt | timestamp | Creation time |
 | updatedAt | timestamp | Last update time |
 | correctedAt | timestamp/null | Server time of latest trip correction |
 | correctedByUserId | string/null | Admin UID for latest trip correction |
 | correctionReason | string/null | Required latest correction reason |
+
+### returnRosterCorrections
+
+| Field | Type | Meaning |
+|---|---|---|
+| correctionId | string | Generated operation/document ID |
+| eventId | string | Corrected event |
+| correctionType | string | `return_roster_assignment` |
+| correctedByUserId | string | Authenticated correcting user |
+| correctedAt | timestamp | Server-authoritative correction time |
+| changes | map | 1–100 entries keyed by `participantType__participantId` |
+
+Each change contains participant type/ID/historical display name, previous and corrected return vehicle IDs (nullable for Return Unassigned), source/destination trip IDs, and nullable cleared return-driver trip ID. History is append-only. Current participant `returnVehicleId` is the effective roster; `latestReturnCorrectionId` links to the most recent operation without replacing earlier history.
 
 ### settings/transportation
 

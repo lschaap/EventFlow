@@ -1,5 +1,18 @@
 # Change Log
 
+## 2026-08-20 — CR-001 Return Planning and Start Return (Ready for verification)
+
+- Closed the supplied Depart/Arrive UAT record at the Product Owner’s accepted overall outcome without fabricating individual case evidence.
+- Added Admin/Staff individual and mixed bulk return editing among active departed/arrived trips and Return Unassigned, with return-driver warning/atomic clearing and locked departure history.
+- Added per-vehicle Start Return review, combined warning confirmation, stale-roster protection, request-time/user audit, and immutable original return snapshot using the configured destination.
+- Added effective post-start roster corrections for Admin/Staff after return start, Returned fixture states, and event completion through append-only `returnRosterCorrections` operation history; original snapshots and lifecycle/event timestamps remain unchanged.
+- Deployed the matching Firestore Rules only to `eventflow-612ed` as ruleset `e8a29a89-d4bc-4413-a094-d9eae4365212` after warning-free cloud compilation and executable emulator verification; no Functions, indexes, Hosting, or operational data changed.
+- UAT exposed Depart permission denial for both approved roles after the return Rules expansion. The broad legacy update paths exceeded Firestore's 1,000-expression evaluation ceiling; compact exact first-Depart event/trip paths and permanent Admin/Staff emulator regressions were added, then deployed as ruleset `dd4b94bb-a586-49b3-bde7-68cf8c0e6865`.
+- Follow-up UAT exposed the same expression ceiling on Arrive at Event. A compact exact `departed -> arrived_at_event` path now permits only stage, arrival timestamp/user audit, and updated time while locking all other trip/event facts. Chained Admin/Staff Depart-and-Arrive emulator regressions pass, and ruleset `32d5839e-c550-496f-b8e8-9aa2eb39bfaa` was deployed.
+- Start Return UAT then exposed silent client waiting during its multi-read review/transaction flow. All prerequisite, transactional, and verification reads are now bounded; the vehicle card immediately shows Preparing state and displays a specific local error instead of appearing inert. The emulator regression now chains Depart, Arrive, and Start Return for both roles. This client fix requires no additional Rules deployment.
+- On 2026-09-03, redundant broad Depart/Arrive Rules branches were removed after the exact compact paths had superseded them. The complete Rules emulator suite and cloud compilation passed, and Rules-only deployment `16fb9b8e-0cfc-4719-b3b0-1157de1a59c6` was released. A broader post-Depart return-driver swap remains outside this milestone rather than shipping a non-atomic workaround.
+- Returned, automatic completion, WhatsApp, generalized movements, Hosting, Functions deployment, and operational-data changes remain excluded.
+
 ## CR-001 Grouped Participant Planning - In Implementation
 
 - Cut Events list summaries over to active target trips/participant assignments with constant-query loading, driver/vehicle resolution, no-plan state, incomplete/overcapacity warnings, and malformed-count reporting.

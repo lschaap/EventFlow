@@ -5,5 +5,5 @@
     "isolatedModules": false,
     "outDir": ".transportation-test"
   },
-  "include": ["src/services/transportationPlanning.ts", "src/services/departurePlanning.ts", "src/services/arrivalPlanning.ts", "src/services/eventTransportationSummary.ts", "src/services/vehicleDeactivation.ts", "src/types/models.ts"]
+  "include": ["src/services/transportationPlanning.ts", "src/services/departurePlanning.ts", "src/services/arrivalPlanning.ts", "src/services/returnPlanning.ts", "src/services/eventTransportationSummary.ts", "src/services/vehicleDeactivation.ts", "src/types/models.ts"]
 }

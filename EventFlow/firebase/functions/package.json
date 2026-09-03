@@ -9,6 +9,7 @@
     "build": "tsc",
     "test:migration": "npm run build && node lib/migrations/legacyDriverMigration.test.js",
     "test:rules-policy": "npm run build && node lib/firestoreRulesPolicy.test.js",
+    "test:rules-emulator": "npm run build && npx firebase-tools emulators:exec --only firestore --project eventflow-rules-test --config ../firebase.json \"node lib/firestoreRulesEmulator.test.js\"",
     "test:legacy-isolation": "npm run build && node lib/legacyIsolation.test.js",
     "test:reset-safeguards": "npm run build && node lib/resetOperationalTestData.test.js",
     "migrate:event-drivers": "npm run build && node lib/migrations/migrateLegacyDrivers.js",
@@ -22,6 +23,7 @@
     "googleapis": "^150.0.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "typescript": "^5.8.0"
   }
 }

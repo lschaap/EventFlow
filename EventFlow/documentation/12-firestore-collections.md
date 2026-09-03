@@ -198,3 +198,11 @@ The Depart Rules were deployed to `eventflow-612ed` on 2026-08-19 as ruleset `40
 Arrive at Event adds nullable `arrivedAtEventByUserId` beside `arrivedAtEventAt`. Its transaction changes only stage, arrival timestamp/audit UID, and `updatedAt`; Rules require the event to remain byte-for-byte unchanged and `in_progress`. Existing planned records missing recently introduced nullable audit/snapshot keys remain planning-compatible, while new trips and lifecycle transitions write the complete schema.
 
 The Arrive at Event and planned-trip compatibility Rules were deployed to `eventflow-612ed` on 2026-08-20 as ruleset `385bfe7e-69e6-46be-96bd-334315411243`. No Functions, indexes, or Hosting resources were deployed.
+
+## Return lifecycle additions
+
+`eventVehicleTrips` now includes nullable `returnStartedByUserId` and `originalReturnSnapshot`. Start Return changes only stage, return-start timestamp/user, original snapshot, and `updatedAt`; event, departure, arrival, participants, later Returned fields, and unrelated planning facts are preserved. The snapshot is never replaced.
+
+Participant documents may add nullable `latestReturnCorrectionId`. Ordinary return edits change only `returnVehicleId`; audited post-start edits change `returnVehicleId` plus this link in the same atomic operation.
+
+`returnRosterCorrections/{generatedOperationId}` is an append-only operation collection. Each document contains `correctionId`, `eventId`, `correctionType`, `correctedByUserId`, server `correctedAt`, and a keyed `changes` map (1–100 entries). Rules allow approved Admin/Staff reads and valid creates only; update/delete are denied. No new composite index is required by the event-ID history query.

@@ -53,6 +53,8 @@ async function main() {
         arrivedAtEventAt: null,
         arrivedAtEventByUserId: null,
         returnStartedAt: null,
+        returnStartedByUserId: null,
+        originalReturnSnapshot: null,
         returnedAt: null,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),

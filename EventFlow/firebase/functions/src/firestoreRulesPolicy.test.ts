@@ -19,7 +19,11 @@ assert.match(trips, /request\.resource\.data\.arrivedAtEventAt == request\.time/
 assert.match(trips, /request\.resource\.data\.arrivedAtEventByUserId == request\.auth\.uid/, 'arrival records the authenticated user')
 assert.match(trips, /affectedKeys\(\)\.hasOnly\(\['stage','arrivedAtEventAt','arrivedAtEventByUserId','updatedAt'\]\)/, 'arrival preserves departure, drivers, assignments, and later timestamps')
 assert.match(trips, /validEventStateForArrival/, 'arrival requires and preserves the in-progress event')
-assert.doesNotMatch(trips, /request\.resource\.data\.stage == 'return_started'/, 'Start Return remains unavailable')
+assert.match(trips, /resource\.data\.stage == 'arrived_at_event' && request\.resource\.data\.stage == 'return_started'/, 'Start Return requires the exact arrived-to-return-started transition')
+assert.match(trips, /request\.resource\.data\.returnStartedAt == request\.time/, 'Start Return uses server-authoritative time')
+assert.match(trips, /request\.resource\.data\.returnStartedByUserId == request\.auth\.uid/, 'Start Return records the authenticated user')
+assert.match(trips, /validOriginalReturnSnapshot/, 'Start Return requires the immutable original return snapshot')
+assert.doesNotMatch(trips, /request\.resource\.data\.stage == 'returned'/, 'Returned remains unavailable')
 assert.match(trips, /validDepartureDriverParticipant\(request\.resource\.data\.eventId, request\.resource\.data\.vehicleId, request\.resource\.data\.departureDriverStaffId\)/, 'departure driver must occupy the driven vehicle')
 assert.match(trips, /validReturnDriverParticipant\(request\.resource\.data\.eventId, request\.resource\.data\.vehicleId, request\.resource\.data\.returnDriverStaffId\)/, 'return driver must occupy the driven vehicle')
 
@@ -41,6 +45,13 @@ assert.match(rules, /validFirstDepartEventTransition/, 'confirmed to in-progress
 
 const legacyDrivers = block('eventDrivers/{driverId}', 'eventVehicleTrips/{tripId}')
 assert.match(legacyDrivers, /allow delete: if false;/, 'legacy drivers cannot be hard deleted through the application')
+
+const corrections = block('returnRosterCorrections/{correctionId}', 'settings/transportation')
+assert.match(corrections, /allow create: if isAuth\(\) && isApproved\(request\.auth\.uid\)/, 'Admin and Staff can append valid return corrections')
+assert.match(corrections, /correctedAt == request\.time/, 'correction history uses server-authoritative time')
+assert.match(corrections, /correctedByUserId == request\.auth\.uid/, 'correction history records the authenticated user')
+assert.match(corrections, /allow update, delete: if false/, 'correction history is append-only')
+assert.match(rules, /validReturnCorrection/, 'post-start participant changes require linked correction history')
 
 for (const name of ['students/{studentId}', 'staff/{staffId}', 'vehicles/{vehicleId}', 'settings/transportation']) {
   const start = rules.indexOf(marker(name))

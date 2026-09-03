@@ -131,6 +131,12 @@ export interface DepartureSnapshot {
   overCapacity: boolean
 }
 
+export interface ReturnSnapshot extends DepartureSnapshot {
+  destination: string
+  startedByUserId: string
+  startedAt: Timestamp
+}
+
 export interface EventVehicleTripRecord {
   eventVehicleTripId: string
   eventId: string
@@ -146,6 +152,8 @@ export interface EventVehicleTripRecord {
   arrivedAtEventAt: Timestamp | null
   arrivedAtEventByUserId: string | null
   returnStartedAt: Timestamp | null
+  returnStartedByUserId: string | null
+  originalReturnSnapshot: ReturnSnapshot | null
   returnedAt: Timestamp | null
   createdAt: Timestamp
   updatedAt: Timestamp
@@ -178,6 +186,7 @@ export interface EventParticipantRecord {
   notes?: string | null
   departureVehicleId: string | null
   returnVehicleId: string | null
+  latestReturnCorrectionId?: string | null
 }
 
 export interface EventStaffParticipantRecord {
@@ -192,4 +201,22 @@ export interface EventStaffParticipantRecord {
   notes?: string | null
   departureVehicleId: string | null
   returnVehicleId: string | null
+  latestReturnCorrectionId?: string | null
+}
+
+export interface ReturnRosterCorrectionRecord {
+  correctionId: string
+  operationId: string
+  eventId: string
+  participantType: 'student' | 'staff'
+  participantId: string
+  participantName: string
+  previousReturnVehicleId: string | null
+  correctedReturnVehicleId: string | null
+  sourceTripId: string | null
+  destinationTripId: string | null
+  clearedReturnDriverTripId: string | null
+  correctionType: 'return_roster_assignment'
+  correctedByUserId: string
+  correctedAt: Timestamp
 }
