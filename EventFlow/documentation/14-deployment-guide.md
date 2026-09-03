@@ -1,5 +1,7 @@
 # Deployment Guide
 
+The CR-001 return-stabilization Rules were deployed to `eventflow-612ed` on 2026-09-03 as ruleset `f294a8cc-826f-4404-a25f-93352222c0b6` after production-build, policy, safeguard, legacy-isolation, and executable emulator verification. No Functions, indexes, Hosting, or operational data were deployed. Manual UAT-196 through UAT-201 remains pending.
+
 ## Prerequisites
 - Firebase project and web app
 - Google Authentication enabled
@@ -69,3 +71,6 @@ Maintain:
 - Last known-good release/tag
 - Previous Firestore rules
 - Manual event process as temporary pilot fallback
+# Return stabilization deployment gate
+
+Run the transportation/build/Rules-policy/emulator/migration/isolation/reset suites and `git diff --check`. Deploy Firestore Rules only after all pass. Do not deploy Hosting, Functions, indexes, or operational data. Manual UAT-196 through UAT-201 is the next acceptance gate.

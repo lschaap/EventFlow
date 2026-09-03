@@ -19,6 +19,10 @@ export function returnTargetIsEligible(stage: string, correction: boolean) {
 
 export function returnMoveRequiresCorrection(sourceStage: string | null) { return sourceStage === 'return_started' || sourceStage === 'returned' }
 
+export function returnCorrectionPhaseIsActive(eventStatus: string, stages: string[]) {
+  return eventStatus === 'completed' || stages.some((stage) => stage === 'return_started' || stage === 'returned')
+}
+
 export function effectiveRosterDiffers(snapshot: DepartureSnapshot | null, occupants: TransportationOccupant[]) {
   const original = snapshotOccupantKeys(snapshot), effective = new Set(occupants.map((person) => `${person.kind}:${person.personId}`))
   return original.size !== effective.size || [...original].some((key) => !effective.has(key))

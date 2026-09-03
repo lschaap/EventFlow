@@ -297,3 +297,13 @@ Depart cases above are implemented acceptance coverage. The table below remains 
 ## Post-MVP WhatsApp Acceptance Considerations
 
 The former UAT-104, UAT-106, UAT-122, UAT-123, and UAT-124 scenarios are deferred and are not MVP UAT or go-live blockers. A future user-initiated handoff must preserve confirmation-message privacy, editable preview without data writes, explicit Copy, best-effort Open behavior, existing staff-only group selection, no message state, and no launch/sent/delivery/attempt claims or persistence.
+# Return stabilization UAT — pending Product Owner retest
+
+UAT of commit `6ea8363` found: return driver/occupants/action were difficult to view together; a post-start passenger move could not be reversed; a moved-back former driver could not be explicitly restored; and completed departure information dominated progressed cards. This stabilization addresses those findings, but final UAT is not accepted until retested.
+
+- UAT-196: At planned, departed, arrived, and return-started stages, verify the card emphasizes the current work; departure time/driver remain visible and full departure details are collapsed but keyboard-expandable.
+- UAT-197: Move a passenger A → B → A after Start Return and verify two new immutable correction records, effective roster reversal, and unchanged snapshots/timestamps.
+- UAT-198: Test vehicle → Return Unassigned → vehicle and Return Unassigned → vehicle → Return Unassigned after Start Return.
+- UAT-199: Assign, change, clear, and restore an eligible effective return driver at departed, arrived, and return-started stages as Admin and Staff; verify each change is audited and the former driver is not restored automatically.
+- UAT-200: Verify a candidate must occupy the vehicle, a driver assigned to another vehicle is blocked with guidance, and Returned exposes no driver-edit control.
+- UAT-201: Verify Start Return, original snapshots, departure facts, counts, dietary state, event status, and correction history remain unchanged except for the intended effective assignment.

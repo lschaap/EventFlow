@@ -100,3 +100,6 @@ Firestore remains authoritative. Transactions couple driver/participant occupanc
 WhatsApp is deferred beyond MVP. The preserved future architecture is a client-side, user-initiated handoff from Event Details: Copy explicitly copies and Open WhatsApp is best-effort. There is no MVP messaging backend, API, paid integration, launch/delivery detection, credential, recipient directory, or state record. Transportation lifecycle behavior is independent of messaging.
 
 See [CR-001](change-requests/CR-001-transportation-trip-lifecycle.md) for the authoritative boundaries and migration plan.
+# Return stabilization architecture
+
+Once return begins anywhere in an event, the client treats every later passenger reassignment as an audited correction, preventing source-stage changes from reverting the UI to ordinary mode. Effective driver changes use a bounded transaction over one trip and one append-only correction record; cross-vehicle driver conflicts are blocked rather than expanded into a Rules-heavy multi-trip operation.

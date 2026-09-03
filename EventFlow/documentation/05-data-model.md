@@ -197,3 +197,6 @@ EVENTS
 
 USERS ── STAFF
 ```
+# Return-driver correction stabilization
+
+`eventVehicleTrips.latestReturnDriverCorrectionId` links the effective `returnDriverStaffId` to the newest immutable `returnDriverCorrections` record. Each record captures event/trip/vehicle identity, previous and corrected driver, authenticated user, server timestamp, and `return_driver_assignment` type. Original departure and Start Return snapshots remain unchanged.

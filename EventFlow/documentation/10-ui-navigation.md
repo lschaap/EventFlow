@@ -120,3 +120,6 @@ Depart and Start Return open an explicit review of vehicle, driver, occupants, c
 The implemented mobile Depart and Start Return reviews show event and vehicle names, student/staff/total counts, available seats or over-capacity result, and a required double-check checkbox. Closing or cancelling submits no transaction; progress disables repeat submission. Returned is not exposed.
 
 WhatsApp controls are post-MVP and do not appear in the MVP navigation or acceptance scope. A future Event Details-only handoff may provide confirmation, outbound, and return previews with explicit Copy and best-effort Open behavior without delivery claims.
+# Stage-focused transportation cards
+
+Planned cards emphasize departure. Departed and arrived cards retain departure time/driver in a compact summary and place full departure details in a collapsed disclosure. Return cards display the effective driver, occupants, capacity, stage, and Arrive or Start Return action together. At `return_started`, the same area emphasizes effective return state and correction controls, with original snapshots and history progressively disclosed.

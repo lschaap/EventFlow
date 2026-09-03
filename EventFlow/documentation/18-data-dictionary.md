@@ -202,6 +202,21 @@ Before departure, `returnVehicleId` mirrors `departureVehicleId`. Depart creates
 | correctionType | string | `return_roster_assignment` |
 | correctedByUserId | string | Authenticated correcting user |
 | correctedAt | timestamp | Server-authoritative correction time |
+
+### returnDriverCorrections
+
+| Field | Type | Meaning |
+|---|---|---|
+| correctionId | string | Generated immutable correction/document ID |
+| eventId | string | Owning event |
+| tripId | string | Deterministic affected trip ID |
+| vehicleId | string | Affected vehicle |
+| previousReturnDriverStaffId | string/null | Previous effective driver |
+| correctedReturnDriverStaffId | string/null | New effective driver or cleared assignment |
+| correctedByUserId | string | Authenticated correcting user |
+| correctedAt | timestamp | Server-authoritative correction time |
+| correctionType | string | `return_driver_assignment` |
+
 | changes | map | 1–100 entries keyed by `participantType__participantId` |
 
 Each change contains participant type/ID/historical display name, previous and corrected return vehicle IDs (nullable for Return Unassigned), source/destination trip IDs, and nullable cleared return-driver trip ID. History is append-only. Current participant `returnVehicleId` is the effective roster; `latestReturnCorrectionId` links to the most recent operation without replacing earlier history.

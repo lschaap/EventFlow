@@ -120,6 +120,14 @@ service cloud.firestore {
           (newVehicleId is string && correction.changes[key].destinationTripId == eventId + '__' + newVehicleId));
     }
 
+    function validReturnDriverCorrection(eventId, tripId, vehicleId, oldDriverId, newDriverId, correctionId) {
+      let correction = getAfter(/databases/$(database)/documents/returnDriverCorrections/$(correctionId)).data;
+      return correctionId is string && correctionId.size() > 0 &&
+        correction.correctionId == correctionId && correction.eventId == eventId && correction.tripId == tripId && correction.vehicleId == vehicleId &&
+        correction.previousReturnDriverStaffId == oldDriverId && correction.correctedReturnDriverStaffId == newDriverId &&
+        correction.correctionType == 'return_driver_assignment' && correction.correctedByUserId == request.auth.uid && correction.correctedAt == request.time;
+    }
+
     function tripTransitionsToDeparted(eventId, vehicleId) {
       let path = /databases/$(database)/documents/eventVehicleTrips/$(eventId + '__' + vehicleId);
       return vehicleId is string && exists(path) && existsAfter(path) &&
@@ -519,6 +527,16 @@ service cloud.firestore {
     match /eventVehicleTrips/{tripId} {
       allow read: if isAuth() && isApproved(request.auth.uid);
 
+      allow update: if isAuth() && isApproved(request.auth.uid) &&
+        request.resource.data.keys().hasAny(['latestReturnDriverCorrectionId']) && request.resource.data.latestReturnDriverCorrectionId is string &&
+        resource.data.assignmentStatus == 'active' && request.resource.data.assignmentStatus == 'active' &&
+        resource.data.stage in ['departed','arrived_at_event','return_started'] && request.resource.data.stage == resource.data.stage &&
+        tripId == resource.data.eventId + '__' + resource.data.vehicleId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['returnDriverStaffId','returnDriverMirrorsDeparture','latestReturnDriverCorrectionId','updatedAt']) &&
+        request.resource.data.returnDriverMirrorsDeparture == false && request.resource.data.updatedAt == request.time &&
+        validReturnDriverCorrection(resource.data.eventId, tripId, resource.data.vehicleId, resource.data.returnDriverStaffId, request.resource.data.returnDriverStaffId, request.resource.data.latestReturnDriverCorrectionId) &&
+        validTripDriver(request.resource.data.returnDriverStaffId) && validReturnDriverParticipant(resource.data.eventId, resource.data.vehicleId, request.resource.data.returnDriverStaffId);
+
       // Compact exact departed -> arrived_at_event path. The prior combined
       // lifecycle rule exceeded Firestore's expression budget after the return
       // milestone expanded it. affectedKeys keeps every other trip fact locked.
@@ -558,32 +576,28 @@ service cloud.firestore {
         validEventStateAfterDepart(resource.data.eventId, tripId);
 
       allow update: if isAuth() && isApproved(request.auth.uid) &&
-        tripId == resource.data.eventId + '__' + resource.data.vehicleId &&
-        request.resource.data.eventVehicleTripId == resource.data.eventVehicleTripId && request.resource.data.eventId == resource.data.eventId && request.resource.data.vehicleId == resource.data.vehicleId &&
-        request.resource.data.createdAt == resource.data.createdAt && request.resource.data.assignmentStatus == resource.data.assignmentStatus && resource.data.assignmentStatus == 'active' &&
-        ((resource.data.stage == 'arrived_at_event' && request.resource.data.stage == 'return_started' &&
-          request.resource.data.departedAt == resource.data.departedAt && request.resource.data.departedByUserId == resource.data.departedByUserId && request.resource.data.departureSnapshot == resource.data.departureSnapshot &&
-          request.resource.data.arrivedAtEventAt == resource.data.arrivedAtEventAt && request.resource.data.arrivedAtEventByUserId == resource.data.arrivedAtEventByUserId &&
-          resource.data.returnStartedAt == null && nullOrMissing(resource.data, 'returnStartedByUserId') && nullOrMissing(resource.data, 'originalReturnSnapshot') &&
-          request.resource.data.returnStartedAt == request.time && request.resource.data.returnStartedByUserId == request.auth.uid &&
-          validTripDriver(request.resource.data.returnDriverStaffId) && validReturnDriverParticipant(resource.data.eventId, resource.data.vehicleId, request.resource.data.returnDriverStaffId) &&
-          validOriginalReturnSnapshot(request.resource.data.originalReturnSnapshot, resource.data.vehicleId, request.resource.data.returnDriverStaffId) &&
-          request.resource.data.returnedAt == null && request.resource.data.updatedAt == request.time &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage','returnStartedAt','returnStartedByUserId','originalReturnSnapshot','updatedAt']) && validEventStateForArrival(resource.data.eventId)) ||
-        (resource.data.stage == request.resource.data.stage && resource.data.stage in ['departed','arrived_at_event'] &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['returnDriverStaffId','returnDriverMirrorsDeparture','updatedAt']) &&
-          request.resource.data.returnDriverStaffId == null && request.resource.data.returnDriverMirrorsDeparture == false && request.resource.data.updatedAt == request.time && resource.data.returnDriverStaffId is string &&
-          getAfter(/databases/$(database)/documents/eventStaffParticipants/$(resource.data.eventId + '__' + resource.data.returnDriverStaffId)).data.returnVehicleId != resource.data.vehicleId) ||
-        (resource.data.stage == request.resource.data.stage && resource.data.stage in ['return_started','returned'] &&
-          request.resource.data.returnStartedAt == resource.data.returnStartedAt && request.resource.data.returnStartedByUserId == resource.data.returnStartedByUserId && request.resource.data.originalReturnSnapshot == resource.data.originalReturnSnapshot && request.resource.data.returnedAt == resource.data.returnedAt &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['returnDriverStaffId','returnDriverMirrorsDeparture','updatedAt']) &&
-          request.resource.data.returnDriverStaffId == null && request.resource.data.returnDriverMirrorsDeparture == false && request.resource.data.updatedAt == request.time && resource.data.returnDriverStaffId is string &&
-          getAfter(/databases/$(database)/documents/eventStaffParticipants/$(resource.data.eventId + '__' + resource.data.returnDriverStaffId)).data.returnVehicleId != resource.data.vehicleId &&
-          validReturnCorrection(resource.data.eventId, 'staff', resource.data.returnDriverStaffId, resource.data.vehicleId, getAfter(/databases/$(database)/documents/eventStaffParticipants/$(resource.data.eventId + '__' + resource.data.returnDriverStaffId)).data.returnVehicleId, getAfter(/databases/$(database)/documents/eventStaffParticipants/$(resource.data.eventId + '__' + resource.data.returnDriverStaffId)).data.latestReturnCorrectionId)));
+        resource.data.stage == 'arrived_at_event' && request.resource.data.stage == 'return_started' && resource.data.assignmentStatus == 'active' && request.resource.data.assignmentStatus == 'active' &&
+        tripId == resource.data.eventId + '__' + resource.data.vehicleId && request.resource.data.returnStartedAt == request.time && request.resource.data.returnStartedByUserId == request.auth.uid && request.resource.data.updatedAt == request.time &&
+        resource.data.returnStartedAt == null && nullOrMissing(resource.data, 'returnStartedByUserId') && nullOrMissing(resource.data, 'originalReturnSnapshot') &&
+        validTripDriver(request.resource.data.returnDriverStaffId) && validReturnDriverParticipant(resource.data.eventId, resource.data.vehicleId, request.resource.data.returnDriverStaffId) &&
+        validOriginalReturnSnapshot(request.resource.data.originalReturnSnapshot, resource.data.vehicleId, request.resource.data.returnDriverStaffId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage','returnStartedAt','returnStartedByUserId','originalReturnSnapshot','updatedAt']) && validEventStateForArrival(resource.data.eventId);
+
+      allow update: if isAuth() && isApproved(request.auth.uid) &&
+        resource.data.stage in ['return_started','returned'] && request.resource.data.stage == resource.data.stage && resource.data.returnDriverStaffId is string && request.resource.data.returnDriverStaffId == null &&
+        request.resource.data.returnStartedAt == resource.data.returnStartedAt && request.resource.data.returnStartedByUserId == resource.data.returnStartedByUserId && request.resource.data.originalReturnSnapshot == resource.data.originalReturnSnapshot && request.resource.data.returnedAt == resource.data.returnedAt &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['returnDriverStaffId','returnDriverMirrorsDeparture','updatedAt']) && request.resource.data.returnDriverMirrorsDeparture == false && request.resource.data.updatedAt == request.time &&
+        getAfter(/databases/$(database)/documents/eventStaffParticipants/$(resource.data.eventId + '__' + resource.data.returnDriverStaffId)).data.returnVehicleId != resource.data.vehicleId &&
+        validReturnCorrection(resource.data.eventId, 'staff', resource.data.returnDriverStaffId, resource.data.vehicleId, getAfter(/databases/$(database)/documents/eventStaffParticipants/$(resource.data.eventId + '__' + resource.data.returnDriverStaffId)).data.returnVehicleId, getAfter(/databases/$(database)/documents/eventStaffParticipants/$(resource.data.eventId + '__' + resource.data.returnDriverStaffId)).data.latestReturnCorrectionId);
+
+      allow update: if isAuth() && isApproved(request.auth.uid) &&
+        resource.data.stage in ['departed','arrived_at_event'] && request.resource.data.stage == resource.data.stage && resource.data.returnDriverStaffId is string && request.resource.data.returnDriverStaffId == null &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['returnDriverStaffId','returnDriverMirrorsDeparture','updatedAt']) && request.resource.data.returnDriverMirrorsDeparture == false && request.resource.data.updatedAt == request.time &&
+        getAfter(/databases/$(database)/documents/eventStaffParticipants/$(resource.data.eventId + '__' + resource.data.returnDriverStaffId)).data.returnVehicleId != resource.data.vehicleId;
 
       allow create: if isAuth() && isApproved(request.auth.uid) &&
-        request.resource.data.keys().hasAll(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','departedByUserId','departureSnapshot','arrivedAtEventAt','arrivedAtEventByUserId','returnStartedAt','returnStartedByUserId','originalReturnSnapshot','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
-        request.resource.data.keys().hasOnly(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','departedByUserId','departureSnapshot','arrivedAtEventAt','arrivedAtEventByUserId','returnStartedAt','returnStartedByUserId','originalReturnSnapshot','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason']) &&
+        request.resource.data.keys().hasAll(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','departedByUserId','departureSnapshot','arrivedAtEventAt','arrivedAtEventByUserId','returnStartedAt','returnStartedByUserId','originalReturnSnapshot','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason','latestReturnDriverCorrectionId']) &&
+        request.resource.data.keys().hasOnly(['eventVehicleTripId','eventId','vehicleId','assignmentStatus','stage','departureDriverStaffId','returnDriverStaffId','returnDriverMirrorsDeparture','departedAt','departedByUserId','departureSnapshot','arrivedAtEventAt','arrivedAtEventByUserId','returnStartedAt','returnStartedByUserId','originalReturnSnapshot','returnedAt','createdAt','updatedAt','correctedAt','correctedByUserId','correctionReason','latestReturnDriverCorrectionId']) &&
         request.resource.data.eventVehicleTripId == tripId &&
         tripId == request.resource.data.eventId + '__' + request.resource.data.vehicleId &&
         request.resource.data.eventId is string && request.resource.data.vehicleId is string &&
@@ -601,7 +615,7 @@ service cloud.firestore {
         request.resource.data.returnDriverMirrorsDeparture is bool &&
         (!request.resource.data.returnDriverMirrorsDeparture || request.resource.data.returnDriverStaffId == request.resource.data.departureDriverStaffId) &&
         request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp &&
-        request.resource.data.correctedAt == null && request.resource.data.correctedByUserId == null && request.resource.data.correctionReason == null;
+        request.resource.data.correctedAt == null && request.resource.data.correctedByUserId == null && request.resource.data.correctionReason == null && request.resource.data.latestReturnDriverCorrectionId == null;
 
       allow update: if isAuth() && isApproved(request.auth.uid) &&
         request.resource.data.eventVehicleTripId == resource.data.eventVehicleTripId &&
@@ -637,6 +651,17 @@ service cloud.firestore {
         request.resource.data.correctionType == 'return_roster_assignment' &&
         request.resource.data.correctedByUserId == request.auth.uid && request.resource.data.correctedAt == request.time &&
         request.resource.data.changes is map && request.resource.data.changes.size() > 0 && request.resource.data.changes.size() <= 100;
+      allow update, delete: if false;
+    }
+
+    match /returnDriverCorrections/{correctionId} {
+      allow read: if isAuth() && isApproved(request.auth.uid);
+      allow create: if isAuth() && isApproved(request.auth.uid) &&
+        request.resource.data.keys().hasAll(['correctionId','eventId','tripId','vehicleId','previousReturnDriverStaffId','correctedReturnDriverStaffId','correctedByUserId','correctedAt','correctionType']) &&
+        request.resource.data.keys().hasOnly(['correctionId','eventId','tripId','vehicleId','previousReturnDriverStaffId','correctedReturnDriverStaffId','correctedByUserId','correctedAt','correctionType']) &&
+        request.resource.data.correctionId == correctionId && correctionId.size() > 0 && request.resource.data.eventId is string &&
+        request.resource.data.tripId == request.resource.data.eventId + '__' + request.resource.data.vehicleId &&
+        request.resource.data.correctionType == 'return_driver_assignment' && request.resource.data.correctedByUserId == request.auth.uid && request.resource.data.correctedAt == request.time;
       allow update, delete: if false;
     }
 

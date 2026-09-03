@@ -187,3 +187,6 @@ The complete authoritative behavior and acceptance criteria are in [CR-001](chan
 ## Post-MVP WhatsApp Handoff
 
 REQ-108 through REQ-110 are retained as future requirements, not MVP acceptance criteria. No WhatsApp API, paid integration, message UI, UAT gate, or go-live dependency is required for MVP. Any future implementation remains a user-initiated preview/edit/copy/best-effort handoff to an existing staff-only group and must operate independently of transportation lifecycle actions.
+# CR-001 return stabilization
+
+After any vehicle starts return, all subsequent return-passenger moves use the append-only correction workflow so moves are reversible between eligible active event vehicles and Return Unassigned. Active approved Admin and Staff may explicitly assign, change, clear, or restore an effective return driver at `departed`, `arrived_at_event`, or `return_started`; the candidate must be an eligible staff occupant. A driver already assigned to another vehicle is blocked with an actionable message. Driver editing ends at `returned`.

@@ -160,6 +160,7 @@ export interface EventVehicleTripRecord {
   correctedAt: Timestamp | null
   correctedByUserId: string | null
   correctionReason: string | null
+  latestReturnDriverCorrectionId?: string | null
 }
 
 export interface ResolvedEventVehicleTrip extends EventVehicleTripRecord {
@@ -219,4 +220,16 @@ export interface ReturnRosterCorrectionRecord {
   correctionType: 'return_roster_assignment'
   correctedByUserId: string
   correctedAt: Timestamp
+}
+
+export interface ReturnDriverCorrectionRecord {
+  correctionId: string
+  eventId: string
+  tripId: string
+  vehicleId: string
+  previousReturnDriverStaffId: string | null
+  correctedReturnDriverStaffId: string | null
+  correctedByUserId: string
+  correctedAt: Timestamp
+  correctionType: 'return_driver_assignment'
 }

@@ -52,6 +52,12 @@ assert.match(corrections, /correctedAt == request\.time/, 'correction history us
 assert.match(corrections, /correctedByUserId == request\.auth\.uid/, 'correction history records the authenticated user')
 assert.match(corrections, /allow update, delete: if false/, 'correction history is append-only')
 assert.match(rules, /validReturnCorrection/, 'post-start participant changes require linked correction history')
+const driverCorrections = block('returnDriverCorrections/{correctionId}', 'settings/transportation')
+assert.match(driverCorrections, /correctedAt == request\.time/, 'driver correction history uses server-authoritative time')
+assert.match(driverCorrections, /correctedByUserId == request\.auth\.uid/, 'driver correction history records the authenticated user')
+assert.match(driverCorrections, /allow update, delete: if false/, 'driver correction history is append-only')
+assert.match(trips, /resource\.data\.stage in \['departed','arrived_at_event','return_started'\]/, 'effective return-driver editing ends before Returned')
+assert.match(trips, /validReturnDriverCorrection/, 'effective driver changes require linked correction history')
 
 for (const name of ['students/{studentId}', 'staff/{staffId}', 'vehicles/{vehicleId}', 'settings/transportation']) {
   const start = rules.indexOf(marker(name))

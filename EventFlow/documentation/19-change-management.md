@@ -12,6 +12,8 @@ Start Return UAT subsequently appeared to do nothing for both roles. Executable 
 
 Final milestone hardening removed redundant broad Depart/Arrive authorization branches after their compact exact replacements were proven. The full executable Rules suite passed and Firestore Rules only were deployed on 2026-09-03 as ruleset `16fb9b8e-0cfc-4719-b3b0-1157de1a59c6`. Post-Depart return-driver swapping remains a separate follow-up because the attempted multi-document client swap exceeded Firestore Rules' expression budget; no partial or weakened-security implementation is included.
 
+The subsequent return-stabilization milestone implements that follow-up with a bounded, append-only `returnDriverCorrections` write linked atomically to the effective trip driver. It also makes post-start passenger correction mode event-wide so occupants remain movable between eligible vehicles after the first return starts. Production and emulator verification passed, and Firestore Rules only were deployed on 2026-09-03 as ruleset `f294a8cc-826f-4404-a25f-93352222c0b6`. Manual UAT-196 through UAT-201 remains the acceptance gate; Functions, indexes, Hosting, and operational data were unchanged.
+
 ## 2026-08-19 CR-001 operational test-data reset
 
 Following Product Owner review of the dry-run scope, the project-locked reset deleted 47 operational test documents from `events`, `eventParticipants`, `eventStaffParticipants`, `eventDrivers`, and `eventVehicleTrips`. Post-reset verification reported zero remaining documents in those collections, no malformed/orphaned dependents, and unchanged reported preservation counts totaling 27 Firestore master/configuration documents. Firebase Authentication users were not targeted.
@@ -88,3 +90,6 @@ After accepting corrected Depart/Arrive UAT, the Product Owner authorized return
 ## 2026-08-20 CR-001 Arrive at Event implementation decision
 
 Product Owner authorized per-vehicle Arrive at Event before completing deferred Depart UAT 5–10, while explicitly blocking Start Return until combined manual Depart/Arrive UAT passes or identified defects are accepted. The implementation changes only `departed -> arrived_at_event`, records server arrival/audit UID, preserves event/participant/assignment/departure state, and includes no notifications, correction, return editing, completion, generalized movement, deployment of application code, or operational data creation. Automated verification may proceed; manual UAT remains pending.
+# CR-001 return stabilization decision
+
+Product Owner UAT of `6ea8363` identified card-density, one-way correction, and effective-driver restoration defects. This bounded stabilization uses stage-focused disclosure, switches the entire event to audited correction mode after the first Start Return, and adds append-only effective-driver corrections through `return_started`. Cross-vehicle driver conflicts are blocked because a broader client transaction would exceed the validated Firestore Rules budget. Final stabilization UAT remains pending; CR-001 is not complete.

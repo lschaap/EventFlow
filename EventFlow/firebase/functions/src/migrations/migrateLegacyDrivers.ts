@@ -61,6 +61,7 @@ async function main() {
         correctedAt: null,
         correctedByUserId: null,
         correctionReason: null,
+        latestReturnDriverCorrectionId: null,
       })
       created += 1
     } catch (error: unknown) {

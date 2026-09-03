@@ -70,3 +70,6 @@ Current implementation note: **Depart**, **Arrive at Event**, ordinary return ed
 The current milestone supersedes older Admin-only correction text for return-roster records: active approved Staff and Admin may append bounded return corrections after Start Return, after Returned fixture states, and after event completion. Neither role can update/delete correction history, overwrite original snapshots, reopen lifecycle stages, or alter departure assignments through this workflow.
 
 For both Admin and Staff, moving a driver occupant away from the vehicle they drive requires a disclosed confirmation and atomically clears the applicable role. Cancelling writes nothing. WhatsApp permissions are not active MVP permissions.
+# Return stabilization permissions
+
+Active approved Admin and Staff share passenger-correction and effective-return-driver permissions. Driver edits are allowed through `return_started`, require an eligible staff occupant, and are denied at `returned`. Conflicted drivers assigned to another vehicle must first be explicitly cleared from that vehicle.

@@ -1,7 +1,7 @@
 export const RESET_PROJECT_ID = 'eventflow-612ed'
 export const RESET_CONFIRMATION = 'DELETE_EVENT_OPERATIONAL_TEST_DATA'
-export const RESET_COLLECTIONS = ['events', 'eventParticipants', 'eventStaffParticipants', 'eventDrivers', 'eventVehicleTrips', 'returnRosterCorrections'] as const
-export const RESET_DEPENDENT_COLLECTIONS = ['eventParticipants', 'eventStaffParticipants', 'eventDrivers', 'eventVehicleTrips', 'returnRosterCorrections'] as const
+export const RESET_COLLECTIONS = ['events', 'eventParticipants', 'eventStaffParticipants', 'eventDrivers', 'eventVehicleTrips', 'returnRosterCorrections', 'returnDriverCorrections'] as const
+export const RESET_DEPENDENT_COLLECTIONS = ['eventParticipants', 'eventStaffParticipants', 'eventDrivers', 'eventVehicleTrips', 'returnRosterCorrections', 'returnDriverCorrections'] as const
 export const PRESERVED_COLLECTIONS = ['users', 'approvedUsers', 'students', 'staff', 'vehicles', 'activities', 'eventTypes', 'settings'] as const
 export const RESET_BATCH_SIZE = 400
 export const RESET_DRY_RUN_ID_LIMIT = 100

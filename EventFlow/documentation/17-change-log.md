@@ -123,3 +123,9 @@
 - Displays actual arrival and retains read-only return occupants without exposing Start Return, return editing, corrections, notifications, or completion.
 - Added backward-compatible Rules handling for planned records missing newly introduced nullable lifecycle fields, resolving driver-assignment permission denials while keeping lifecycle writes strict.
 - Automated verification is complete; combined Depart/Arrive manual UAT is pending and Depart tests 5–10 remain deferred.
+# 2026-09-03 — CR-001 return stabilization (UAT pending)
+
+- Recorded four Product Owner findings from UAT of `6ea8363` without marking acceptance.
+- Added stage-focused vehicle cards, event-wide reversible post-start passenger corrections, and audited effective return-driver editing through `return_started`.
+- Cross-vehicle driver conflicts are intentionally blocked; original snapshots and lifecycle timestamps remain immutable. Returned and automatic completion remain unimplemented.
+- Production build, focused regressions, policy checks, migration/reset safeguards, legacy isolation, and the executable Firestore emulator suite passed. Firestore Rules only were deployed to `eventflow-612ed` as ruleset `f294a8cc-826f-4404-a25f-93352222c0b6`; Functions, indexes, Hosting, and operational data were unchanged.

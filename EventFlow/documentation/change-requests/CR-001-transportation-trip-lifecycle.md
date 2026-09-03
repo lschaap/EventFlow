@@ -10,6 +10,8 @@
 | Current implementation | Target-model planning, Depart, Arrive at Event, return-only editing, Start Return, audited return-roster corrections, and legacy production isolation are implemented; Returned and automatic completion are not |
 | Current milestone | Return planning, Start Return, and audited roster correction |
 
+The 2026-09-03 stabilization extends the current milestone with stage-focused vehicle cards, event-wide reversible post-start passenger corrections, and append-only effective return-driver corrections through `return_started`. Verified Firestore Rules were deployed as ruleset `f294a8cc-826f-4404-a25f-93352222c0b6`; manual UAT-196 through UAT-201 is pending. Returned and automatic completion remain out of scope.
+
 ## Implementation progress
 
 Implemented in the foundation milestone: shared `in_progress` and nullable `startedAt` compatibility; `eventVehicleTrips` types/foundation services; transportation-settings model/service and Admin Vehicles-tab control; restrictive Rules; two foundation indexes; and dry-run-first migration tooling with fictional-fixture tests. The foundation Firestore Rules were deployed to the configured Firebase project on 2026-08-18; indexes were not deployed.
@@ -228,3 +230,6 @@ Start Return then appeared inert during UAT for both roles. The full chained Rul
 - [ ] Execute `13-uat-test-cases.md`.
 - [ ] Record build, rule-test, migration, and UAT evidence.
 - [ ] Advance state only when Ready for UAT, Accepted, or Released is genuinely reached.
+# Return stabilization after `6ea8363`
+
+Product Owner UAT identified four stabilization findings: progressed cards overemphasized departure, return state/action were separated, post-start passenger corrections became one-way when the new source had not started return, and effective drivers could not be explicitly restored. The stabilization makes correction mode event-wide after the first Start Return, adds append-only effective-driver corrections through `return_started`, and reorganizes cards around their current stage. Cross-vehicle driver conflicts are deliberately blocked pending a future trusted backend operation. Returned and automatic completion remain unimplemented, and focused stabilization UAT is pending.

@@ -182,3 +182,6 @@ EventFlow lists affected future event names. Confirmation clears departure/retur
 ### T8 - Prepare a WhatsApp message (Post-MVP)
 
 This workflow is not part of CR-001 MVP acceptance, UAT, or go-live. A future Event Details implementation may let the user preview/edit eligible text without changing data, explicitly Copy it, and make a best-effort Open WhatsApp handoff to an existing staff-only group. EventFlow will claim/store no launch, send, delivery, receipt, or attempt state.
+# Stabilized return workflow
+
+After Depart, completed departure information collapses while the return roster, capacity, driver, and next action become primary. Once any vehicle reaches `return_started`, all later passenger moves append a correction, including reversals. Driver changes append separate immutable audit records and never rewrite the original Start Return snapshot.
